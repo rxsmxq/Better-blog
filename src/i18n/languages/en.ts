@@ -262,9 +262,12 @@ export const en: Translation = {
 	[Key.siteStatsTagCount]: "Tags",
 	[Key.siteStatsTotalWords]: "Total Words",
 	[Key.siteStatsRunningDays]: "Running Days",
-	[Key.siteStatsLastUpdate]: "Last Activity",
+	[Key.siteStatsLastUpdate]: "Last Active",
 	[Key.siteStatsDaysAgo]: "{days} days ago",
 	[Key.siteStatsDays]: "{days} days",
+	[Key.siteStatsVisitors]: "Visitors",
+	[Key.siteStatsPageViews]: "Views",
+	[Key.siteStatsLoading]: "--",
 	[Key.today]: "Today",
 
 	// Calendar Component

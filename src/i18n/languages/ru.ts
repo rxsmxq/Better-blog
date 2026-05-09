@@ -266,6 +266,9 @@ export const ru: Translation = {
 	[Key.siteStatsLastUpdate]: "Последняя активность",
 	[Key.siteStatsDaysAgo]: "{days} дней назад",
 	[Key.siteStatsDays]: "{days} дней",
+	[Key.siteStatsVisitors]: "Посетители",
+	[Key.siteStatsPageViews]: "Просмотры",
+	[Key.siteStatsLoading]: "--",
 	[Key.today]: "Сегодня",
 
 	// Компонент календаря

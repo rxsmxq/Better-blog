@@ -262,8 +262,11 @@ export const ja: Translation = {
 	[Key.siteStatsTotalWords]: "総文字数",
 	[Key.siteStatsRunningDays]: "運用日数",
 	[Key.siteStatsLastUpdate]: "最終活動",
-	[Key.siteStatsDaysAgo]: "{days} 日前",
-	[Key.siteStatsDays]: "{days} 日",
+	[Key.siteStatsDaysAgo]: "{days}日前",
+	[Key.siteStatsDays]: "{days}日",
+	[Key.siteStatsVisitors]: "訪問者",
+	[Key.siteStatsPageViews]: "閲覧数",
+	[Key.siteStatsLoading]: "--",
 	[Key.today]: "今日",
 
 	// カレンダーコンポーネント

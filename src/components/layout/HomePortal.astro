@@ -83,15 +83,36 @@ const stats = [
 		icon: "material-symbols:calendar-clock-outline",
 		label: i18n(I18nKey.siteStatsRunningDays),
 		value: runningDays,
-		suffix: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
+		hideValue: runningDays === 0,
+		suffix:
+			runningDays === 0
+				? i18n(I18nKey.today)
+				: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
 	},
 	{
 		icon: "mingcute:heartbeat-line",
 		label: i18n(I18nKey.siteStatsLastUpdate),
 		value: isToday ? 0 : lastUpdateDays,
+		hideValue: isToday,
 		suffix: isToday
 			? i18n(I18nKey.today)
 			: i18n(I18nKey.siteStatsDaysAgo).replace("{days}", ""),
+	},
+	{
+		icon: "material-symbols:eye-tracking-outline",
+		label: i18n(I18nKey.siteStatsVisitors),
+		value: 0,
+		hideValue: true,
+		suffix: i18n(I18nKey.siteStatsLoading),
+		id: "counter-uv",
+	},
+	{
+		icon: "material-symbols:visibility-outline-rounded",
+		label: i18n(I18nKey.siteStatsPageViews),
+		value: 0,
+		hideValue: true,
+		suffix: i18n(I18nKey.siteStatsLoading),
+		id: "counter-pv",
 	},
 ];
 ---
@@ -139,6 +160,7 @@ const stats = [
 	</section>
 
 	{/* STATS */}
+	<div class="home-divider text-center">- - - - -</div>
 	<div class="onload-animation mt-4">
 		<div class="flex flex-row flex-wrap justify-center gap-x-8 gap-y-4">
 			{stats.map((stat) => (
@@ -149,13 +171,17 @@ const stats = [
 							{stat.label}
 						</span>
 					</div>
-					<NumberTicker
-						value={stat.value}
-						formatted={stat.formatted || false}
-						suffix={stat.suffix || ''}
-						class="text-sm font-bold text-neutral-900 dark:text-neutral-100"
-						client:visible
-					/>
+					{stat.hideValue ? (
+						<span class="text-sm font-bold text-neutral-900 dark:text-neutral-100" data-stat-id={stat.id || undefined}>{stat.suffix}</span>
+					) : (
+						<NumberTicker
+							value={stat.value}
+							formatted={stat.formatted || false}
+							suffix={stat.suffix || ''}
+							class="text-sm font-bold text-neutral-900 dark:text-neutral-100"
+							client:visible
+						/>
+					)}
 				</div>
 			))}
 		</div>
@@ -206,6 +232,7 @@ const stats = [
 		font-size: 0.75rem;
 		letter-spacing: 0.25em;
 		color: var(--content-meta);
+		font-weight: 700;
 	}
 
 	/* === Avatar Ripple === */
@@ -220,6 +247,12 @@ const stats = [
 	.avatar-core {
 		position: relative;
 		z-index: 2;
+		transition: border 0.3s ease;
+	}
+	[data-time-mode="off"] .avatar-core {
+		border-width: 3px;
+		border-color: var(--line-divider);
+		box-sizing: border-box;
 	}
 	.avatar-img {
 		position: absolute;
@@ -263,7 +296,7 @@ const stats = [
 		border: 4px solid #000;
 		animation: none;
 		opacity: 1;
-		transform: translate(-50%, -50%) scale(1);
+		transform: translate(-50%, -50%) scale(1.06);
 	}
 	[data-time-mode="off"] .ripple-ring-2,
 	[data-time-mode="off"] .ripple-ring-3 {
@@ -415,5 +448,32 @@ const stats = [
 	setTimeMode();
 	setInterval(setTimeMode, 60000);
 	document.addEventListener('astro:page-load', setTimeMode);
+})();
+</script>
+
+<script is:inline>
+(function() {
+	function updateCounter() {
+		var uvEl = document.querySelector('[data-stat-id="counter-uv"]');
+		var pvEl = document.querySelector('[data-stat-id="counter-pv"]');
+		if (!uvEl || !pvEl) return;
+
+		fetch('/api/count', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ path: location.pathname }),
+		})
+		.then(function(r) { return r.json(); })
+		.then(function(data) {
+			if (data.uv != null) uvEl.textContent = Number(data.uv).toLocaleString();
+			if (data.pv != null) pvEl.textContent = Number(data.pv).toLocaleString();
+		})
+		.catch(function() {});
+	}
+
+	updateCounter();
+	document.addEventListener('swup:contentReplaced', function() {
+		setTimeout(updateCounter, 200);
+	});
 })();
 </script>
