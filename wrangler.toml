@@ -4,3 +4,7 @@ pages_build_output_dir = "./dist"
 
 [vars]
 NODE_VERSION = "22"
+
+[[kv_namespaces]]
+binding = "VISITOR_KV"
+id = "2720087758cb476eb24fd8dd4efb3e4c"
