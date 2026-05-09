@@ -138,6 +138,14 @@ export type SiteConfig = {
 		};
 	};
 
+	// 上下班时间配置（24小时制），用于首页头像涟漪动效和状态按钮
+	workHours?: {
+		start: number; // 上班时间，例如 9 表示 9:00
+		end: number; // 下班时间，例如 18 表示 18:00
+		// 工作日范围，0=周日 1=周一 ... 6=周六，默认 [1,2,3,4,5]（周一到周五）
+		workDays?: number[];
+	};
+
 	// 图片优化配置
 	imageOptimization?: {
 		/**

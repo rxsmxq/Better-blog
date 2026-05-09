@@ -97,6 +97,14 @@ export const siteConfig: SiteConfig = {
 	// 示例："Asia/Shanghai", "UTC", 如果为空，则按照构建服务器的时区进行时区转换
 	timezone: "Asia/Shanghai",
 
+	// 上下班时间配置（24小时制），用于首页头像涟漪动效和状态按钮
+	workHours: {
+		start: 9, // 上班时间 9:00
+		end: 18, // 下班时间 18:00
+		// 工作日范围，0=周日 1=周一 ... 6=周六，默认周一到周五
+		workDays: [1, 2, 3, 4, 5],
+	},
+
 	// 提醒框（Admonitions）配置，修改后需要重启开发服务器才能生效
 	// 主题：'github' | 'obsidian' | 'vitepress'，每个主题风格和语法不同，可根据喜好选择
 	rehypeCallouts: {

@@ -98,18 +98,27 @@ const stats = [
 
 <div class="home-portal">
 	{/* PROFILE */}
-	<section class="section onload-animation flex flex-col items-center gap-4">
-		<a href={url("/about/")} class="group block relative w-60 h-60 overflow-hidden rounded-full border border-(--line-divider) shrink-0">
-			<ImageWrapper
-				src={profileConfig.avatar || ""}
-				alt="Profile Image of the Author"
-				class="w-full h-full"
-				loading="eager"
-				fetchpriority="high"
-				widths={[400]}
-				sizes="400px"
-			/>
-		</a>
+	<section class="section onload-animation flex flex-col items-center gap-8 mt-8">
+		<div class="avatar-ripple-wrapper" id="avatar-ripple-wrapper" data-work-start={siteConfig.workHours?.start ?? 9} data-work-end={siteConfig.workHours?.end ?? 18} data-work-days={JSON.stringify(siteConfig.workHours?.workDays ?? [1,2,3,4,5])}>
+			<div class="ripple-ring ripple-ring-1"></div>
+			<div class="ripple-ring ripple-ring-2"></div>
+			<div class="ripple-ring ripple-ring-3"></div>
+			<a href={url("/about/")} class="group block relative w-44 h-44 overflow-hidden rounded-full border border-(--line-divider) shrink-0 avatar-core">
+				<ImageWrapper
+					src={profileConfig.avatar || ""}
+					alt="Profile Image of the Author"
+					class="w-full h-full"
+					loading="eager"
+					fetchpriority="high"
+					widths={[400]}
+					sizes="400px"
+				/>
+			</a>
+			<div class="avatar-status-btn" id="avatar-status-btn">
+				<span class="status-dot"></span>
+				<span class="status-text" id="status-text">下班</span>
+			</div>
+		</div>
 		<div class="text-center w-full">
 			<TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-xl text-(--content-meta)" />
 		</div>
@@ -185,6 +194,123 @@ const stats = [
 		color: var(--content-meta);
 	}
 
+	/* === Avatar Ripple === */
+	.avatar-ripple-wrapper {
+		position: relative;
+		width: 11rem;
+		height: 11rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.avatar-core {
+		position: relative;
+		z-index: 2;
+	}
+	.ripple-ring {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 100%;
+		height: 100%;
+		border-radius: 9999px;
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 0;
+		pointer-events: none;
+		will-change: transform, opacity;
+	}
+
+	/* 上班时间：粉红色涟漪 */
+	[data-time-mode="work"] .ripple-ring {
+		border: 4px solid oklch(0.65 0.2 350);
+		box-shadow: 0 0 16px oklch(0.65 0.2 350 / 0.4);
+	}
+	[data-time-mode="work"] .ripple-ring-1 { animation: ripple-expand 3s ease-out infinite; }
+	[data-time-mode="work"] .ripple-ring-2 { animation: ripple-expand 3s ease-out 1s infinite; }
+	[data-time-mode="work"] .ripple-ring-3 { animation: ripple-expand 3s ease-out 2s infinite; }
+
+	/* 下班时间：静态一圈 */
+	[data-time-mode="off"] .ripple-ring {
+		border: 4px solid #000;
+		animation: none;
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+	[data-time-mode="off"] .ripple-ring-2,
+	[data-time-mode="off"] .ripple-ring-3 {
+		display: none;
+	}
+	:root.dark [data-time-mode="off"] .ripple-ring {
+		border-color: #fff;
+	}
+
+	@keyframes ripple-expand {
+		0% {
+			transform: translate(-50%, -50%) scale(0.8);
+			opacity: 0.6;
+		}
+		100% {
+			transform: translate(-50%, -50%) scale(1.5);
+			opacity: 0;
+		}
+	}
+
+	/* === Status Button === */
+	.avatar-status-btn {
+		position: absolute;
+		bottom: -0.5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 10;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.25rem 0.75rem;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		white-space: nowrap;
+		border: 2px solid #000;
+		color: #000;
+		background: #fff;
+	}
+	:root.dark .avatar-status-btn {
+		border-color: #fff;
+		color: #fff;
+		background: #000;
+	}
+	/* 上班时间粉色 */
+	[data-time-mode="work"] .avatar-status-btn {
+		border-color: oklch(0.65 0.2 350);
+		color: oklch(0.65 0.2 350);
+		background: #fff;
+	}
+	:root.dark [data-time-mode="work"] .avatar-status-btn {
+		border-color: oklch(0.65 0.2 350);
+		color: oklch(0.65 0.2 350);
+		background: #000;
+	}
+
+	.status-dot {
+		width: 0.375rem;
+		height: 0.375rem;
+		border-radius: 9999px;
+		background: #000;
+		flex-shrink: 0;
+	}
+	:root.dark .status-dot {
+		background: #fff;
+	}
+	[data-time-mode="work"] .status-dot {
+		background: oklch(0.65 0.2 350);
+		animation: status-pulse 1.5s ease-in-out infinite;
+	}
+
+	@keyframes status-pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.3; }
+	}
+
 	.social-link-btn {
 		display: inline-flex;
 		align-items: center;
@@ -237,3 +363,28 @@ const stats = [
 		color: black;
 	}
 </style>
+
+<script>
+(function() {
+	function setTimeMode() {
+		var wrapper = document.getElementById('avatar-ripple-wrapper');
+		var statusText = document.getElementById('status-text');
+		if (!wrapper) return;
+		var start = parseInt(wrapper.dataset.workStart || '9') || 9;
+		var end = parseInt(wrapper.dataset.workEnd || '18') || 18;
+		var workDays = [1,2,3,4,5];
+		try { workDays = JSON.parse(wrapper.dataset.workDays || '[1,2,3,4,5]'); } catch(e) {}
+		var now = new Date();
+		var day = now.getDay();
+		var hour = now.getHours();
+		// 先判断是否工作日，再判断时间
+		var isWorkDay = workDays.indexOf(day) !== -1;
+		var isWork = isWorkDay && hour >= start && hour < end;
+		wrapper.setAttribute('data-time-mode', isWork ? 'work' : 'off');
+		if (statusText) statusText.textContent = isWork ? '上班中' : '下班';
+	}
+	setTimeMode();
+	setInterval(setTimeMode, 60000);
+	document.addEventListener('astro:page-load', setTimeMode);
+})();
+</script>
