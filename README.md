@@ -6,8 +6,13 @@
 
 目前爆改如图，个人博客仓库。如果要fork请务必把我的笔记清除干净哦
 
-live2d设计版权归属库洛，作者是B站木果阿木果大佬的哦，大家感兴趣可以关注一下[木果阿木果的B站](https://space.bilibili.com/886695)
+live2d的注意事项，作者是B站木果阿木果大大佬，大家感兴趣可以关注一下[木果阿木果的B站](https://space.bilibili.com/886695)
 
+1.本模型的设计版权归属于库洛
+2.模型可以用于制作鸣潮相关的视频和鸣潮游戏直播（需要标注来源）
+3.不可用于任何商用盈利行为，禁止二次上传转载引流
+
+视频展示中鼠标指针来自up：咕小雅Official
 <img alt="Simple-firefly-2" src="./docs/images/2.webp" />
 
 <img alt="Simple-firefly-3" src="./docs/images/3.webp" />
