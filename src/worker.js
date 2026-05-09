@@ -1,5 +1,18 @@
-export async function onRequest(context) {
-	const { request, env } = context;
+export default {
+	async fetch(request, env) {
+		const url = new URL(request.url);
+
+		// 计数 API
+		if (url.pathname === "/api/count") {
+			return handleCount(request, env);
+		}
+
+		// 其他请求返回静态资源
+		return env.ASSETS.fetch(request);
+	},
+};
+
+async function handleCount(request, env) {
 	const headers = {
 		"Access-Control-Allow-Origin": "*",
 		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -23,11 +36,9 @@ export async function onRequest(context) {
 
 		const cookie = request.headers.get("Cookie") || "";
 		let visitorId = getCookie(cookie, "vid");
-		let isNewVisitor = false;
 
 		if (!visitorId) {
 			visitorId = crypto.randomUUID();
-			isNewVisitor = true;
 		}
 
 		const pv = Number((await env.VISITOR_KV.get("pv")) || "0") + 1;
