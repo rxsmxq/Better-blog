@@ -3,7 +3,7 @@ title: IDEA快捷键
 published: 2026-01-15
 description: IDEA开发工具常用插件推荐与快捷键大全，涵盖编辑、导航、重构、调试等高频操作的快捷键说明，以及Key Promoter X、Rainbow Brackets等实用插件介绍。
 tags: [JAVA, 工具]
-category: 笔记
+category: JAVA
 draft: false
 ---
 

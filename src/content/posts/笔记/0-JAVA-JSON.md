@@ -3,7 +3,7 @@ title: JSON
 published: 2026-02-03
 description: Java中JSON处理库FastJson和Jackson的详细使用指南，包含序列化、反序列化、JSON对象操作、数组解析等核心API的使用方法与代码示例。
 tags: [JAVA, 基础]
-category: 笔记
+category: JAVA
 draft: false
 ---
 

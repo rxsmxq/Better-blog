@@ -209,6 +209,7 @@ export type NavBarConfig = {
 
 export type ProfileConfig = {
 	avatar?: string;
+	avatarOffWork?: string;
 	name: string;
 	bio?: string;
 	links: {

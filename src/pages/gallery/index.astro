@@ -52,23 +52,25 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
 
       <!-- 标签筛选 -->
       {albums.length > 0 && allTags.length > 0 && (
-        <gallery-filter class="gallery-filter-group flex flex-wrap gap-0 mb-6 p-1 rounded-xl" data-gallery-filter>
-          <div class="gallery-filter-indicator" data-gallery-indicator></div>
-          <button
-            data-tag="all"
-            class="gallery-filter-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 gallery-filter-btn-active"
-          >
-            {i18n(I18nKey.all)}
-          </button>
-          {allTags.map((tag) => (
+        <div class="gallery-filter-outer mb-6">
+          <gallery-filter class="gallery-filter-tabs flex gap-1 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-gallery-filter>
             <button
-              data-tag={tag}
-              class="gallery-filter-btn px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 gallery-filter-btn-inactive"
+              data-tag="all"
+              class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-white dark:text-neutral-900"
             >
-              {tag}
+              {i18n(I18nKey.all)}
             </button>
-          ))}
-        </gallery-filter>
+            {allTags.map((tag) => (
+              <button
+                data-tag={tag}
+                class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+              >
+                {tag}
+              </button>
+            ))}
+            <div class="gallery-filter-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
+          </gallery-filter>
+        </div>
       )}
 
       <!-- 相册卡片网格 -->
@@ -97,55 +99,38 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
   </div>
 
   <style>
-    .gallery-filter-group {
-      position: relative;
-      background: white;
-      box-shadow: 0 1px 3px oklch(0.5 0 0 / 0.08);
-      width: fit-content;
+    .gallery-filter-outer {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 2px 0;
     }
-    :root.dark .gallery-filter-group {
-      background: black;
-      box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+    .gallery-filter-outer::-webkit-scrollbar {
+      display: none;
+    }
+
+    .gallery-filter-tabs {
+      position: relative;
+      display: inline-flex;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+      width: max-content;
     }
 
     .gallery-filter-indicator {
-      position: absolute;
-      top: 0.25rem;
-      bottom: 0.25rem;
-      background: black;
-      border-radius: 0.5rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    :root.dark .gallery-filter-indicator {
-      background: white;
+      opacity: 0;
     }
 
     .gallery-filter-btn {
-      position: relative;
-      z-index: 1;
       background: transparent;
       border: none;
       cursor: pointer;
-      color: black;
-    }
-
-    :root.dark .gallery-filter-btn {
-      color: white;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .gallery-filter-btn:hover {
       opacity: 0.7;
-    }
-
-    .gallery-filter-btn-active {
-      color: white;
-    }
-
-    :root.dark .gallery-filter-btn-active {
-      color: black;
     }
 
     .gallery-filter-btn:active {
@@ -154,6 +139,35 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
   </style>
 
   <script slot="head" is:inline>
+    (function() {
+      function initGalleryFilter() {
+        const filterEl = document.querySelector("gallery-filter");
+        if (!filterEl) return;
+
+        const allBtn = filterEl.querySelector('button[data-tag="all"]');
+        const indicator = filterEl.querySelector(".gallery-filter-indicator");
+        if (!allBtn || !indicator) return;
+
+        allBtn.classList.remove("text-neutral-900", "dark:text-neutral-100");
+        allBtn.classList.add("text-white", "dark:text-neutral-900");
+
+        const parentRect = filterEl.getBoundingClientRect();
+        const btnRect = allBtn.getBoundingClientRect();
+        indicator.style.left = (btnRect.left - parentRect.left) + "px";
+        indicator.style.width = btnRect.width + "px";
+        indicator.style.opacity = "1";
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initGalleryFilter);
+      } else {
+        initGalleryFilter();
+      }
+
+      document.addEventListener("astro:page-load", initGalleryFilter);
+      document.addEventListener("astro:after-swap", initGalleryFilter);
+    })();
+
     if (!customElements.get("gallery-filter")) {
       class GalleryFilter extends HTMLElement {
         constructor() {
@@ -162,30 +176,22 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
 
         connectedCallback() {
           this.addEventListener("click", this.handleClick);
-          // Initialize indicator position
-          setTimeout(() => this.initIndicator(), 0);
         }
 
         disconnectedCallback() {
           this.removeEventListener("click", this.handleClick);
         }
 
-        initIndicator() {
-          const indicator = this.querySelector('[data-gallery-indicator]');
-          const activeBtn = this.querySelector('.gallery-filter-btn-active');
-          if (indicator && activeBtn) {
-            this.updateIndicator(activeBtn);
-          }
-        }
-
-        updateIndicator(targetBtn) {
-          const indicator = this.querySelector('[data-gallery-indicator]');
+        updateIndicator(button) {
+          if (!button) return;
+          const indicator = this.querySelector(".gallery-filter-indicator");
           if (!indicator) return;
-          const groupRect = this.getBoundingClientRect();
-          const btnRect = targetBtn.getBoundingClientRect();
-          indicator.style.left = (btnRect.left - groupRect.left) + 'px';
-          indicator.style.width = btnRect.width + 'px';
-          indicator.style.opacity = '1';
+
+          const parentRect = this.getBoundingClientRect();
+          const btnRect = button.getBoundingClientRect();
+          indicator.style.left = (btnRect.left - parentRect.left) + "px";
+          indicator.style.width = btnRect.width + "px";
+          indicator.style.opacity = "1";
         }
 
         handleClick(e) {
@@ -200,16 +206,14 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
 
           const cards = container.querySelectorAll(".album-card");
 
-          // Update button styles and indicator
           filters.forEach((f) => {
-            f.classList.remove("gallery-filter-btn-active");
-            f.classList.add("gallery-filter-btn-inactive");
+            f.classList.remove("text-white", "dark:text-neutral-900");
+            f.classList.add("text-neutral-900", "dark:text-neutral-100");
           });
 
-          button.classList.remove("gallery-filter-btn-inactive");
-          button.classList.add("gallery-filter-btn-active");
+          button.classList.remove("text-neutral-900", "dark:text-neutral-100");
+          button.classList.add("text-white", "dark:text-neutral-900");
 
-          // Update indicator position
           this.updateIndicator(button);
 
           cards.forEach((card) => {

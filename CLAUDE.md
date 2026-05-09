@@ -2,94 +2,102 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## 常用命令
 
-| Purpose | Command |
+| 用途 | 命令 |
 |---|---|
-| Dev server (localhost:4321) | `pnpm dev` |
-| Build to `./dist/` | `pnpm build` (runs icons → astro build → pagefind) |
-| Preview built site | `pnpm preview` |
-| Type-check | `pnpm check` (astro check) or `pnpm type-check` (tsc --noEmit) |
-| Format code | `pnpm format` (biome format --write ./src) |
-| Lint + fix | `pnpm lint` (biome check --write ./src) |
-| New blog post | `pnpm new-post <filename>` |
-| Regenerate icons | `pnpm icons` |
-| Any astro CLI | `pnpm astro ...` |
+| 开发服务器 (localhost:4321) | `pnpm dev` |
+| 构建到 `./dist/` | `pnpm build`（依次执行：图标生成 → astro build → pagefind） |
+| 预览构建产物 | `pnpm preview` |
+| 类型检查 | `pnpm check`（astro check）或 `pnpm type-check`（tsc --noEmit） |
+| 格式化代码 | `pnpm format`（biome format --write ./src） |
+| Lint + 自动修复 | `pnpm lint`（biome check --write ./src） |
+| 新建博客文章 | `pnpm new-post <filename>` |
+| 重新生成图标 | `pnpm icons` |
+| 执行任意 astro CLI | `pnpm astro ...` |
 
-Use pnpm only (enforced by `preinstall` script). Node.js ≥ 22, pnpm ≥ 9 required.
+强制使用 pnpm（通过 `preinstall` 脚本限制）。要求 Node.js ≥ 22，pnpm ≥ 9。
 
-## Architecture
+## 技术栈
 
-**Stack**: Astro 6.x (SSG), Svelte 5, Tailwind CSS 4, TypeScript. Biome for formatting/linting. Swup for page transitions. Pagefind for client-side search.
+**核心**：Astro 6.x（SSG 静态站点）、Svelte 5、Tailwind CSS 4、TypeScript。Biome 负责格式化/Lint，Swup 处理页面过渡动画，Pagefind 提供客户端搜索。
 
-### Content
+## 架构概览
 
-Blog posts live in `src/content/posts/` as `.md`/`.mdx` files, loaded via Astro content collections (`src/content.config.ts`). Frontmatter schema: `title`, `published`, `draft`, `tags`, `category`, `pinned`, `comment`, `password`, etc. The `spec` collection in `src/content/spec/` is for special page content (about, friends, guestbook).
+### 内容系统
 
-### Layout system
+博客文章存放在 `src/content/posts/`，支持 `.md`/`.mdx` 格式，通过 Astro content collections 加载（定义在 `src/content.config.ts`）。Frontmatter 字段：`title`、`published`、`draft`、`tags`、`category`、`pinned`、`comment`、`password` 等。`spec` 集合（`src/content/spec/`）用于特殊页面内容（关于、友链、留言板）。
 
-- `src/layouts/Layout.astro` — base layout: `<html>`, `<head>`, global styles, analytics, favicons, wallpaper setup, Swup containers.
-- `src/layouts/MainGridLayout.astro` — extends Layout, adds the sidebar grid system with Navbar, SideBar, and responsive layout. This is what most pages use.
+### 布局系统
 
-### Sidebar widget system
+- `src/layouts/Layout.astro` — 基础布局：`<html>`、`<head>`、全局样式、分析代码、favicon、壁纸设置、Swup 容器。
+- `src/layouts/MainGridLayout.astro` — 继承 Layout，添加侧边栏栅格系统（Navbar、SideBar、响应式布局），大多数页面使用此布局。
 
-Configured entirely in `src/config/sidebarConfig.ts`. Supports `left` / `right` / `both` positions. Each sidebar has an ordered list of widget components (`profile`, `announcement`, `music`, `categories`, `tags`, `stats`, `calendar`, `sidebarToc`, `advertisement`). Each widget can be independently toggled and configured to show/hide on post pages vs non-post pages. There's also a separate `mobileBottomComponents` list for mobile (<768px).
+### 侧边栏组件系统
 
-Key widgets: `src/components/widget/` (sidebars), `src/components/layout/SideBar.astro` (renders them).
+完全通过 `src/config/sidebarConfig.ts` 配置。支持 `left`/`right`/`both` 位置。每个侧边栏包含有序的组件列表（`profile`、`announcement`、`music`、`categories`、`tags`、`stats`、`calendar`、`sidebarToc`、`advertisement`），每个组件可独立开关，并可配置在文章页/非文章页的显示。另有 `mobileBottomComponents` 列表用于移动端（<768px）。
 
-### Component organization
+关键文件：`src/components/widget/`（侧边栏组件）、`src/components/layout/SideBar.astro`（渲染逻辑）。
 
-- `src/components/layout/` — structural: Navbar, Footer, SideBar, PostCard, PostPage, CategoryBar, DropdownMenu
-- `src/components/widget/` — sidebar widgets: Profile, Announcement, Music, Calendar, Categories, Tags, SiteStats, Advertisement
-- `src/components/features/` — optional features: Live2DWidget, SpineModel, MusicPlayer, SakuraEffect, EncryptedPost, TypewriterText
-- `src/components/controls/` — interactive UI: Search, FloatingTOC, LightDarkSwitch, DisplaySettings, WallpaperSwitch, BackToTop
-- `src/components/common/` — reusable: Pagination, CoverImage, WidgetLayout, FloatingButton, Icon
-- `src/components/misc/` — License, RecommendedPost, SharePoster
-- `src/components/analytics/` — GoogleAnalytics, UmamiAnalytics, MicrosoftClarity, La51Analytics
-- `src/components/comment/` — comment system integrations
+### 组件目录结构
 
-### Configuration
+- `src/components/layout/` — 结构性组件：Navbar、Footer、SideBar、PostCard、PostPage、CategoryBar、DropdownMenu
+- `src/components/widget/` — 侧边栏组件：Profile、Announcement、Music、Calendar、Categories、Tags、SiteStats、Advertisement
+- `src/components/features/` — 可选功能：Live2DWidget、SpineModel、MusicPlayer、SakuraEffect、EncryptedPost、TypewriterText
+- `src/components/controls/` — 交互控件：Search、FloatingTOC、LightDarkSwitch、DisplaySettings、WallpaperSwitch、BackToTop
+- `src/components/common/` — 通用组件：Pagination、CoverImage、WidgetLayout、FloatingButton、Icon、ImageWrapper
+- `src/components/misc/` — License、RecommendedPost、SharePoster
+- `src/components/analytics/` — GoogleAnalytics、UmamiAnalytics、MicrosoftClarity、La51Analytics
+- `src/components/comment/` — 评论系统集成
 
-All config lives in `src/config/`. Import from `@/config` (the barrel `index.ts` re-exports everything). The main file is `siteConfig.ts` — it controls language (`SITE_LANG` at top), theme color, wallpaper mode, page switches, post list layout (list/grid/masonry), pagination, analytics, image optimization, fonts, etc.
+### 配置系统
 
-After changing `rehypeCallouts.theme` or `plantumlConfig`, restart the dev server.
+所有配置集中在 `src/config/`，通过 `@/config`（barrel 文件 `index.ts` 统一导出）导入。核心配置文件 `siteConfig.ts` 控制语言（顶部 `SITE_LANG`）、主题色、壁纸模式、页面开关、文章列表布局（list/grid/masonry）、分页、分析、图片优化、字体等。
 
-### Markdown plugin pipeline
+修改 `rehypeCallouts.theme` 或 `plantumlConfig` 后需要重启开发服务器。
 
-Defined in `astro.config.mjs`. **Remark plugins** (parse phase, in order): remarkMath, remarkReadingTime, remarkImageGrid, remarkExcerpt, remarkDirective, remarkSectionize, parseDirectiveNode, remarkMermaid, remarkPlantuml. **Rehype plugins** (HTML transform phase): rehypeKatex, rehypeCallouts, rehypeSlug, rehypeMermaid, rehypePlantuml, rehypeFigure, rehypeExternalLinks, rehypeEmailProtection, rehypeComponents (for `::github` directive), rehypeAutolinkHeadings.
+### Markdown 插件流水线
 
-Custom plugins are in `src/plugins/`. Many handle directive parsing (`remark-directive-rehype.js` converts `::directive` nodes).
+定义在 `astro.config.mjs`。**Remark 插件**（解析阶段，按顺序）：remarkMath → remarkReadingTime → remarkImageGrid → remarkExcerpt → remarkDirective → remarkSectionize → parseDirectiveNode → remarkMermaid → remarkPlantuml。**Rehype 插件**（HTML 转换阶段）：rehypeKatex → rehypeCallouts → rehypeSlug → rehypeMermaid → rehypePlantuml → rehypeFigure → rehypeExternalLinks → rehypeEmailProtection → rehypeComponents（处理 `::github` 指令）→ rehypeAutolinkHeadings。
 
-### i18n
+自定义插件位于 `src/plugins/`，其中 `remark-directive-rehype.js` 负责将 `::directive` 节点转换为 rehype 节点。
 
-Translation keys defined in `src/i18n/i18nKey.ts` (a const enum). Languages in `src/i18n/languages/` (zh_CN, zh_TW, en, ja, ru). Use `i18n(key)` from `src/i18n/translation.ts` — it reads `siteConfig.lang` and falls back to zh_CN then en.
+### 国际化 (i18n)
 
-### Styling
+翻译键定义在 `src/i18n/i18nKey.ts`（const enum）。语言文件在 `src/i18n/languages/`（zh_CN、zh_TW、en、ja、ru）。使用 `i18n(key)` 函数（来自 `src/i18n/translation.ts`），它读取 `siteConfig.lang` 并按 zh_CN → en 顺序回退。
 
-- Tailwind CSS v4 with `@tailwindcss/vite` plugin
-- Global styles in `src/styles/main.css`, Stylus variables in `src/styles/variables.styl`
-- PostCSS pipeline (`postcss.config.mjs`): postcss-import → postcss-nesting
-- Theme color is set via CSS custom properties generated from `siteConfig.themeColor.hue` in `Layout.astro`
+### 样式系统
 
-### Path aliases (tsconfig.json)
+- Tailwind CSS v4 + `@tailwindcss/vite` 插件
+- 全局样式：`src/styles/main.css`，Stylus 变量：`src/styles/variables.styl`
+- PostCSS 流水线（`postcss.config.mjs`）：postcss-import → postcss-nesting
+- 主题色通过 `Layout.astro` 中从 `siteConfig.themeColor.hue` 生成的 CSS 自定义属性设置
 
-`@components/*` → `src/components/*`, `@assets/*` → `src/assets/*`, `@constants/*` → `src/constants/*`, `@utils/*` → `src/utils/*`, `@i18n/*` → `src/i18n/*`, `@layouts/*` → `src/layouts/*`, `@/*` → `src/*`
+### 路径别名 (tsconfig.json)
 
-### Key utilities
+`@components/*` → `src/components/*`、`@assets/*` → `src/assets/*`、`@constants/*` → `src/constants/*`、`@utils/*` → `src/utils/*`、`@i18n/*` → `src/i18n/*`、`@layouts/*` → `src/layouts/*`、`@/*` → `src/*`
 
-- `src/utils/setting-utils.ts` — large (~29KB), manages display settings (theme, wallpaper, layout mode) persisted to localStorage
-- `src/utils/toc-utils.ts` — table of contents generation (~11KB)
-- `src/utils/responsive-utils.ts` — sidebar grid classes, responsive breakpoints
-- `src/utils/content-utils.ts` — post sorting, filtering, pagination
-- `src/utils/sakura-manager.ts` — cherry blossom animation lifecycle
+### 关键工具函数
 
-### Swup (page transitions)
+- `src/utils/setting-utils.ts` — 管理显示设置（主题、壁纸、布局模式），持久化到 localStorage
+- `src/utils/toc-utils.ts` — 目录生成
+- `src/utils/responsive-utils.ts` — 侧边栏栅格类、响应式断点
+- `src/utils/content-utils.ts` — 文章排序、过滤、分页
+- `src/utils/image-utils.ts` — 图片格式、质量、referrer 策略
+- `src/utils/url-utils.ts` — URL 处理工具
 
-Swup is enabled with specific containers (`#swup-container`, `#left-sidebar-dynamic`, `#right-sidebar-dynamic`, `#floating-toc-wrapper`, etc.). It skips popstate handling for hash-anchor links. `animateHistoryBrowsing: false` — direct navigation from history won't animate.
+### Swup（页面过渡）
 
-### Build notes
+Swup 启用了特定容器（`#swup-container`、`#left-sidebar-dynamic`、`#right-sidebar-dynamic`、`#floating-toc-wrapper` 等）。锚点链接跳过 popstate 处理，由浏览器原生处理。`animateHistoryBrowsing: false` — 历史导航不播放动画。
 
-- `pnpm build` runs three steps: icon generation script → `astro build` → `pagefind --site dist`
-- Vite build drops `console` and `debugger` in production (esbuild `drop` option)
-- Image optimization only works on images in `src/` — Astro cannot optimize images in `public/`
-- `generateOgImages: true` is slow; kept off by default
+### Biome 配置
+
+格式化使用 tab 缩进、双引号。Svelte/Astro/Vue 文件放宽 lint 规则（允许 `let`、未使用变量等）。CI 中通过 `biome ci ./src --reporter=github` 检查。`src/constants/icons.ts` 被排除在 biome 检查之外（自动生成文件）。
+
+### 构建注意事项
+
+- `pnpm build` 三步流程：图标生成脚本 → `astro build` → `pagefind --site dist`
+- Vite 构建会移除 `console.log` 和 `debugger`（esbuild `drop` 选项）
+- 图片优化仅对 `src/` 目录下的图片生效，`public/` 目录的图片不会被 Astro 优化
+- `generateOgImages: true` 构建很慢，默认关闭
+- CI 在 push/PR 到 master 时运行 biome 检查

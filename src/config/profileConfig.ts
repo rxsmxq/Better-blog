@@ -8,6 +8,9 @@ export const profileConfig: ProfileConfig = {
 	// 3. 远程 URL："https://example.com/avatar.jpg"
 	avatar: "assets/images/avatar.gif",
 
+	// 下班时间头像（为空则始终使用上方 avatar）
+	avatarOffWork: "assets/images/avatar2.gif",
+
 	// 名字
 	name: "MmzMing",
 

@@ -2,7 +2,7 @@
 title: Redis交互数据缓存设计
 published: 2026-05-06
 description: 本文详细解析了基于Redis Bitmap+Hash双Key方案的高性能交互数据缓存设计，涵盖点赞、收藏、关注、浏览四大场景，讲解了Bitmap存状态、Hash存计数的双Key设计模式，以及从请求到Redis再到DB的完整用户点击流程、数据同步策略、缓存预热机制，并对比了纯数据库方案与Redis Set方案的优劣。
-tags: [Redis, 缓存设计, 高性能, Bitmap, Hash, 交互数据]
+tags: [Redis, 缓存设计, 高性能, Bitmap, 交互数据]
 category: 项目
 draft: false
 ---
