@@ -18,7 +18,7 @@ import {
 	getSortedPosts,
 	getTagList,
 } from "@/utils/content-utils";
-import { getTagUrl, url } from "@/utils/url-utils";
+import { url } from "@/utils/url-utils";
 
 const posts = await getSortedPosts();
 const categories = await getCategoryList();
@@ -113,21 +113,7 @@ const stats = [
 		<div class="text-center w-full">
 			<TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-xl text-(--content-meta)" />
 		</div>
-		<div class="flex items-center justify-center gap-3">
-			{profileConfig.links.map((item) => (
-				<a
-					rel="me"
-					aria-label={item.name}
-					href={item.url}
-					target={item.url.startsWith("http") ? "_blank" : "_self"}
-					class="social-link w-10 h-10 flex items-center justify-center rounded-full border border-(--line-divider) text-(--deep-text) hover:text-(--primary) hover:border-(--primary) transition-colors"
-				>
-				<Icon name={item.icon} class="text-xl" is:inline />
-				</a>
-			))}
-		</div>
 	</section>
-
 
 	{/* STATS */}
 	<div class="onload-animation mt-4">
@@ -152,85 +138,78 @@ const stats = [
 		</div>
 	</div>
 
-	{/* CATEGORIES TITLE */}
-	<div class="section-label text-center">{i18n(I18nKey.categories)}</div>
-
-	{/* CATEGORIES — follows scroll */}
-	<div id="category-sticky-placeholder">
-		<div id="category-sticky-wrapper">
-			<section class="section onload-animation">
-				<div class="flex flex-wrap justify-center gap-2 px-2 max-w-full overflow-x-auto">
-					{categories.map((c) => (
-						<a href={c.url} aria-label={`View all posts in ${c.name.trim()}`} class="cat-square-btn text-sm gap-2 shrink-0">
-							<span>{c.name.trim()}</span>
-							<span class="text-(--content-meta) text-xs">{c.count}</span>
-						</a>
-					))}
-				</div>
-			</section>
-		</div>
+	{/* SOCIAL */}
+	<div class="home-divider text-center">- - - - -</div>
+	<div class="flex items-center justify-center gap-2 flex-wrap">
+		{profileConfig.links.map((item) => (
+			<a
+				rel="me"
+				aria-label={item.name}
+				href={item.url}
+				target={item.url.startsWith("http") ? "_blank" : "_self"}
+				class="social-link-btn"
+			>
+				<Icon name={item.icon} class="text-base" is:inline />
+				<span>{item.name}</span>
+			</a>
+		))}
 	</div>
 
-	{/* TAGS TITLE */}
-	<div class="section-label text-center">{i18n(I18nKey.tags)}</div>
-
-	{/* TAGS */}
+	{/* CATEGORIES */}
+	<div class="home-divider text-center">- - - - -</div>
 	<section class="section onload-animation">
-		<div class="flex flex-wrap justify-center gap-2">
-			{tags.map((t) => (
-				<a href={getTagUrl(t.name)} aria-label={`View all posts tagged ${t.name.trim()}`} class="cat-square-btn text-sm">
-					# {t.name.trim()}
+		<div class="flex flex-wrap justify-center gap-2 px-2 max-w-full overflow-x-auto">
+			{categories.map((c) => (
+				<a href={c.url} aria-label={`View all posts in ${c.name.trim()}`} class="cat-square-btn text-sm gap-2 shrink-0">
+					<span>{c.name.trim()}</span>
+					<span class="text-(--content-meta) text-xs">{c.count}</span>
 				</a>
 			))}
 		</div>
 	</section>
+	<div class="home-divider text-center">- - - - -</div>
+
 </div>
 
 <style>
 	.home-portal {
 		padding-top: 1rem;
-		padding-bottom: 4rem;
+		padding-bottom: 0;
 	}
 
-	/* 统一标题边距：分类/标签标题在 section 外，需要与 section 间距一致 */
-	.home-portal > .section-label {
-		margin-top: 3rem;
-		padding-top: 3rem;
-		border-top: 1px solid var(--line-divider);
-	}
-	/* 第一个标题不需要上边框 */
-	.home-portal > .section-label:first-of-type {
-		margin-top: 0;
-		padding-top: 0;
-		border-top: none;
+	.home-divider {
+		margin-top: 0.75rem;
+		margin-bottom: 0.75rem;
+		font-size: 0.75rem;
+		letter-spacing: 0.25em;
+		color: var(--content-meta);
 	}
 
-	:root.dark .social-link {
-		color: oklch(1 0 0) !important;
-		border-color: oklch(0.3 0 0) !important;
+	.social-link-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		border: 1px solid #000;
+		color: #000;
+		background: #fff;
+		border-radius: 9999px;
+		font-size: 0.8125rem;
+		text-decoration: none;
+		transition: color 150ms, background-color 150ms;
 	}
-
-	:root.dark .social-link:hover {
-		color: oklch(0.85 0 0) !important;
-		border-color: oklch(0.5 0 0) !important;
+	.social-link-btn:hover {
+		background-color: #000;
+		color: #fff;
 	}
-
-	/* Category bar — follows header */
-	#category-sticky-placeholder {
-		position: relative;
+	:root.dark .social-link-btn {
+		border-color: #fff;
+		color: #fff;
+		background: #000;
 	}
-	#category-sticky-wrapper {
-		position: relative;
-		z-index: 40;
-		background: transparent;
-		padding: 0.5rem 0;
-	}
-	#category-sticky-wrapper.is-pinned {
-		position: fixed;
-		top: 68px;
-		left: max(1rem, calc((100vw - 56rem) / 2));
-		right: max(1rem, calc((100vw - 56rem) / 2));
-		max-width: 56rem;
+	:root.dark .social-link-btn:hover {
+		background-color: #fff;
+		color: #000;
 	}
 
 	.cat-square-btn {
@@ -241,7 +220,7 @@ const stats = [
 		border: 1px solid black;
 		color: black;
 		background: #fff;
-		border-radius: 0;
+		border-radius: 9999px;
 		transition: color 150ms, background-color 150ms;
 	}
 	.cat-square-btn:hover {
@@ -258,66 +237,3 @@ const stats = [
 		color: black;
 	}
 </style>
-
-<script>
-(function() {
-	const FIXED_TOP = 68;
-	let originalTop = 0;
-	let ticking = false;
-
-	function measure() {
-		const placeholder = document.getElementById('category-sticky-placeholder');
-		if (!placeholder) return;
-		const rect = placeholder.getBoundingClientRect();
-		originalTop = rect.top + window.scrollY;
-	}
-
-	function onScroll() {
-		if (ticking) return;
-		ticking = true;
-		requestAnimationFrame(() => {
-			const wrapper = document.getElementById('category-sticky-wrapper');
-			const placeholder = document.getElementById('category-sticky-placeholder');
-			const mainGrid = document.getElementById('main-grid');
-			if (!wrapper || !placeholder || !mainGrid) { ticking = false; return; }
-
-			const gridRect = mainGrid.getBoundingClientRect();
-			const gridBottom = gridRect.bottom;
-			const shouldPin = window.scrollY >= originalTop - FIXED_TOP && gridBottom > FIXED_TOP + wrapper.offsetHeight;
-
-			if (shouldPin && !wrapper.classList.contains('is-pinned')) {
-				placeholder.style.height = wrapper.offsetHeight + 'px';
-			} else if (!shouldPin && wrapper.classList.contains('is-pinned')) {
-				placeholder.style.height = '';
-			}
-			wrapper.classList.toggle('is-pinned', shouldPin);
-			ticking = false;
-		});
-	}
-
-	function init() {
-		const wrapper = document.getElementById('category-sticky-wrapper');
-		if (!wrapper) return;
-		wrapper.classList.remove('is-pinned');
-		requestAnimationFrame(() => {
-			measure();
-			window.addEventListener('scroll', onScroll, { passive: true });
-			onScroll();
-		});
-	}
-
-	function cleanup() {
-		window.removeEventListener('scroll', onScroll);
-		const wrapper = document.getElementById('category-sticky-wrapper');
-		const placeholder = document.getElementById('category-sticky-placeholder');
-		if (wrapper) wrapper.classList.remove('is-pinned');
-		if (placeholder) placeholder.style.height = '';
-	}
-
-	init();
-	window.addEventListener('resize', () => { measure(); onScroll(); });
-
-	document.addEventListener('swup:page:view', () => { cleanup(); setTimeout(init, 100); });
-	document.addEventListener('astro:page-load', () => { cleanup(); setTimeout(init, 100); });
-})();
-</script>

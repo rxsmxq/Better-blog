@@ -29,10 +29,7 @@ const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
 const isListDefault = initialLayoutClass.includes("list-mode");
 ---
 
-<div id="post-list-toolbar" class="flex items-center justify-between mb-3 px-1">
-  <div class="text-xs text-(--content-meta) font-medium">
-    {page.data.length} {page.data.length > 1 ? 'articles' : 'article'}
-  </div>
+<div id="post-list-toolbar" class="flex items-center justify-center mb-3 px-1">
   <div class:list={["layout-toggle-group", { "hidden": !allowLayoutSwitch }]}>
     <AnimatedTabs
       client:load

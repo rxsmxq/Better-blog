@@ -2,7 +2,7 @@
 import Icon from "@components/common/Icon.astro";
 /**
  * 极简悬浮坞 — 替代原 FloatingControls。
- * 所有重组件（Search / Theme / DisplaySettings / Music / Live2D / Spine / Calendar / TOC / BackToTop / BackToHome / BackToComment）
+ * 所有重组件（Search / Theme / DisplaySettings / Music / Live2D / Spine / Calendar / TOC / BackToTop / BackToHome / BackToComment / Tags）
  * 全部以图标按钮 + 抽屉/浮层形式集中在右下角。
  */
 import type { MarkdownHeading } from "astro";
@@ -16,12 +16,16 @@ import {
 import { musicPlayerConfig } from "@/config/musicConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
+import { getTagList } from "@/utils/content-utils";
+import { getTagUrl } from "@/utils/url-utils";
 
 interface Props {
 	headings?: MarkdownHeading[];
 }
 
 const { headings: _headings = [] } = Astro.props;
+
+const tags = await getTagList();
 ---
 
 <div class="floating-dock" id="floating-dock">
@@ -45,6 +49,10 @@ const { headings: _headings = [] } = Astro.props;
 
 			<button class="dock-btn" id="dock-search-btn" aria-label={i18n(I18nKey.search)} type="button" data-tooltip={i18n(I18nKey.search)}>
 				<Icon name="material-symbols:search" class="text-xl" />
+			</button>
+
+			<button class="dock-btn" id="dock-tags-btn" aria-label={i18n(I18nKey.tags)} type="button" data-tooltip={i18n(I18nKey.tags)}>
+				<Icon name="material-symbols:label-outline" class="text-xl" />
 			</button>
 
 			{live2dModelConfig.enable && (
@@ -137,6 +145,18 @@ const { headings: _headings = [] } = Astro.props;
 	</div>
 )}
 
+<div class="dock-drawer dock-drawer-closed" id="dock-drawer-tags">
+	<div class="dock-drawer-title">[ {i18n(I18nKey.tags)} ]</div>
+	<div class="dock-tags-list">
+		{tags.map((t) => (
+			<a href={getTagUrl(t.name)} class="dock-tag-item">
+				<span class="dock-tag-name"># {t.name.trim()}</span>
+				<span class="dock-tag-count">{t.count}</span>
+			</a>
+		))}
+	</div>
+</div>
+
 <div class="dock-drawer dock-drawer-closed" id="dock-drawer-toc">
 	<div class="dock-drawer-title">[ contents ]</div>
 	<div id="dock-toc-content" class="text-sm leading-relaxed"></div>
@@ -210,6 +230,41 @@ const { headings: _headings = [] } = Astro.props;
 	.theme-option[data-active="true"] {
 		border-color: var(--deep-text);
 	}
+
+	.dock-tags-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.dock-tag-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		border: 1px solid #000;
+		color: #000;
+		background: #fff;
+		text-decoration: none;
+		font-size: 0.8125rem;
+		transition: color 150ms, background-color 150ms;
+	}
+	.dock-tag-item:hover {
+		background-color: #000;
+		color: #fff;
+	}
+	:root.dark .dock-tag-item {
+		border-color: #fff;
+		color: #fff;
+		background: #000;
+	}
+	:root.dark .dock-tag-item:hover {
+		background-color: #fff;
+		color: #000;
+	}
+	.dock-tag-count {
+		font-size: 0.6875rem;
+		color: var(--content-meta);
+	}
 </style>
 
 <script>
@@ -235,6 +290,7 @@ const { headings: _headings = [] } = Astro.props;
 			"dock-music-btn": "dock-drawer-music",
 			"dock-toc-btn": "dock-drawer-toc",
 			"dock-announcement-btn": "dock-drawer-announcement",
+			"dock-tags-btn": "dock-drawer-tags",
 		};
 
 		function closeAllDrawers() {
