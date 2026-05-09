@@ -83,23 +83,23 @@ const description =
       <!-- 标签筛选 -->
       {
         items.length > 0 && (
-          <friend-filter class="friend-filter-tabs flex flex-wrap gap-1 mb-6 p-1 rounded-xl border border-neutral-900 dark:border-neutral-100" data-tags={["all", ...allTags].join(",")}>
+          <friend-filter class="friend-filter-tabs flex flex-wrap gap-1 mb-6 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-tags={["all", ...allTags].join(",")}>
             <button
               data-tag="all"
-              class="friend-tab-btn relative z-10 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+              class="friend-tab-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
             >
               {i18n(I18nKey.all)}
             </button>
             {allTags.map((tag) => (
               <button
                 data-tag={tag}
-                class="friend-tab-btn relative z-10 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+                class="friend-tab-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
               >
                 {tag}
               </button>
             ))}
             <!-- 滑动指示器 -->
-            <div class="friend-tab-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-lg transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
+            <div class="friend-tab-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
           </friend-filter>
         )
       }

@@ -53,6 +53,7 @@ const {
 
 const isHomePageCheck = isHomePage(Astro.url.pathname);
 const isPostPage = !!postSlug;
+const isArchive = Astro.url.pathname.replace(/\/$/, "").endsWith("/archive");
 const shouldRenderCategoryBar = !!siteConfig.categoryBar;
 const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
 
@@ -103,7 +104,7 @@ const navLinks = navBarConfig.links.map((item) => {
 				</div>
 			)}
 			{shouldRenderCategoryBar && <div id="category-bar-wrapper"><CategoryBar title={title} postSlug={postSlug} postCategory={postCategory} /></div>}
-			{!isHomePageCheck && <CategoryFollowBar />}
+			{(isArchive || isPostPage) && <CategoryFollowBar />}
 
 			{/* 首页：顶部 Hero + 门户信息层（profile / 公告 / 站点统计 / 分类 / 标签） */}
 			{isHomePageCheck && (

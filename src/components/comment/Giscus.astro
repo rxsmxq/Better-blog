@@ -12,10 +12,19 @@ const giscus = commentConfig.giscus;
 <div class="giscus"></div>
 
 <script is:inline define:vars={{ giscus }}>
+  function getGiscusTheme() {
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  }
+
+  function syncGiscusTheme() {
+    var iframe = document.querySelector('iframe.giscus-frame');
+    if (!iframe) return;
+    iframe.contentWindow.postMessage({ giscus: { setConfig: { theme: getGiscusTheme() } } }, 'https://giscus.app');
+  }
+
   function loadGiscus() {
     var container = document.querySelector('.giscus');
     if (!container) return;
-    // 清除旧内容
     container.innerHTML = '';
 
     var s = document.createElement('script');
@@ -29,7 +38,7 @@ const giscus = commentConfig.giscus;
     s.setAttribute('data-reactions-enabled', giscus.reactionsEnabled);
     s.setAttribute('data-emit-metadata', giscus.emitMetadata);
     s.setAttribute('data-input-position', giscus.inputPosition);
-    s.setAttribute('data-theme', 'preferred_color_scheme');
+    s.setAttribute('data-theme', getGiscusTheme());
     s.setAttribute('data-lang', giscus.lang);
     s.setAttribute('data-loading', giscus.loading);
     s.crossOrigin = 'anonymous';
@@ -37,8 +46,10 @@ const giscus = commentConfig.giscus;
     container.appendChild(s);
   }
 
-  // 页面首次加载
   loadGiscus();
+
+  // 站点主题切换时同步 Giscus 主题
+  window.addEventListener('theme-change', syncGiscusTheme);
 
   // Swup 页面切换后重新加载
   if (window.swup && window.swup.hooks) {

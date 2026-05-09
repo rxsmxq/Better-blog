@@ -76,9 +76,6 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 							{link.icon && <Icon name={link.icon} is:inline class="text-[1.25rem] nav-drawer-icon" />}
 							<span class="nav-drawer-link-text">{link.name}</span>
 						</div>
-						{!link.external && <Icon name="material-symbols:chevron-right-rounded" is:inline
-							class="text-[1.35rem] text-(--primary) opacity-50 group-hover:opacity-100 transition-opacity"
-						/>}
 						{link.external && <Icon name="fa7-solid:arrow-up-right-from-square" is:inline
 							class="text-[0.7rem] text-black/25 dark:text-white/25"
 						/>}
@@ -268,7 +265,15 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 </style>
 
 <script>
+let drawerAbortController: AbortController | null = null;
+let dropdownAbortController: AbortController | null = null;
+
 function initNavDrawer() {
+	// Remove previous listeners before re-initializing
+	if (drawerAbortController) drawerAbortController.abort();
+	drawerAbortController = new AbortController();
+	const signal = drawerAbortController.signal;
+
 	const panelEl = document.getElementById('nav-menu-panel');
 	const overlayEl = document.getElementById('nav-drawer-overlay');
 	const menuBtn = document.getElementById('nav-menu-switch');
@@ -309,20 +314,25 @@ function initNavDrawer() {
 		closeBtn.onclick = () => closeDrawer();
 	}
 
-	overlay.addEventListener('click', () => closeDrawer());
+	overlay.addEventListener('click', () => closeDrawer(), { signal });
 
 	document.addEventListener('keydown', (e) => {
 		if (e.key === 'Escape' && panel.classList.contains('is-open')) {
 			closeDrawer();
 		}
-	});
+	}, { signal });
 
 	document.addEventListener('swup:page:view', () => {
 		closeDrawer();
-	});
+	}, { signal });
 }
 
 function initMobileDropdowns() {
+	// Remove previous listeners before re-initializing
+	if (dropdownAbortController) dropdownAbortController.abort();
+	dropdownAbortController = new AbortController();
+	const signal = dropdownAbortController.signal;
+
 	const mobileDropdowns = document.querySelectorAll('[data-mobile-dropdown]');
 
 	mobileDropdowns.forEach(dropdown => {
@@ -348,7 +358,7 @@ function initMobileDropdowns() {
 			const newState = !isExpanded;
 			dropdown.setAttribute('data-expanded', newState.toString());
 			trigger.setAttribute('aria-expanded', newState.toString());
-		});
+		}, { signal });
 	});
 }
 
