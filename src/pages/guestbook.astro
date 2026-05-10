@@ -1,13 +1,16 @@
 ---
 import { getEntry, render } from "astro:content";
 import Icon from "@components/common/Icon.astro";
+import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
+import FloatingDock from "@/components/controls/FloatingDock.astro";
 import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
 import GuestbookComposeButton from "@components/features/GuestbookComposeButton.svelte";
 import Navbar from "@/components/layout/Navbar.astro";
-import { siteConfig } from "@/config";
+import { navBarConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import Layout from "@/layouts/Layout.astro";
+import { LinkPresets } from "@/constants/link-presets";
 
 // 检查页面是否启用
 if (!siteConfig.pages.guestbook) {
@@ -25,9 +28,16 @@ const { Content } = await render(guestbookPost);
 // 页面标题和描述
 const title = i18n(I18nKey.guestbook);
 const description = i18n(I18nKey.guestbookDescription);
+
+const navLinks = navBarConfig.links.map((item) => {
+	if (typeof item === "number") return LinkPresets[item];
+	return item;
+});
 ---
 
 <Layout title={title} description={description}>
+	<NavMenuPanel links={navLinks} />
+
 	{/* Navbar */}
 	<div id="top-row" class="z-50 pointer-events-none relative mx-auto sticky top-0 left-0 right-0 z-80 w-full">
 		<div id="navbar-wrapper" class="pointer-events-auto">
@@ -63,6 +73,8 @@ const description = i18n(I18nKey.guestbookDescription);
 			<GuestbookCardStack client:load />
 		</main>
 	</div>
+
+	<FloatingDock />
 </Layout>
 
 <style>
@@ -122,10 +134,14 @@ const description = i18n(I18nKey.guestbookDescription);
 		overflow: hidden;
 	}
 
-	/* 响应式 */
+	/* 移动端修复：absolute 定位覆盖页头 */
 	@media (max-width: 640px) {
 		.gb-header {
 			padding: 1rem;
+		}
+
+		.gb-main {
+			position: relative;
 		}
 	}
 </style>
