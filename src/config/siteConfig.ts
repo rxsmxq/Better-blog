@@ -36,8 +36,8 @@ export const siteConfig: SiteConfig = {
 		hue: 165,
 		// 是否对访问者隐藏主题色选择器
 		fixed: false,
-		// 默认模式："light" 亮色，"dark" 暗色，"system" 跟随系统
-		defaultMode: "system",
+		// 默认模式："light" 亮色，"dark" 暗色
+		defaultMode: "light",
 	},
 
 	// 页面整体宽度（单位：rem）
@@ -102,7 +102,7 @@ export const siteConfig: SiteConfig = {
 		start: 9, // 上班时间 9:00
 		end: 18, // 下班时间 18:00
 		// 工作日范围，0=周日 1=周一 ... 6=周六，默认周一到周五
-		workDays: [1, 2, 3, 4, 5],
+		workDays: [1, 2, 3, 4, 5,0],
 	},
 
 	// 提醒框（Admonitions）配置，修改后需要重启开发服务器才能生效

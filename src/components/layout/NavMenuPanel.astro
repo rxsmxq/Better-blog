@@ -266,10 +266,8 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 
 <script>
 let drawerAbortController: AbortController | null = null;
-let dropdownAbortController: AbortController | null = null;
 
 function initNavDrawer() {
-	// Remove previous listeners before re-initializing
 	if (drawerAbortController) drawerAbortController.abort();
 	drawerAbortController = new AbortController();
 	const signal = drawerAbortController.signal;
@@ -325,33 +323,27 @@ function initNavDrawer() {
 	document.addEventListener('swup:page:view', () => {
 		closeDrawer();
 	}, { signal });
-}
 
-function initMobileDropdowns() {
-	// Remove previous listeners before re-initializing
-	if (dropdownAbortController) dropdownAbortController.abort();
-	dropdownAbortController = new AbortController();
-	const signal = dropdownAbortController.signal;
+	// Mobile submenu toggling via event delegation on the drawer body
+	const drawerBody = panel.querySelector('.nav-drawer-body');
+	if (drawerBody) {
+		drawerBody.addEventListener('click', (e) => {
+			const target = e.target as HTMLElement;
+			const trigger = target.closest('[data-mobile-dropdown-trigger]');
+			if (!trigger) return;
 
-	const mobileDropdowns = document.querySelectorAll('[data-mobile-dropdown]');
-
-	mobileDropdowns.forEach(dropdown => {
-		const trigger = dropdown.querySelector('[data-mobile-dropdown-trigger]');
-		const submenu = dropdown.querySelector('[data-mobile-submenu]');
-
-		if (!trigger || !submenu) return;
-
-		trigger.addEventListener('click', function(e) {
 			e.preventDefault();
+			const dropdown = trigger.closest('[data-mobile-dropdown]');
+			if (!dropdown) return;
+
 			const isExpanded = dropdown.getAttribute('data-expanded') === 'true';
 
-			mobileDropdowns.forEach(otherDropdown => {
-				if (otherDropdown !== dropdown) {
-					otherDropdown.setAttribute('data-expanded', 'false');
-					const otherTrigger = otherDropdown.querySelector('[data-mobile-dropdown-trigger]');
-					if (otherTrigger) {
-						otherTrigger.setAttribute('aria-expanded', 'false');
-					}
+			// Close all other submenus (accordion behavior)
+			panel.querySelectorAll('[data-mobile-dropdown]').forEach(other => {
+				if (other !== dropdown) {
+					other.setAttribute('data-expanded', 'false');
+					const otherTrigger = other.querySelector('[data-mobile-dropdown-trigger]');
+					if (otherTrigger) otherTrigger.setAttribute('aria-expanded', 'false');
 				}
 			});
 
@@ -359,14 +351,12 @@ function initMobileDropdowns() {
 			dropdown.setAttribute('data-expanded', newState.toString());
 			trigger.setAttribute('aria-expanded', newState.toString());
 		}, { signal });
-	});
+	}
 }
 
 initNavDrawer();
-initMobileDropdowns();
 
 document.addEventListener('astro:page-load', () => {
 	initNavDrawer();
-	initMobileDropdowns();
 });
 </script>

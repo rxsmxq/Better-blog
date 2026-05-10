@@ -120,7 +120,7 @@ const siteLang = lang.replace("_", "-");
       />
     ))}
 
-    {/* 主题初始化（极简：仅 light/dark；无壁纸模式） */}
+    {/* 主题初始化（极简：仅 light/dark） */}
     <script
       is:inline
       define:vars={{
@@ -130,19 +130,17 @@ const siteLang = lang.replace("_", "-");
         lightTheme: expressiveCodeConfig.lightTheme,
       }}
     >
-      const LIGHT_MODE = "light";
-      const DARK_MODE = "dark";
-      const SYSTEM_MODE = "system";
-
-      const theme = localStorage.getItem("theme") || defaultMode;
-      function getSystemTheme() {
-        return window.matchMedia("(prefers-color-scheme: dark)").matches ? DARK_MODE : LIGHT_MODE;
-      }
-      const resolvedTheme = theme === SYSTEM_MODE ? getSystemTheme() : theme;
-      const isDark = resolvedTheme === DARK_MODE;
+      const stored = localStorage.getItem("theme") || defaultMode;
+      // Resolve legacy "system" value to actual theme
+      const theme = stored === "system"
+        ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+        : stored;
+      const isDark = theme === "dark";
       if (isDark) document.documentElement.classList.add("dark");
       else document.documentElement.classList.remove("dark");
       document.documentElement.setAttribute("data-theme", isDark ? darkTheme : lightTheme);
+      // Persist resolved value if it was "system"
+      if (stored === "system") localStorage.setItem("theme", theme);
 
       const hue = localStorage.getItem("hue") || configHue;
       document.documentElement.style.setProperty("--hue", hue);
@@ -281,12 +279,7 @@ const siteLang = lang.replace("_", "-");
 
     window.swup.hooks.on("page:view", () => {
       const storedTheme = localStorage.getItem("theme") || siteConfig.themeColor.defaultMode || "light";
-      let isDark = false;
-      if (storedTheme === "system") {
-        isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      } else {
-        isDark = storedTheme === "dark";
-      }
+      const isDark = storedTheme === "dark";
       const expectedTheme = isDark ? expressiveCodeConfig.darkTheme : expressiveCodeConfig.lightTheme;
       const currentTheme = document.documentElement.getAttribute("data-theme");
       if (currentTheme !== expectedTheme) {

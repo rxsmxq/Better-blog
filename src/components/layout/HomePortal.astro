@@ -119,11 +119,9 @@ const stats = [
 
 <div class="home-portal">
 	{/* PROFILE */}
-	<section class="section onload-animation flex flex-col items-center gap-8 mt-8">
+	<section class="section onload-animation flex flex-col items-center gap-8 mt-2">
 		<div class="avatar-ripple-wrapper" id="avatar-ripple-wrapper" data-work-start={siteConfig.workHours?.start ?? 9} data-work-end={siteConfig.workHours?.end ?? 18} data-work-days={JSON.stringify(siteConfig.workHours?.workDays ?? [1,2,3,4,5])}>
-			<div class="ripple-ring ripple-ring-1"></div>
-			<div class="ripple-ring ripple-ring-2"></div>
-			<div class="ripple-ring ripple-ring-3"></div>
+			<div class="magic-rings-bg" id="magic-rings-bg"></div>
 			<a href={url("/about/")} class="group block relative w-44 h-44 overflow-hidden rounded-full border border-(--line-divider) shrink-0 avatar-core">
 				<div class="avatar-img avatar-work">
 					<ImageWrapper
@@ -237,7 +235,7 @@ const stats = [
 		font-weight: 700;
 	}
 
-	/* === Avatar Ripple === */
+	/* === Avatar Magic Rings === */
 	.avatar-ripple-wrapper {
 		position: relative;
 		width: 11rem;
@@ -245,6 +243,24 @@ const stats = [
 		display: flex;
 		align-items: center;
 		justify-content: center;
+	}
+	.magic-rings-bg {
+		position: absolute;
+		top: -3rem;
+		bottom: -2.5rem;
+		left: -20rem;
+		right: -20rem;
+		pointer-events: none;
+		z-index: 0;
+		overflow: hidden;
+	}
+	.magic-rings-bg canvas {
+		width: 100% !important;
+		height: 100% !important;
+		transform: scaleY(0.45);
+	}
+	[data-time-mode="off"] .magic-rings-bg {
+		display: none;
 	}
 	.avatar-core {
 		position: relative;
@@ -270,53 +286,6 @@ const stats = [
 	}
 	[data-time-mode="off"] .avatar-img.avatar-off {
 		display: block;
-	}
-	.ripple-ring {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: 100%;
-		height: 100%;
-		border-radius: 9999px;
-		transform: translate(-50%, -50%) scale(1);
-		opacity: 0;
-		pointer-events: none;
-		will-change: transform, opacity;
-	}
-
-	/* 上班时间：粉红色涟漪 */
-	[data-time-mode="work"] .ripple-ring {
-		border: 4px solid oklch(0.65 0.2 350);
-		box-shadow: 0 0 16px oklch(0.65 0.2 350 / 0.4);
-	}
-	[data-time-mode="work"] .ripple-ring-1 { animation: ripple-expand 3s ease-out infinite; }
-	[data-time-mode="work"] .ripple-ring-2 { animation: ripple-expand 3s ease-out 1s infinite; }
-	[data-time-mode="work"] .ripple-ring-3 { animation: ripple-expand 3s ease-out 2s infinite; }
-
-	/* 下班时间：静态一圈 */
-	[data-time-mode="off"] .ripple-ring {
-		border: 4px solid #000;
-		animation: none;
-		opacity: 1;
-		transform: translate(-50%, -50%) scale(1.06);
-	}
-	[data-time-mode="off"] .ripple-ring-2,
-	[data-time-mode="off"] .ripple-ring-3 {
-		display: none;
-	}
-	:root.dark [data-time-mode="off"] .ripple-ring {
-		border-color: #fff;
-	}
-
-	@keyframes ripple-expand {
-		0% {
-			transform: translate(-50%, -50%) scale(0.8);
-			opacity: 0.6;
-		}
-		100% {
-			transform: translate(-50%, -50%) scale(1.5);
-			opacity: 0;
-		}
 	}
 
 	/* === Status Button === */
@@ -429,11 +398,12 @@ const stats = [
 </style>
 
 <script>
+import { initMagicRings } from '@components/features/MagicRings.ts';
+
 (function() {
-	function setTimeMode() {
-		var wrapper = document.getElementById('avatar-ripple-wrapper');
-		var statusText = document.getElementById('status-text');
-		if (!wrapper) return;
+	var ringsInstance = null;
+
+	function getIsWork(wrapper) {
 		var start = parseInt(wrapper.dataset.workStart || '9') || 9;
 		var end = parseInt(wrapper.dataset.workEnd || '18') || 18;
 		var workDays = [1,2,3,4,5];
@@ -441,15 +411,62 @@ const stats = [
 		var now = new Date();
 		var day = now.getDay();
 		var hour = now.getHours();
-		// 先判断是否工作日，再判断时间
 		var isWorkDay = workDays.indexOf(day) !== -1;
-		var isWork = isWorkDay && hour >= start && hour < end;
+		return isWorkDay && hour >= start && hour < end;
+	}
+
+	function setTimeMode() {
+		var wrapper = document.getElementById('avatar-ripple-wrapper');
+		var statusText = document.getElementById('status-text');
+		if (!wrapper) return;
+		var isWork = getIsWork(wrapper);
 		wrapper.setAttribute('data-time-mode', isWork ? 'work' : 'off');
 		if (statusText) statusText.textContent = isWork ? '上班中' : '下班';
 	}
+
+	function initRings() {
+		var container = document.getElementById('magic-rings-bg');
+		var wrapper = document.getElementById('avatar-ripple-wrapper');
+		if (!container || !wrapper) return;
+		if (ringsInstance) {
+			ringsInstance.destroy();
+			ringsInstance = null;
+		}
+		var isWork = getIsWork(wrapper);
+		if (isWork) {
+			ringsInstance = initMagicRings(container, {
+				color: '#fc42ff',
+				colorTwo: '#ff85a2',
+				ringCount: 6,
+				speed: 1,
+				attenuation: 10,
+				lineThickness: 2,
+				baseRadius: 0.35,
+				radiusStep: 0.1,
+				scaleRate: 0.1,
+				opacity: 1,
+				noiseAmount: 0,
+				rotation: 0,
+				ringGap: 1.5,
+				fadeIn: 0.7,
+				fadeOut: 0.5,
+				followMouse: true,
+				mouseInfluence: 0.2,
+				hoverScale: 1.2,
+				parallax: 0.05,
+				clickBurst: true,
+			});
+		}
+	}
+
 	setTimeMode();
+	initRings();
 	setInterval(setTimeMode, 60000);
-	document.addEventListener('astro:page-load', setTimeMode);
+
+	document.addEventListener('astro:page-load', function() {
+		setTimeMode();
+		initRings();
+	});
 })();
 </script>
 
