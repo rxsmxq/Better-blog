@@ -119,7 +119,7 @@ const stats = [
 
 <div class="home-portal">
 	{/* PROFILE */}
-	<section class="section onload-animation flex flex-col items-center gap-8 mt-2">
+	<section class="section onload-animation flex flex-col items-center gap-8 mt-2 magic-rings-container">
 		<div class="avatar-ripple-wrapper" id="avatar-ripple-wrapper" data-work-start={siteConfig.workHours?.start ?? 9} data-work-end={siteConfig.workHours?.end ?? 18} data-work-days={JSON.stringify(siteConfig.workHours?.workDays ?? [1,2,3,4,5])}>
 			<div class="magic-rings-bg" id="magic-rings-bg"></div>
 			<a href={url("/about/")} class="group block relative w-44 h-44 overflow-hidden rounded-full border border-(--line-divider) shrink-0 avatar-core">
@@ -248,8 +248,8 @@ const stats = [
 		position: absolute;
 		top: -3rem;
 		bottom: -2.5rem;
-		left: -20rem;
-		right: -20rem;
+		left: -8rem;
+		right: -8rem;
 		pointer-events: none;
 		z-index: 0;
 		overflow: hidden;
@@ -258,6 +258,12 @@ const stats = [
 		width: 100% !important;
 		height: 100% !important;
 		transform: scaleY(0.45);
+	}
+	@media (min-width: 768px) {
+		.magic-rings-bg {
+			left: -20rem;
+			right: -20rem;
+		}
 	}
 	[data-time-mode="off"] .magic-rings-bg {
 		display: none;
@@ -435,8 +441,8 @@ import { initMagicRings } from '@components/features/MagicRings.ts';
 		var isWork = getIsWork(wrapper);
 		if (isWork) {
 			ringsInstance = initMagicRings(container, {
-				color: '#fc42ff',
-				colorTwo: '#ff85a2',
+				color: '#E24EA0',
+				colorTwo: '#F97316',
 				ringCount: 6,
 				speed: 1,
 				attenuation: 10,

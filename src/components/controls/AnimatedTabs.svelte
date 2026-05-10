@@ -144,11 +144,27 @@ onMount(() => {
   }
 
   .tab-button:hover {
-    color: var(--primary, #3b82f6);
+    color: #000;
   }
 
   .tab-button.active {
-    color: white;
+    color: #fff;
+  }
+
+  :root.dark .animated-tabs {
+    border-color: #fff;
+  }
+
+  :root.dark .tab-indicator {
+    background: #fff;
+  }
+
+  :root.dark .tab-button:hover {
+    color: #fff;
+  }
+
+  :root.dark .tab-button.active {
+    color: #000;
   }
 
   .tab-button:active {

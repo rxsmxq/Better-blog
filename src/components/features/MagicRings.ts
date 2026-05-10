@@ -68,219 +68,234 @@ void main() {
 `;
 
 export interface MagicRingsOptions {
-  color?: string;
-  colorTwo?: string;
-  speed?: number;
-  ringCount?: number;
-  attenuation?: number;
-  lineThickness?: number;
-  baseRadius?: number;
-  radiusStep?: number;
-  scaleRate?: number;
-  opacity?: number;
-  blur?: number;
-  noiseAmount?: number;
-  rotation?: number;
-  ringGap?: number;
-  fadeIn?: number;
-  fadeOut?: number;
-  followMouse?: boolean;
-  mouseInfluence?: number;
-  hoverScale?: number;
-  parallax?: number;
-  clickBurst?: boolean;
+	color?: string;
+	colorTwo?: string;
+	speed?: number;
+	ringCount?: number;
+	attenuation?: number;
+	lineThickness?: number;
+	baseRadius?: number;
+	radiusStep?: number;
+	scaleRate?: number;
+	opacity?: number;
+	blur?: number;
+	noiseAmount?: number;
+	rotation?: number;
+	ringGap?: number;
+	fadeIn?: number;
+	fadeOut?: number;
+	followMouse?: boolean;
+	mouseInfluence?: number;
+	hoverScale?: number;
+	parallax?: number;
+	clickBurst?: boolean;
 }
 
 interface MagicRingsInstance {
-  destroy: () => void;
-  updateOptions: (opts: Partial<MagicRingsOptions>) => void;
+	destroy: () => void;
+	updateOptions: (opts: Partial<MagicRingsOptions>) => void;
 }
 
 export function initMagicRings(
-  container: HTMLElement,
-  options: MagicRingsOptions = {},
+	container: HTMLElement,
+	options: MagicRingsOptions = {},
 ): MagicRingsInstance | null {
-  const opts: Required<MagicRingsOptions> = {
-    color: "#A855F7",
-    colorTwo: "#6366F1",
-    speed: 1,
-    ringCount: 6,
-    attenuation: 10,
-    lineThickness: 2,
-    baseRadius: 0.35,
-    radiusStep: 0.1,
-    scaleRate: 0.1,
-    opacity: 1,
-    blur: 0,
-    noiseAmount: 0.1,
-    rotation: 0,
-    ringGap: 1.5,
-    fadeIn: 0.7,
-    fadeOut: 0.5,
-    followMouse: false,
-    mouseInfluence: 0.2,
-    hoverScale: 1.2,
-    parallax: 0.05,
-    clickBurst: false,
-    ...options,
-  };
+	const opts: Required<MagicRingsOptions> = {
+		color: "#A855F7",
+		colorTwo: "#6366F1",
+		speed: 1,
+		ringCount: 6,
+		attenuation: 10,
+		lineThickness: 2,
+		baseRadius: 0.35,
+		radiusStep: 0.1,
+		scaleRate: 0.1,
+		opacity: 1,
+		blur: 0,
+		noiseAmount: 0.1,
+		rotation: 0,
+		ringGap: 1.5,
+		fadeIn: 0.7,
+		fadeOut: 0.5,
+		followMouse: false,
+		mouseInfluence: 0.2,
+		hoverScale: 1.2,
+		parallax: 0.05,
+		clickBurst: false,
+		...options,
+	};
 
-  const mouseRef = [0, 0];
-  const smoothMouseRef = [0, 0];
-  let hoverAmount = 0;
-  let isHovered = false;
-  let burst = 0;
+	const mouseRef = [0, 0];
+	const smoothMouseRef = [0, 0];
+	let hoverAmount = 0;
+	let isHovered = false;
+	let burst = 0;
 
-  let renderer: THREE.WebGLRenderer;
-  try {
-    renderer = new THREE.WebGLRenderer({ alpha: true });
-  } catch {
-    return null;
-  }
+	let renderer: THREE.WebGLRenderer;
+	try {
+		renderer = new THREE.WebGLRenderer({ alpha: true });
+	} catch {
+		return null;
+	}
 
-  if (!renderer.capabilities.isWebGL2) {
-    renderer.dispose();
-    return null;
-  }
+	if (!renderer.capabilities.isWebGL2) {
+		renderer.dispose();
+		return null;
+	}
 
-  renderer.setClearColor(0x000000, 0);
-  container.appendChild(renderer.domElement);
+	renderer.setClearColor(0x000000, 0);
+	container.appendChild(renderer.domElement);
 
-  if (opts.blur > 0) {
-    container.style.filter = `blur(${opts.blur}px)`;
-  }
+	if (opts.blur > 0) {
+		container.style.filter = `blur(${opts.blur}px)`;
+	}
 
-  const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0.1, 10);
-  camera.position.z = 1;
+	const scene = new THREE.Scene();
+	const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0.1, 10);
+	camera.position.z = 1;
 
-  const uniforms = {
-    uTime: { value: 0 },
-    uAttenuation: { value: opts.attenuation },
-    uResolution: { value: new THREE.Vector2() },
-    uColor: { value: new THREE.Color(opts.color) },
-    uColorTwo: { value: new THREE.Color(opts.colorTwo) },
-    uLineThickness: { value: opts.lineThickness },
-    uBaseRadius: { value: opts.baseRadius },
-    uRadiusStep: { value: opts.radiusStep },
-    uScaleRate: { value: opts.scaleRate },
-    uRingCount: { value: opts.ringCount },
-    uOpacity: { value: opts.opacity },
-    uNoiseAmount: { value: opts.noiseAmount },
-    uRotation: { value: opts.rotation },
-    uRingGap: { value: opts.ringGap },
-    uFadeIn: { value: opts.fadeIn },
-    uFadeOut: { value: opts.fadeOut },
-    uMouse: { value: new THREE.Vector2() },
-    uMouseInfluence: { value: 0 },
-    uHoverAmount: { value: 0 },
-    uHoverScale: { value: opts.hoverScale },
-    uParallax: { value: opts.parallax },
-    uBurst: { value: 0 },
-    uLightMode: { value: document.documentElement.classList.contains("dark") ? 0 : 1 },
-  };
+	const uniforms = {
+		uTime: { value: 0 },
+		uAttenuation: { value: opts.attenuation },
+		uResolution: { value: new THREE.Vector2() },
+		uColor: { value: new THREE.Color(opts.color) },
+		uColorTwo: { value: new THREE.Color(opts.colorTwo) },
+		uLineThickness: { value: opts.lineThickness },
+		uBaseRadius: { value: opts.baseRadius },
+		uRadiusStep: { value: opts.radiusStep },
+		uScaleRate: { value: opts.scaleRate },
+		uRingCount: { value: opts.ringCount },
+		uOpacity: { value: opts.opacity },
+		uNoiseAmount: { value: opts.noiseAmount },
+		uRotation: { value: opts.rotation },
+		uRingGap: { value: opts.ringGap },
+		uFadeIn: { value: opts.fadeIn },
+		uFadeOut: { value: opts.fadeOut },
+		uMouse: { value: new THREE.Vector2() },
+		uMouseInfluence: { value: 0 },
+		uHoverAmount: { value: 0 },
+		uHoverScale: { value: opts.hoverScale },
+		uParallax: { value: opts.parallax },
+		uBurst: { value: 0 },
+		uLightMode: {
+			value: document.documentElement.classList.contains("dark") ? 0 : 1,
+		},
+	};
 
-  const material = new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
-    uniforms,
-    transparent: true,
-  });
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
-  scene.add(quad);
+	const material = new THREE.ShaderMaterial({
+		vertexShader,
+		fragmentShader,
+		uniforms,
+		transparent: true,
+	});
+	const quad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+	scene.add(quad);
 
-  const resize = () => {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio, 2);
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(dpr);
-    uniforms.uResolution.value.set(w * dpr, h * dpr);
-  };
-  resize();
+	const resize = () => {
+		const w = container.clientWidth;
+		const h = container.clientHeight;
+		const dpr = Math.min(window.devicePixelRatio, 2);
+		renderer.setSize(w, h);
+		renderer.setPixelRatio(dpr);
+		uniforms.uResolution.value.set(w * dpr, h * dpr);
+	};
+	resize();
 
-  window.addEventListener("resize", resize);
-  const ro = new ResizeObserver(resize);
-  ro.observe(container);
+	window.addEventListener("resize", resize);
+	const ro = new ResizeObserver(resize);
+	ro.observe(container);
 
-  const onMouseMove = (e: MouseEvent) => {
-    const rect = container.getBoundingClientRect();
-    mouseRef[0] = (e.clientX - rect.left) / rect.width - 0.5;
-    mouseRef[1] = -((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const onMouseEnter = () => { isHovered = true; };
-  const onMouseLeave = () => {
-    isHovered = false;
-    mouseRef[0] = 0;
-    mouseRef[1] = 0;
-  };
-  const onClick = () => { burst = 1; };
+	const onMouseMove = (e: MouseEvent) => {
+		const rect = container.getBoundingClientRect();
+		mouseRef[0] = (e.clientX - rect.left) / rect.width - 0.5;
+		mouseRef[1] = -((e.clientY - rect.top) / rect.height - 0.5);
+	};
+	const onMouseEnter = () => {
+		isHovered = true;
+	};
+	const onMouseLeave = () => {
+		isHovered = false;
+		mouseRef[0] = 0;
+		mouseRef[1] = 0;
+	};
+	const onClick = () => {
+		burst = 1;
+	};
 
-  container.addEventListener("mousemove", onMouseMove);
-  container.addEventListener("mouseenter", onMouseEnter);
-  container.addEventListener("mouseleave", onMouseLeave);
-  container.addEventListener("click", onClick);
+	container.addEventListener("mousemove", onMouseMove);
+	container.addEventListener("mouseenter", onMouseEnter);
+	container.addEventListener("mouseleave", onMouseLeave);
+	container.addEventListener("click", onClick);
 
-  const themeObserver = new MutationObserver(() => {
-    uniforms.uLightMode.value = document.documentElement.classList.contains("dark") ? 0 : 1;
-  });
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+	const themeObserver = new MutationObserver(() => {
+		uniforms.uLightMode.value = document.documentElement.classList.contains(
+			"dark",
+		)
+			? 0
+			: 1;
+	});
+	themeObserver.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["class"],
+	});
 
-  let frameId: number;
-  const animate = (t: number) => {
-    frameId = requestAnimationFrame(animate);
+	let frameId: number;
+	const animate = (t: number) => {
+		frameId = requestAnimationFrame(animate);
 
-    smoothMouseRef[0] += (mouseRef[0] - smoothMouseRef[0]) * 0.08;
-    smoothMouseRef[1] += (mouseRef[1] - smoothMouseRef[1]) * 0.08;
-    hoverAmount += ((isHovered ? 1 : 0) - hoverAmount) * 0.08;
-    burst *= 0.95;
-    if (burst < 0.001) burst = 0;
+		smoothMouseRef[0] += (mouseRef[0] - smoothMouseRef[0]) * 0.08;
+		smoothMouseRef[1] += (mouseRef[1] - smoothMouseRef[1]) * 0.08;
+		hoverAmount += ((isHovered ? 1 : 0) - hoverAmount) * 0.08;
+		burst *= 0.95;
+		if (burst < 0.001) burst = 0;
 
-    uniforms.uTime.value = t * 0.001 * opts.speed;
-    uniforms.uAttenuation.value = opts.attenuation;
-    uniforms.uColor.value.set(opts.color);
-    uniforms.uColorTwo.value.set(opts.colorTwo);
-    uniforms.uLineThickness.value = opts.lineThickness;
-    uniforms.uBaseRadius.value = opts.baseRadius;
-    uniforms.uRadiusStep.value = opts.radiusStep;
-    uniforms.uScaleRate.value = opts.scaleRate;
-    uniforms.uRingCount.value = opts.ringCount;
-    uniforms.uOpacity.value = opts.opacity;
-    uniforms.uNoiseAmount.value = opts.noiseAmount;
-    uniforms.uRotation.value = (opts.rotation * Math.PI) / 180;
-    uniforms.uRingGap.value = opts.ringGap;
-    uniforms.uFadeIn.value = opts.fadeIn;
-    uniforms.uFadeOut.value = opts.fadeOut;
-    uniforms.uMouse.value.set(smoothMouseRef[0], smoothMouseRef[1]);
-    uniforms.uMouseInfluence.value = opts.followMouse ? opts.mouseInfluence : 0;
-    uniforms.uHoverAmount.value = hoverAmount;
-    uniforms.uHoverScale.value = opts.hoverScale;
-    uniforms.uParallax.value = opts.parallax;
-    uniforms.uBurst.value = opts.clickBurst ? burst : 0;
+		uniforms.uTime.value = t * 0.001 * opts.speed;
+		uniforms.uAttenuation.value = opts.attenuation;
+		uniforms.uColor.value.set(opts.color);
+		uniforms.uColorTwo.value.set(opts.colorTwo);
+		uniforms.uLineThickness.value = opts.lineThickness;
+		uniforms.uBaseRadius.value = opts.baseRadius;
+		uniforms.uRadiusStep.value = opts.radiusStep;
+		uniforms.uScaleRate.value = opts.scaleRate;
+		uniforms.uRingCount.value = opts.ringCount;
+		uniforms.uOpacity.value = opts.opacity;
+		uniforms.uNoiseAmount.value = opts.noiseAmount;
+		uniforms.uRotation.value = (opts.rotation * Math.PI) / 180;
+		uniforms.uRingGap.value = opts.ringGap;
+		uniforms.uFadeIn.value = opts.fadeIn;
+		uniforms.uFadeOut.value = opts.fadeOut;
+		uniforms.uMouse.value.set(smoothMouseRef[0], smoothMouseRef[1]);
+		uniforms.uMouseInfluence.value = opts.followMouse ? opts.mouseInfluence : 0;
+		uniforms.uHoverAmount.value = hoverAmount;
+		uniforms.uHoverScale.value = opts.hoverScale;
+		uniforms.uParallax.value = opts.parallax;
+		uniforms.uBurst.value = opts.clickBurst ? burst : 0;
 
-    renderer.render(scene, camera);
-  };
-  frameId = requestAnimationFrame(animate);
+		renderer.render(scene, camera);
+	};
+	frameId = requestAnimationFrame(animate);
 
-  return {
-    destroy() {
-      cancelAnimationFrame(frameId);
-      themeObserver.disconnect();
-      window.removeEventListener("resize", resize);
-      ro.disconnect();
-      container.removeEventListener("mousemove", onMouseMove);
-      container.removeEventListener("mouseenter", onMouseEnter);
-      container.removeEventListener("mouseleave", onMouseLeave);
-      container.removeEventListener("click", onClick);
-      container.removeChild(renderer.domElement);
-      renderer.dispose();
-      material.dispose();
-    },
-    updateOptions(partial) {
-      Object.assign(opts, partial);
-      if (partial.color !== undefined) uniforms.uColor.value.set(opts.color);
-      if (partial.colorTwo !== undefined) uniforms.uColorTwo.value.set(opts.colorTwo);
-      if (partial.blur !== undefined) container.style.filter = opts.blur > 0 ? `blur(${opts.blur}px)` : "";
-    },
-  };
+	return {
+		destroy() {
+			cancelAnimationFrame(frameId);
+			themeObserver.disconnect();
+			window.removeEventListener("resize", resize);
+			ro.disconnect();
+			container.removeEventListener("mousemove", onMouseMove);
+			container.removeEventListener("mouseenter", onMouseEnter);
+			container.removeEventListener("mouseleave", onMouseLeave);
+			container.removeEventListener("click", onClick);
+			container.removeChild(renderer.domElement);
+			renderer.dispose();
+			material.dispose();
+		},
+		updateOptions(partial) {
+			Object.assign(opts, partial);
+			if (partial.color !== undefined) uniforms.uColor.value.set(opts.color);
+			if (partial.colorTwo !== undefined)
+				uniforms.uColorTwo.value.set(opts.colorTwo);
+			if (partial.blur !== undefined)
+				container.style.filter = opts.blur > 0 ? `blur(${opts.blur}px)` : "";
+		},
+	};
 }
