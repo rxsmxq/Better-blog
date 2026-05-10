@@ -34,8 +34,8 @@ export const friendsConfig: FriendLink[] = [
 		desc: "飞萤之火自无梦的长夜亮起，绽放在终竟的明天。",
 		siteurl: "https://blog.cuteleaf.cn",
 		tags: ["Blog"],
-		weight: 8, // 权重，数字越大排序越靠前
-		enabled: true, // 是否启用
+		weight: 5,
+		enabled: true,
 	},
 	{
 		title: "Firefly Docs",
@@ -43,7 +43,7 @@ export const friendsConfig: FriendLink[] = [
 		desc: "Firefly主题模板文档",
 		siteurl: "https://docs-firefly.cuteleaf.cn",
 		tags: ["Docs"],
-		weight: 8,
+		weight: 5,
 		enabled: true,
 	},
 	{
@@ -52,7 +52,7 @@ export const friendsConfig: FriendLink[] = [
 		desc: "一个轻量，网页端，本地缓存的简历生成器，支持多套模板，欢迎试用和反馈！",
 		siteurl: "https://resume.mmzmingzsk.dpdns.org",
 		tags: ["Tools"],
-		weight: 9,
+		weight: 5,
 		enabled: true,
 	},
 	{
@@ -61,7 +61,16 @@ export const friendsConfig: FriendLink[] = [
 		desc: "番茄煮理人大佬的博客，一位主打「人间凑数」「快乐摸鱼」的生活体验家，解锁了各种有趣的「非专业」技能，热衷于在生活里挖掘快乐，在摆烂中寻找平衡。",
 		siteurl: "https://fqzlr.com/",
 		tags: ["Blog"],
-		weight: 7,
+		weight: 5,
+		enabled: true,
+	},
+	{
+		title: "琳心",
+		imgurl: "https://karina.xin/IMG_0280.jpeg",
+		desc: "恣意探索 放弃就到此为止啦….",
+		siteurl: "https://karina.xin/",
+		tags: ["Blog"],
+		weight: 5,
 		enabled: true,
 	},
 ];
