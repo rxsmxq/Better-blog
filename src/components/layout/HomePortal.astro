@@ -410,7 +410,7 @@ const stats = [
 import { initMagicRings } from '@components/features/MagicRings.ts';
 
 (function() {
-	var ringsInstance = null;
+	var ringsInstance: ReturnType<typeof initMagicRings> = null;
 
 	function getIsWork(wrapper) {
 		var start = parseInt(wrapper.dataset.workStart || '9') || 9;
