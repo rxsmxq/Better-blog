@@ -595,7 +595,7 @@ function swipeCard(x: number, y: number) {
 	<!-- 空状态 -->
 	{#if visibleCards.length === 0}
 		<div class="empty-state">
-			<div class="empty-icon">💬</div>
+			<div class="empty-icon">📭</div>
 			<div class="empty-text">暂无更多留言</div>
 			<div class="empty-subtext">成为第一个留言的人吧</div>
 		</div>
@@ -1214,6 +1214,7 @@ function swipeCard(x: number, y: number) {
 		justify-content: center;
 		gap: 0.75rem;
 		color: #71717a;
+		margin-top: -25rem;
 	}
 
 	.empty-icon {

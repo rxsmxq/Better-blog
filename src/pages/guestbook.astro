@@ -1,16 +1,16 @@
 ---
-import { getEntry, render } from "astro:content";
+import { getEntry } from "astro:content";
 import Icon from "@components/common/Icon.astro";
-import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
-import FloatingDock from "@/components/controls/FloatingDock.astro";
 import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
 import GuestbookComposeButton from "@components/features/GuestbookComposeButton.svelte";
+import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
+import FloatingDock from "@/components/controls/FloatingDock.astro";
 import Navbar from "@/components/layout/Navbar.astro";
 import { navBarConfig, siteConfig } from "@/config";
+import { LinkPresets } from "@/constants/link-presets";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import Layout from "@/layouts/Layout.astro";
-import { LinkPresets } from "@/constants/link-presets";
 
 // 检查页面是否启用
 if (!siteConfig.pages.guestbook) {
@@ -22,8 +22,6 @@ const guestbookPost = await getEntry("spec", "guestbook");
 if (!guestbookPost) {
 	throw new Error("guestbook page content not found");
 }
-
-const { Content } = await render(guestbookPost);
 
 // 页面标题和描述
 const title = i18n(I18nKey.guestbook);
@@ -45,39 +43,106 @@ const navLinks = navBarConfig.links.map((item) => {
 		</div>
 	</div>
 
-	<div class="guestbook-fullscreen">
-		<!-- 顶部页头 -->
-		<header class="gb-header">
-			<div class="gb-header-inner">
-				<div class="flex items-center gap-3 mb-3">
-					<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
-						<Icon name="material-symbols:chat" class="text-[1.5rem]" />
-					</div>
-					<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-						{title}
+	{/* 与 MainGridLayout 相同的 DOM 结构，保证 Swup 切换后其他页面布局正确 */}
+	<div class="relative w-full" id="main-grid-wrapper">
+		<div class="mx-auto max-w-4xl px-0 md:px-4" data-sidebar-position="none" id="main-grid">
+			<div id="left-sidebar-dynamic" class="hidden"></div>
+			<div id="right-sidebar-dynamic" class="hidden"></div>
+
+			<main id="swup-container" class="transition-swup-main">
+				<div class="guestbook-fullscreen">
+					{/* 顶部页头 */}
+					<header class="gb-header">
+						<div class="gb-header-inner">
+							<div class="flex items-center gap-3 mb-3">
+								<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+									<Icon name="material-symbols:chat" class="text-[1.5rem]" />
+								</div>
+								<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+									{title}
+								</div>
+							</div>
+							{description && (
+							<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-3">
+								{description}
+							</p>
+						)}
+						<div>
+							<GuestbookComposeButton client:load />
+						</div>
+						</div>
+					</header>
+
+					{/* 卡片堆叠区域 */}
+					<div class="gb-main">
+						<GuestbookCardStack client:load />
 					</div>
 				</div>
-				{description && (
-				<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-3">
-					{description}
-				</p>
-			)}
-			<div>
-				<GuestbookComposeButton client:load />
-			</div>
-			</div>
-		</header>
-
-		<!-- 卡片堆叠区域 -->
-		<main class="gb-main">
-			<GuestbookCardStack client:load />
-		</main>
+			</main>
+		</div>
 	</div>
 
 	<FloatingDock />
 </Layout>
 
+<script>
+	// 留言页全屏布局：通过 JS 设置 #main-grid 为全屏，离开时清理
+	function applyGuestbookFullscreen() {
+		const grid = document.getElementById("main-grid");
+		if (!grid) return;
+		grid.style.setProperty("max-width", "none", "important");
+		grid.style.setProperty("position", "fixed", "important");
+		grid.style.setProperty("inset", "0", "important");
+		grid.style.setProperty("z-index", "30", "important");
+		grid.style.setProperty("display", "flex", "important");
+		grid.style.setProperty("flex-direction", "column", "important");
+		grid.dataset.guestbookFullscreen = "true";
+	}
+
+	function removeGuestbookFullscreen() {
+		document.querySelectorAll('[data-guestbook-fullscreen="true"]').forEach((el) => {
+			const htmlEl = el as HTMLElement;
+			htmlEl.style.removeProperty("max-width");
+			htmlEl.style.removeProperty("position");
+			htmlEl.style.removeProperty("inset");
+			htmlEl.style.removeProperty("z-index");
+			htmlEl.style.removeProperty("display");
+			htmlEl.style.removeProperty("flex-direction");
+			delete htmlEl.dataset.guestbookFullscreen;
+		});
+	}
+
+	// 首次加载
+	applyGuestbookFullscreen();
+
+	// Swup 导航：离开时清理，回来时重新设置
+	const setupGuestbookHooks = () => {
+		// content:replace 在退出动画完成后、新内容插入前触发
+		window.swup.hooks.on("content:replace", () => {
+			removeGuestbookFullscreen();
+		});
+		window.swup.hooks.on("page:view", () => {
+			if (location.pathname.replace(/\/$/, "").endsWith("/guestbook")) {
+				applyGuestbookFullscreen();
+			}
+		});
+	};
+
+	if (window?.swup?.hooks) setupGuestbookHooks();
+	else document.addEventListener("swup:enable", setupGuestbookHooks);
+</script>
+
 <style>
+	/* 留言板全屏内容 */
+	.guestbook-fullscreen {
+		position: relative;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		padding-top: 5.5rem;
+	}
+
 	/* 标题栏 */
 	.gb-header {
 		padding: 1.5rem 2rem;
@@ -90,47 +155,12 @@ const navLinks = navBarConfig.links.map((item) => {
 		margin: 0 auto;
 	}
 
-	/* 投票提示 */
-	.gb-vote-hint {
-		display: flex;
-		justify-content: center;
-		gap: 1.5rem;
-		margin-top: 0.75rem;
-	}
-
-	.gb-vote-item {
-		font-size: 0.75rem;
-		font-weight: 600;
-		padding: 0.25rem 0.75rem;
-		border-radius: 0.5rem;
-		border: 1px solid transparent;
-	}
-
-	.gb-vote-item.agree {
-		color: #34d399;
-		border-color: rgba(52, 211, 153, 0.3);
-	}
-
-	.gb-vote-item.neutral {
-		color: #eab308;
-		border-color: rgba(234, 179, 8, 0.3);
-	}
-
-	.gb-vote-item.disagree {
-		color: #fb7185;
-		border-color: rgba(251, 113, 133, 0.3);
-	}
-
-	/* 卡片区域容器 */
-	.gb-main-wrapper {
-		flex: 1;
-		position: relative;
-		min-height: 0;
-	}
-
 	.gb-main {
 		position: absolute;
-		inset: 0;
+		top: 3.75rem;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		overflow: hidden;
 	}
 
