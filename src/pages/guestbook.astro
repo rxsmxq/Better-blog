@@ -1,12 +1,13 @@
 ---
 import { getEntry, render } from "astro:content";
-import Comment from "@components/comment/index.astro";
 import Icon from "@components/common/Icon.astro";
-import Markdown from "@components/common/Markdown.astro";
-import { commentConfig, siteConfig } from "@/config";
+import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
+import GuestbookComposeButton from "@components/features/GuestbookComposeButton.svelte";
+import Navbar from "@/components/layout/Navbar.astro";
+import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Layout from "@/layouts/Layout.astro";
 
 // 检查页面是否启用
 if (!siteConfig.pages.guestbook) {
@@ -21,70 +22,110 @@ if (!guestbookPost) {
 
 const { Content } = await render(guestbookPost);
 
-// 检查评论系统是否启用
-const isCommentEnabled = commentConfig?.type && commentConfig.type !== "none";
-
 // 页面标题和描述
 const title = i18n(I18nKey.guestbook);
 const description = i18n(I18nKey.guestbookDescription);
 ---
 
-<MainGridLayout title={title} description={description}>
-  <div
-    class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
-  >
-    <div class="card-base z-10 px-9 py-6 relative w-full">
-      <!-- 页面标题和描述 -->
-      <div class="mb-8">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
-            <Icon name="material-symbols:chat" class="text-[1.5rem]"></Icon>
-          </div>
-          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {title}
-          </div>
-        </div>
-        {description && (
-          <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-            {description}
-          </p>
-        )}
-      </div>
-      
-      <Markdown class="mt-2">
-        <Content />
-      </Markdown>
-    </div>
-  </div>
+<Layout title={title} description={description}>
+	{/* Navbar */}
+	<div id="top-row" class="z-50 pointer-events-none relative mx-auto sticky top-0 left-0 right-0 z-80 w-full">
+		<div id="navbar-wrapper" class="pointer-events-auto">
+			<Navbar />
+		</div>
+	</div>
 
-  <!-- 评论区 -->
-  <div class="mt-4">
-    {isCommentEnabled ? (
-      <Comment post={guestbookPost} customPath="/guestbook/" />
-    ) : (
-      <div class="card-base p-8 mb-6 relative overflow-hidden">
-        <div class="text-center py-8 text-(--content-meta)">
-          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-(--btn-regular-bg) flex items-center justify-center">
-            <svg
-              class="w-8 h-8 text-(--primary)"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              ></path>
-            </svg>
-          </div>
-          <p class="text-base mb-2">{i18n(I18nKey.commentNotConfigured)}</p>
-          <p class="text-sm text-(--content-meta) opacity-75">
-            {i18n(I18nKey.guestbookCommentHint)}
-          </p>
-        </div>
-      </div>
-    )}
-  </div>
-</MainGridLayout>
+	<div class="guestbook-fullscreen">
+		<!-- 顶部页头 -->
+		<header class="gb-header">
+			<div class="gb-header-inner">
+				<div class="flex items-center gap-3 mb-3">
+					<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+						<Icon name="material-symbols:chat" class="text-[1.5rem]" />
+					</div>
+					<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+						{title}
+					</div>
+				</div>
+				{description && (
+				<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-3">
+					{description}
+				</p>
+			)}
+			<div>
+				<GuestbookComposeButton client:load />
+			</div>
+			</div>
+		</header>
+
+		<!-- 卡片堆叠区域 -->
+		<main class="gb-main">
+			<GuestbookCardStack client:load />
+		</main>
+	</div>
+</Layout>
+
+<style>
+	/* 标题栏 */
+	.gb-header {
+		padding: 1.5rem 2rem;
+		position: relative;
+		z-index: 10;
+	}
+
+	.gb-header-inner {
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
+	/* 投票提示 */
+	.gb-vote-hint {
+		display: flex;
+		justify-content: center;
+		gap: 1.5rem;
+		margin-top: 0.75rem;
+	}
+
+	.gb-vote-item {
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 0.25rem 0.75rem;
+		border-radius: 0.5rem;
+		border: 1px solid transparent;
+	}
+
+	.gb-vote-item.agree {
+		color: #34d399;
+		border-color: rgba(52, 211, 153, 0.3);
+	}
+
+	.gb-vote-item.neutral {
+		color: #eab308;
+		border-color: rgba(234, 179, 8, 0.3);
+	}
+
+	.gb-vote-item.disagree {
+		color: #fb7185;
+		border-color: rgba(251, 113, 133, 0.3);
+	}
+
+	/* 卡片区域容器 */
+	.gb-main-wrapper {
+		flex: 1;
+		position: relative;
+		min-height: 0;
+	}
+
+	.gb-main {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+	}
+
+	/* 响应式 */
+	@media (max-width: 640px) {
+		.gb-header {
+			padding: 1rem;
+		}
+	}
+</style>
