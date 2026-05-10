@@ -20,7 +20,8 @@ export const galleryConfig: GalleryConfig = {
 			location: "AI生图",
 			date: "2026-05-06",
 			tags: ["AI", "祖国人"],
-		},{
+		},
+		{
 			id: "mc-2026",
 			name: "鸣潮",
 			description: "鸣潮相册，欢迎投稿！",

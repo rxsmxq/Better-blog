@@ -28,16 +28,6 @@ export const friendsPageConfig: FriendsPageConfig = {
 // 友链配置
 export const friendsConfig: FriendLink[] = [
 	{
-		title: "夏夜流萤",
-		imgurl:
-			"https://weavatar.com/avatar/d252655d40d6874417a720bad0a6c5f77f8f6a1fd2f882f8f338402dc37e4190?s=640",
-		desc: "飞萤之火自无梦的长夜亮起，绽放在终竟的明天。",
-		siteurl: "https://blog.cuteleaf.cn",
-		tags: ["Blog"],
-		weight: 5,
-		enabled: true,
-	},
-	{
 		title: "Firefly Docs",
 		imgurl: "https://docs-firefly.cuteleaf.cn/logo.png",
 		desc: "Firefly主题模板文档",
@@ -52,7 +42,16 @@ export const friendsConfig: FriendLink[] = [
 		desc: "一个轻量，网页端，本地缓存的简历生成器，支持多套模板，欢迎试用和反馈！",
 		siteurl: "https://resume.mmzmingzsk.dpdns.org",
 		tags: ["Tools"],
-		weight: 5,
+		weight: 10,
+		enabled: true,
+	},
+	{
+		title: "带后台带视频博客",
+		imgurl: "https://i.stardots.io/784774835/StarDots-2026042803043780900.png",
+		desc: "目前只展示前端，带企业级的后台视频博客，支持视频上传和播放，文档上传和下载，后台还带链路监控、日志监控等功能等等。因为使劲堆后台，实在太大，中间件一开启就用掉了6G的内存，还是一个微服务架构的博客。",
+		siteurl: "https://resume.mmzmingzsk.dpdns.org",
+		tags: ["Blog"],
+		weight: 10,
 		enabled: true,
 	},
 	{

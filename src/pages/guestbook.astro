@@ -5,8 +5,9 @@ import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
 import GuestbookComposeButton from "@components/features/GuestbookComposeButton.svelte";
 import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
 import FloatingDock from "@/components/controls/FloatingDock.astro";
+import Live2DWidget from "@/components/features/Live2DWidget.astro";
 import Navbar from "@/components/layout/Navbar.astro";
-import { navBarConfig, siteConfig } from "@/config";
+import { live2dModelConfig, navBarConfig, siteConfig } from "@/config";
 import { LinkPresets } from "@/constants/link-presets";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -82,10 +83,16 @@ const navLinks = navBarConfig.links.map((item) => {
 		</div>
 	</div>
 
+	{live2dModelConfig.enable && <Live2DWidget config={live2dModelConfig} />}
 	<FloatingDock />
 </Layout>
 
-<script>
+<script
+	is:inline
+	define:vars={{
+		live2dPosition: live2dModelConfig.position || { corner: "bottom-left", offsetX: 0, offsetY: 0 },
+	}}
+>
 	// 留言页全屏布局：通过 JS 设置 #main-grid 为全屏，离开时清理
 	function applyGuestbookFullscreen() {
 		const grid = document.getElementById("main-grid");
@@ -101,19 +108,34 @@ const navLinks = navBarConfig.links.map((item) => {
 
 	function removeGuestbookFullscreen() {
 		document.querySelectorAll('[data-guestbook-fullscreen="true"]').forEach((el) => {
-			const htmlEl = el as HTMLElement;
-			htmlEl.style.removeProperty("max-width");
-			htmlEl.style.removeProperty("position");
-			htmlEl.style.removeProperty("inset");
-			htmlEl.style.removeProperty("z-index");
-			htmlEl.style.removeProperty("display");
-			htmlEl.style.removeProperty("flex-direction");
-			delete htmlEl.dataset.guestbookFullscreen;
+			el.style.removeProperty("max-width");
+			el.style.removeProperty("position");
+			el.style.removeProperty("inset");
+			el.style.removeProperty("z-index");
+			el.style.removeProperty("display");
+			el.style.removeProperty("flex-direction");
+			delete el.dataset.guestbookFullscreen;
 		});
+	}
+
+	// 重置 Live2D 到左下角
+	function resetLive2DPosition() {
+		const widget = document.getElementById("live2d-widget");
+		if (!widget) return;
+		const position = live2dPosition;
+		const offsetX = position.offsetX ?? 0;
+		const offsetY = position.offsetY ?? 0;
+		const isRight = position.corner && position.corner.includes("right");
+		const isTop = position.corner && position.corner.includes("top");
+		widget.style.left = isRight ? "auto" : offsetX + "px";
+		widget.style.right = isRight ? offsetX + "px" : "auto";
+		widget.style.top = isTop ? offsetY + "px" : "auto";
+		widget.style.bottom = isTop ? "auto" : offsetY + "px";
 	}
 
 	// 首次加载
 	applyGuestbookFullscreen();
+	resetLive2DPosition();
 
 	// Swup 导航：离开时清理，回来时重新设置
 	const setupGuestbookHooks = () => {
@@ -124,6 +146,7 @@ const navLinks = navBarConfig.links.map((item) => {
 		window.swup.hooks.on("page:view", () => {
 			if (location.pathname.replace(/\/$/, "").endsWith("/guestbook")) {
 				applyGuestbookFullscreen();
+				resetLive2DPosition();
 			}
 		});
 	};
