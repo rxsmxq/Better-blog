@@ -102,7 +102,7 @@ export const siteConfig: SiteConfig = {
 		start: 9, // 上班时间 9:00
 		end: 18, // 下班时间 18:00
 		// 工作日范围，0=周日 1=周一 ... 6=周六，默认周一到周五
-		workDays: [1, 2, 3, 4, 5, 0],
+		workDays: [1, 2, 3, 4, 5,6],
 	},
 
 	// 提醒框（Admonitions）配置，修改后需要重启开发服务器才能生效

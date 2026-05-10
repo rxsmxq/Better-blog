@@ -275,8 +275,11 @@ const stats = [
 	}
 	[data-time-mode="off"] .avatar-core {
 		border-width: 3px;
-		border-color: var(--line-divider);
+		border-color: #000;
 		box-sizing: border-box;
+	}
+	:root.dark [data-time-mode="off"] .avatar-core {
+		border-color: #fff;
 	}
 	.avatar-img {
 		position: absolute;
