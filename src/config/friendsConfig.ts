@@ -42,7 +42,7 @@ export const friendsConfig: FriendLink[] = [
 		desc: "一个轻量，网页端，本地缓存的简历生成器，支持多套模板，欢迎试用和反馈！",
 		siteurl: "https://resume.mmzmingzsk.dpdns.org",
 		tags: ["Tools"],
-		weight: 10,
+		weight: 5,
 		enabled: true,
 	},
 	{
@@ -51,7 +51,7 @@ export const friendsConfig: FriendLink[] = [
 		desc: "目前只展示前端，带企业级的后台视频博客，支持视频上传和播放，文档上传和下载，后台还带链路监控、日志监控等功能等等。因为使劲堆后台，实在太大，中间件一开启就用掉了6G的内存，还是一个微服务架构的博客。",
 		siteurl: "https://dev.mmzmingzsk.dpdns.org/",
 		tags: ["Blog"],
-		weight: 10,
+		weight: 5,
 		enabled: true,
 	},
 	{
@@ -68,6 +68,15 @@ export const friendsConfig: FriendLink[] = [
 		imgurl: "https://karina.xin/IMG_0280.jpeg",
 		desc: "恣意探索 放弃就到此为止啦….",
 		siteurl: "https://karina.xin/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
+	{
+		title: "流欺の博客",
+		imgurl: "https://tc.lqay.cn/LightPicture/2026/03/5f64e0f0f361e19c.png",
+		desc: "嗯对就是个博客",
+		siteurl: "https://blog.lqay.cn/",
 		tags: ["Blog"],
 		weight: 5,
 		enabled: true,
