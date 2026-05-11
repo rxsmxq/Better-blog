@@ -44,8 +44,6 @@ import { url } from "@/utils/url-utils";
 
     // 监听加载失败事件，自动回退到本地文件
     cdnLink.onerror = function () {
-      console.warn("⚠️ Spine CSS CDN failed, trying local fallback...");
-
       // 移除失败的 CDN link
       if (cdnLink.parentNode) {
         cdnLink.parentNode.removeChild(cdnLink);
@@ -56,7 +54,7 @@ import { url } from "@/utils/url-utils";
       localLink.rel = "stylesheet";
       localLink.href = cssPath;
       localLink.onerror = function () {
-        console.error("❌ Failed to load Spine CSS");
+        // Failed to load Spine CSS
       };
 
       document.head.appendChild(localLink);
@@ -104,8 +102,6 @@ import { url } from "@/utils/url-utils";
 
   // 清理函数
   function cleanupSpineModel() {
-    console.log("🧹 Cleaning up existing Spine model...");
-
     // 清理消息显示（使用公共组件）
     if (window.clearModelMessage) {
       window.clearModelMessage();
@@ -118,7 +114,7 @@ import { url } from "@/utils/url-utils";
           window.spinePlayerInstance.dispose();
         }
       } catch (e) {
-        console.warn("Error disposing spine player:", e);
+        // Error disposing spine player
       }
       window.spinePlayerInstance = null;
     }
@@ -141,7 +137,6 @@ import { url } from "@/utils/url-utils";
       spineModelConfig.responsive.hideOnMobile &&
       window.innerWidth <= spineModelConfig.responsive.mobileBreakpoint
     ) {
-      console.log("📱 Mobile device detected, skipping Spine model initialization");
       const container = document.getElementById("spine-model-container");
       if (container) container.style.display = "none";
       return;
@@ -149,11 +144,8 @@ import { url } from "@/utils/url-utils";
 
     // 检查是否已经初始化
     if (window.spineModelInitialized) {
-      console.log("⏭️ Spine model already initialized, skipping...");
       return;
     }
-
-    console.log("🎯 Initializing Spine Model...");
 
     // 先清理可能存在的旧实例
     cleanupSpineModel();
@@ -165,27 +157,21 @@ import { url } from "@/utils/url-utils";
     const loadSpineRuntime = () => {
       return new Promise((resolve, reject) => {
         if (typeof window.spine !== "undefined") {
-          console.log("✅ Spine runtime already loaded");
           resolve();
           return;
         }
 
-        console.log("📦 Loading Spine runtime...");
         const script = document.createElement("script");
         script.src =
           "https://unpkg.com/@esotericsoftware/spine-player@4.2.*/dist/iife/spine-player.min.js";
         script.onload = () => {
-          console.log("✅ Spine runtime loaded from CDN");
           resolve();
         };
         script.onerror = (_error) => {
-          console.warn("⚠️ CDN failed, trying local fallback...");
-
-          // 尝试本地回退
+          // CDN failed, trying local fallback
           const fallbackScript = document.createElement("script");
           fallbackScript.src = jsPath;
           fallbackScript.onload = () => {
-            console.log("✅ Spine runtime loaded from local fallback");
             resolve();
           };
           fallbackScript.onerror = () => {
@@ -206,7 +192,6 @@ import { url } from "@/utils/url-utils";
         const check = () => {
           attempts++;
           if (typeof window.spine !== "undefined" && window.spine.SpinePlayer) {
-            console.log("✅ Spine runtime loaded");
             resolve();
           } else if (attempts >= maxAttempts) {
             reject(new Error("Spine runtime loading timeout"));
@@ -238,8 +223,6 @@ import { url } from "@/utils/url-utils";
         alpha: true,
         premultipliedAlpha: false,
         success: (player) => {
-          console.log("🎉 Spine model loaded successfully!");
-
           // 保存播放器实例引用
           window.spinePlayerInstance = player;
 
@@ -284,7 +267,6 @@ import { url } from "@/utils/url-utils";
               player.setAnimation(name, loop);
               return true;
             } catch (e) {
-              console.warn(`Failed to play animation: ${name}`, e);
               return false;
             }
           };
@@ -299,10 +281,7 @@ import { url } from "@/utils/url-utils";
             (name) => !availableAnimations.has(name)
           );
           if (missingClickAnims.length > 0) {
-            console.warn(
-              "Spine click animations not found in model:",
-              missingClickAnims
-            );
+            // Some click animations not found in model
           }
 
           // 初始化完成后设置默认姿态
@@ -317,7 +296,7 @@ import { url } from "@/utils/url-utils";
                   0;
                 player.skeleton.updateWorldTransform(physicsMode);
               } catch (e) {
-                console.warn("Error positioning skeleton:", e);
+                // Error positioning skeleton
               }
             }
           }, 500);
@@ -379,10 +358,8 @@ import { url } from "@/utils/url-utils";
             }
           }
 
-          console.log("✅ Spine model setup complete!");
         },
         error: (_player, reason) => {
-          console.error("❌ Spine model loading error:", reason);
 
           const errorDiv = document.getElementById("spine-error");
           if (errorDiv) {
@@ -400,8 +377,6 @@ import { url } from "@/utils/url-utils";
         },
       });
     } catch (error) {
-      console.error("Spine model initialization error:", error);
-
       // 重置初始化标志，允许重试
       window.spineModelInitialized = false;
 

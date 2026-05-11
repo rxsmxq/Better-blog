@@ -412,7 +412,7 @@ import { initMagicRings } from '@components/features/MagicRings.ts';
 (function() {
 	var ringsInstance: ReturnType<typeof initMagicRings> = null;
 
-	function getIsWork(wrapper) {
+	function getIsWork(wrapper: HTMLElement) {
 		var start = parseInt(wrapper.dataset.workStart || '9') || 9;
 		var end = parseInt(wrapper.dataset.workEnd || '18') || 18;
 		var workDays = [1,2,3,4,5];

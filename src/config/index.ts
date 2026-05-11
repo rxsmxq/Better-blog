@@ -9,6 +9,8 @@ export type {
 	CoverImageConfig,
 	ExpressiveCodeConfig,
 	FooterConfig,
+	FriendNote,
+	FriendSiteInfo,
 	GalleryAlbum,
 	GalleryConfig,
 	LicenseConfig,

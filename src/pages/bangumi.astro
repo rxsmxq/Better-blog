@@ -71,26 +71,18 @@ async function fetchBangumiData(username: string, subjectType: number) {
 		const isDev = import.meta.env.DEV;
 		const maxPages = isDev ? 1 : 0; // 0 表示不限制
 
-		console.log(
-			`[Bangumi] ${isDev ? "🔧 开发模式" : "🌐 生产模式"} - 开始获取用户 ${username} 的 subjectType ${subjectType} 数据...`,
-		);
-
 		while (hasMore) {
 			// 开发模式限制：只获取一页
 			if (isDev && maxPages > 0 && allData.length >= limit * maxPages) {
-				console.log(`[Bangumi] 开发模式：已获取 ${maxPages} 页数据，停止获取`);
 				break;
 			}
 
 			// 检查是否超过最大获取限制
 			if (maxTotal > 0 && allData.length >= maxTotal) {
-				console.log(`[Bangumi] 已达到最大获取限制 ${maxTotal}，停止获取`);
 				break;
 			}
 
 			const url = `${bangumiConfig.apiUrl}/v0/users/${username}/collections?subject_type=${subjectType}&limit=${limit}&offset=${offset}`;
-
-			console.log(`[Bangumi] 正在获取数据: ${url} (已获取: ${allData.length})`);
 
 			const response = await fetch(url, {
 				headers: {
@@ -100,10 +92,6 @@ async function fetchBangumiData(username: string, subjectType: number) {
 			});
 
 			if (!response.ok) {
-				console.warn(
-					`[Bangumi] 无法获取数据 (状态码: ${response.status}):`,
-					url,
-				);
 				break;
 			}
 
@@ -128,10 +116,8 @@ async function fetchBangumiData(username: string, subjectType: number) {
 			}
 		}
 
-		console.log(`[Bangumi] 总共获取到 ${allData.length} 条数据`);
 		return allData;
-	} catch (error) {
-		console.error("[Bangumi] 获取数据时出错:", error);
+	} catch (_error) {
 		return [];
 	}
 }
@@ -145,12 +131,6 @@ const isUserIdConfigured =
 	bangumiConfig.username &&
 	bangumiConfig.username !== "you-user-id" &&
 	bangumiConfig.username.trim() !== "";
-
-if (!isUserIdConfigured) {
-	console.log("[Bangumi] ⚠️ 未配置 Bangumi 用户ID，跳过数据获取");
-} else {
-	console.log("[Bangumi] 🌐 从 API 获取数据");
-}
 
 for (const [categoryKey, enabled] of Object.entries(bangumiConfig.categories)) {
 	// 如果未配置用户ID，跳过数据获取
@@ -171,8 +151,7 @@ for (const [categoryKey, enabled] of Object.entries(bangumiConfig.categories)) {
 				name: categoryInfo.name,
 				count: data.length,
 			});
-		} catch (error) {
-			console.error(`[Bangumi] 获取 ${categoryInfo.name} 数据失败:`, error);
+		} catch (_error) {
 			bangumiData[categoryKey] = [];
 			tabs.push({
 				id: categoryKey,

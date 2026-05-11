@@ -85,26 +85,17 @@ const size = config.size || { width: 280, height: 250 };
 
   async function initLive2D() {
     if (!config.model || !config.model.path) {
-      console.error("No model path configured");
       return;
     }
 
     try {
-      console.log("[Live2D] Loading Cubism Core...");
       await loadScript("https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js");
-      console.log("[Live2D] Cubism Core loaded, version:", window.Live2DCubismCore?.Version?.version);
-
-      console.log("[Live2D] Loading PixiJS...");
       await loadScript("https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js");
-
-      console.log("[Live2D] Loading pixi-live2d-display...");
       await loadScript("https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js");
 
       if (!window.PIXI || !window.PIXI.live2d) {
-        console.error("[Live2D] pixi-live2d-display failed to load");
         return;
       }
-      console.log("[Live2D] pixi-live2d-display loaded");
 
       const canvas = document.getElementById("live2d-canvas");
       const size = config.size || { width: 280, height: 250 };
@@ -117,9 +108,7 @@ const size = config.size || { width: 280, height: 250 };
         antialias: true,
       });
 
-      console.log("[Live2D] PIXI app created, loading model:", modelPathUrl);
       live2dModel = await PIXI.live2d.Live2DModel.from(modelPathUrl);
-      console.log("[Live2D] Model loaded, size:", live2dModel.width, "x", live2dModel.height);
 
       // Auto-fit model to canvas
       const scaleX = size.width / live2dModel.width;
@@ -129,7 +118,6 @@ const size = config.size || { width: 280, height: 250 };
       live2dModel.anchor.set(0.5, 0.5);
       live2dModel.x = size.width / 2;
       live2dModel.y = size.height / 2;
-      console.log("[Live2D] Scale:", fitScale, "Position:", size.width / 2, size.height / 2);
 
       live2dApp.stage.addChild(live2dModel);
 
@@ -138,8 +126,7 @@ const size = config.size || { width: 280, height: 250 };
       let clickMotionGroups = ["Expression", "TapShort"];
       let currentGroupIndex = 0;
 
-      live2dModel.on("hit", (hitAreas) => {
-        console.log("[Live2D] Hit areas:", hitAreas);
+      live2dModel.on("hit", (_hitAreas) => {
         if (!window._live2dWasDragging) playRandomMotion();
         window._live2dWasDragging = false;
       });
@@ -222,17 +209,16 @@ const size = config.size || { width: 280, height: 250 };
           live2dModel.motion(group, undefined, 2); // NORMAL priority, random index
           // Also trigger a random expression
           live2dModel.expression();
-        } catch (e) {
-          console.warn("[Live2D] Failed to play motion:", e);
+        } catch (_e) {
+          // Failed to play motion
         }
         showMessage();
         scheduleIdle();
       }
 
       setupDrag();
-      console.log("[Live2D] Model loaded successfully:", modelPathUrl);
-    } catch (error) {
-      console.error("[Live2D] Failed to load:", error);
+    } catch (_error) {
+      // Failed to load Live2D model
     }
   }
 

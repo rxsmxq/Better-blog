@@ -75,7 +75,7 @@ const descriptionText = description || remarkPluginFrontmatter.excerpt || "";
   ]}
   style={style}
   data-post-url={url}
-  onclick="if(event.target.closest('a'))return;window.location.href=this.dataset.postUrl"
+  onclick="((e)=>{if(e.target.closest('a'))return;window.location.href=this.dataset.postUrl}).call(this,arguments[0])"
 >
   <!-- pinned icon -->
   <div

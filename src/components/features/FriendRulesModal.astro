@@ -7,32 +7,8 @@ interface Props {
 }
 
 const { applyLink = friendsPageConfig.applyLink } = Astro.props;
-
-// 站点信息
-const site = {
-	name: "MmzMing的知识库",
-	desc: "哈基米，南北绿豆",
-	url: "https://tblog.mmzhiku.xyz/",
-	avatar: "https://i.stardots.io/784774835/StarDots-2026050515272984592.webp",
-	email: "784774835@qq.com",
-};
-
-// 注意事项
-const notes = [
-	{
-		title: "互换原则",
-		content: "请先将本站添加到您的友链页面，确认后会添加您的友链",
-	},
-	{ title: "链接维护", content: "友链网站长期无法访问或内容违规，将会被移除" },
-	{
-		title: "内容要求",
-		content: "内容积极向上，不含有任何含色情/反动/暴力等违法违规内容",
-	},
-	{
-		title: "站点要求",
-		content: "支持 HTTPS，以原创内容为主，能够正常访问且有持续更新",
-	},
-];
+const site = friendsPageConfig.siteInfo;
+const notes = friendsPageConfig.notes;
 ---
 
 <dialog id="friend-rules-modal" class="fr-modal">
@@ -49,37 +25,39 @@ const notes = [
     <!-- 内容 -->
     <div class="fr-body">
       <!-- 本站信息 -->
-      <section class="fr-section">
-        <div class="fr-section-head">
-          <div class="fr-section-icon">
-            <Icon name="material-symbols:info-outline-rounded" />
-          </div>
-          <h3>本站信息</h3>
-        </div>
-        <div class="fr-info-grid">
-          {[
-            { label: "站点名称", value: site.name },
-            { label: "站点描述", value: site.desc },
-            { label: "站点链接", value: site.url },
-            { label: "头像链接", value: site.avatar },
-          ].map((item) => (
-            <div class="fr-info-row">
-              <div class="fr-info-text">
-                <span class="fr-info-label">{item.label}</span>
-                <span class="fr-info-value">{item.value}</span>
-              </div>
-              <button
-                class="fr-copy-btn"
-                onclick={`navigator.clipboard.writeText('${item.value.replace(/'/g, "\\'")}');this.classList.add('copied');setTimeout(()=>this.classList.remove('copied'),1500)`}
-                aria-label={`复制${item.label}`}
-              >
-                <Icon name="material-symbols:content-copy-outline-rounded" class="fr-copy-icon" />
-                <Icon name="material-symbols:check-rounded" class="fr-check-icon" />
-              </button>
+      {site && (
+        <section class="fr-section">
+          <div class="fr-section-head">
+            <div class="fr-section-icon">
+              <Icon name="material-symbols:info-outline-rounded" />
             </div>
-          ))}
-        </div>
-      </section>
+            <h3>本站信息</h3>
+          </div>
+          <div class="fr-info-grid">
+            {[
+              { label: "站点名称", value: site.name },
+              { label: "站点描述", value: site.desc },
+              { label: "站点链接", value: site.url },
+              { label: "头像链接", value: site.avatar },
+            ].map((item) => (
+              <div class="fr-info-row">
+                <div class="fr-info-text">
+                  <span class="fr-info-label">{item.label}</span>
+                  <span class="fr-info-value">{item.value}</span>
+                </div>
+                <button
+                  class="fr-copy-btn"
+                  onclick={`navigator.clipboard.writeText('${item.value.replace(/'/g, "\\'")}');this.classList.add('copied');setTimeout(()=>this.classList.remove('copied'),1500)`}
+                  aria-label={`复制${item.label}`}
+                >
+                  <Icon name="material-symbols:content-copy-outline-rounded" class="fr-copy-icon" />
+                  <Icon name="material-symbols:check-rounded" class="fr-check-icon" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <!-- 申请流程 -->
       <section class="fr-section">
@@ -103,7 +81,7 @@ const notes = [
             <div class="fr-step-line"></div>
             <div class="fr-step-content">
               <p class="fr-step-title">
-                发送申请邮件至：<code class="fr-code">{site.email}</code>
+                发送申请邮件至：<code class="fr-code">{site?.email}</code>
               </p>
               <p class="fr-step-desc">将下方模板内容复制修改后发送</p>
               <div class="fr-template">
@@ -130,22 +108,24 @@ const notes = [
       </section>
 
       <!-- 注意事项 -->
-      <section class="fr-section">
-        <div class="fr-section-head">
-          <div class="fr-section-icon">
-            <Icon name="material-symbols:info-outline-rounded" />
-          </div>
-          <h3>注意事项</h3>
-        </div>
-        <div class="fr-notes">
-          {notes.map((item) => (
-            <div class="fr-note">
-              <span class="fr-note-dot"></span>
-              <p><strong>{item.title}</strong>：{item.content}</p>
+      {notes && (
+        <section class="fr-section">
+          <div class="fr-section-head">
+            <div class="fr-section-icon">
+              <Icon name="material-symbols:info-outline-rounded" />
             </div>
-          ))}
-        </div>
-      </section>
+            <h3>注意事项</h3>
+          </div>
+          <div class="fr-notes">
+            {notes.map((item) => (
+              <div class="fr-note">
+                <span class="fr-note-dot"></span>
+                <p><strong>{item.title}</strong>：{item.content}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
 
     <!-- 底部按钮 -->

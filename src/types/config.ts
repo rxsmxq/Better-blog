@@ -688,6 +688,19 @@ export type FriendLink = {
 	enabled: boolean; // 是否启用
 };
 
+export type FriendSiteInfo = {
+	name: string; // 站点名称
+	desc: string; // 站点描述
+	url: string; // 站点链接
+	avatar: string; // 头像链接
+	email: string; // 联系邮箱
+};
+
+export type FriendNote = {
+	title: string; // 注意事项标题
+	content: string; // 注意事项内容
+};
+
 export type FriendsPageConfig = {
 	title?: string; // 页面标题，留空则使用 i18n 中的翻译
 	description?: string; // 页面描述，留空则使用 i18n 中的翻译
@@ -695,6 +708,8 @@ export type FriendsPageConfig = {
 	showComment?: boolean; // 是否显示评论区，默认 true
 	randomizeSort?: boolean; // 是否打乱排序，如果为 true，将忽略 weight，随机排序
 	applyLink?: string; // 友链申请链接，跳转到 GitHub Issue 等
+	siteInfo?: FriendSiteInfo; // 本站信息，用于友链申请指南弹窗
+	notes?: FriendNote[]; // 注意事项，用于友链申请指南弹窗
 };
 
 // 音乐播放器配置
