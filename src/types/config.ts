@@ -535,6 +535,7 @@ export type Live2DModelConfig = {
 		width?: number; // 容器宽度，默认280px
 		height?: number; // 容器高度，默认250px
 	};
+	resolution?: number; // 渲染分辨率倍率，默认使用 window.devicePixelRatio（上限2），值越大越清晰但越耗性能
 	interactive?: {
 		enabled?: boolean; // 是否启用交互功能，默认true
 		// motions 和 expressions 将从模型 JSON 文件中自动读取

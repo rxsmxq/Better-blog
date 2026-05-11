@@ -99,6 +99,7 @@ const size = config.size || { width: 280, height: 250 };
 
       const canvas = document.getElementById("live2d-canvas");
       const size = config.size || { width: 280, height: 250 };
+      const resolution = config.resolution || Math.min(window.devicePixelRatio || 1, 2);
 
       live2dApp = new PIXI.Application({
         view: canvas,
@@ -106,6 +107,8 @@ const size = config.size || { width: 280, height: 250 };
         height: size.height,
         backgroundAlpha: 0,
         antialias: true,
+        resolution: resolution,
+        autoDensity: true,
       });
 
       live2dModel = await PIXI.live2d.Live2DModel.from(modelPathUrl);
