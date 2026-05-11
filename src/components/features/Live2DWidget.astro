@@ -376,24 +376,20 @@ const size = config.size || { width: 280, height: 250 };
     handleResponsive();
   }
 
-  if (!window.__live2dListenersAttached) {
-    window.__live2dListenersAttached = true;
+  window.addEventListener("resize", handleResponsive);
 
-    window.addEventListener("resize", handleResponsive);
-
-    if (typeof window.swup !== "undefined" && window.swup.hooks) {
-      window.swup.hooks.on("content:replace", () => {
-        setTimeout(handleResponsive, 100);
-      });
-    } else {
-      document.addEventListener("swup:enable", () => {
-        if (window.swup?.hooks) {
-          window.swup.hooks.on("content:replace", () => {
-            setTimeout(handleResponsive, 100);
-          });
-        }
-      });
-    }
+  if (typeof window.swup !== "undefined" && window.swup.hooks) {
+    window.swup.hooks.on("content:replace", () => {
+      setTimeout(handleResponsive, 100);
+    });
+  } else {
+    document.addEventListener("swup:enable", () => {
+      if (window.swup?.hooks) {
+        window.swup.hooks.on("content:replace", () => {
+          setTimeout(handleResponsive, 100);
+        });
+      }
+    });
   }
 </script>
 
