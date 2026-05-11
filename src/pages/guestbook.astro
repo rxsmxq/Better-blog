@@ -3,15 +3,12 @@ import { getEntry } from "astro:content";
 import Icon from "@components/common/Icon.astro";
 import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
 import GuestbookComposeButton from "@components/features/GuestbookComposeButton.svelte";
-import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
-import FloatingDock from "@/components/controls/FloatingDock.astro";
-import Live2DWidget from "@/components/features/Live2DWidget.astro";
-import Navbar from "@/components/layout/Navbar.astro";
-import { live2dModelConfig, navBarConfig, siteConfig } from "@/config";
-import { LinkPresets } from "@/constants/link-presets";
+import GuestbookComposeModal from "@components/features/GuestbookComposeModal.astro";
+import GuestbookDetailModal from "@components/features/GuestbookDetailModal.astro";
+import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import Layout from "@/layouts/Layout.astro";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 // 检查页面是否启用
 if (!siteConfig.pages.guestbook) {
@@ -27,176 +24,58 @@ if (!guestbookPost) {
 // 页面标题和描述
 const title = i18n(I18nKey.guestbook);
 const description = i18n(I18nKey.guestbookDescription);
-
-const navLinks = navBarConfig.links.map((item) => {
-	if (typeof item === "number") return LinkPresets[item];
-	return item;
-});
 ---
 
-<Layout title={title} description={description}>
-	<NavMenuPanel links={navLinks} />
-
-	{/* Navbar */}
-	<div id="top-row" class="z-50 pointer-events-none relative mx-auto sticky top-0 left-0 right-0 z-80 w-full">
-		<div id="navbar-wrapper" class="pointer-events-auto">
-			<Navbar />
-		</div>
-	</div>
-
-	{/* 与 MainGridLayout 相同的 DOM 结构，保证 Swup 切换后其他页面布局正确 */}
-	<div class="relative w-full" id="main-grid-wrapper">
-		<div class="mx-auto max-w-4xl px-0 md:px-4" data-sidebar-position="none" id="main-grid">
-			<div id="left-sidebar-dynamic" class="hidden"></div>
-			<div id="right-sidebar-dynamic" class="hidden"></div>
-
-			<main id="swup-container" class="transition-swup-main">
-				<div class="guestbook-fullscreen">
-					{/* 顶部页头 */}
-					<header class="gb-header">
-						<div class="gb-header-inner">
-							<div class="flex items-center gap-3 mb-3">
-								<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
-									<Icon name="material-symbols:chat" class="text-[1.5rem]" />
-								</div>
-								<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-									{title}
-								</div>
-							</div>
-							{description && (
-							<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-3">
-								{description}
-							</p>
-						)}
-						<div>
-							<GuestbookComposeButton client:load />
+<MainGridLayout title={title} description={description}>
+	<div class="flex w-full rounded-(--radius-large) relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- 页面标题和描述 -->
+			<div class="mb-4">
+				<div class="flex items-center justify-between mb-3">
+					<div class="flex items-center gap-3">
+						<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+							<Icon name="material-symbols:chat" class="text-[1.5rem]" />
 						</div>
+						<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+							{title}
 						</div>
-					</header>
-
-					{/* 卡片堆叠区域 */}
-					<div class="gb-main">
-						<GuestbookCardStack client:load />
+					</div>
+					<div>
+						<GuestbookComposeButton client:load />
 					</div>
 				</div>
-			</main>
+				{description && (
+					<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+						{description}
+					</p>
+				)}
+			</div>
+
+			<!-- 卡片堆叠区域 -->
+			<div class="guestbook-container">
+				<GuestbookCardStack client:load />
+			</div>
 		</div>
 	</div>
 
-	{live2dModelConfig.enable && <Live2DWidget config={live2dModelConfig} />}
-	<FloatingDock />
-</Layout>
-
-<script
-	is:inline
-	define:vars={{
-		live2dPosition: live2dModelConfig.position || { corner: "bottom-left", offsetX: 0, offsetY: 0 },
-	}}
->
-	function applyGuestbookFullscreen() {
-		const grid = document.getElementById("main-grid");
-		if (!grid) return;
-		grid.style.setProperty("max-width", "none", "important");
-		grid.style.setProperty("position", "fixed", "important");
-		grid.style.setProperty("inset", "0", "important");
-		grid.style.setProperty("z-index", "30", "important");
-		grid.style.setProperty("display", "flex", "important");
-		grid.style.setProperty("flex-direction", "column", "important");
-		grid.dataset.guestbookFullscreen = "true";
-	}
-
-	function removeGuestbookFullscreen() {
-		document.querySelectorAll('[data-guestbook-fullscreen="true"]').forEach((el) => {
-			el.style.removeProperty("max-width");
-			el.style.removeProperty("position");
-			el.style.removeProperty("inset");
-			el.style.removeProperty("z-index");
-			el.style.removeProperty("display");
-			el.style.removeProperty("flex-direction");
-			delete el.dataset.guestbookFullscreen;
-		});
-	}
-
-	function resetLive2DPosition() {
-		const widget = document.getElementById("live2d-widget");
-		if (!widget) return;
-		const position = live2dPosition;
-		const offsetX = position.offsetX ?? 0;
-		const offsetY = position.offsetY ?? 0;
-		const isRight = position.corner && position.corner.includes("right");
-		const isTop = position.corner && position.corner.includes("top");
-		widget.style.left = isRight ? "auto" : offsetX + "px";
-		widget.style.right = isRight ? offsetX + "px" : "auto";
-		widget.style.top = isTop ? offsetY + "px" : "auto";
-		widget.style.bottom = isTop ? "auto" : offsetY + "px";
-	}
-
-	// 首次加载
-	applyGuestbookFullscreen();
-	resetLive2DPosition();
-
-	// 防止 Swup 跳转时重复注册 hooks
-	if (!window.__guestbookHooksAttached) {
-		window.__guestbookHooksAttached = true;
-
-		const setupGuestbookHooks = () => {
-			// visit:start 时清理（动画开始前），避免 content:replace 时移除样式导致截断
-			window.swup.hooks.on("visit:start", () => {
-				removeGuestbookFullscreen();
-			});
-			window.swup.hooks.on("page:view", () => {
-				if (location.pathname.replace(/\/$/, "").endsWith("/guestbook")) {
-					applyGuestbookFullscreen();
-					resetLive2DPosition();
-				}
-			});
-		};
-
-		if (window?.swup?.hooks) setupGuestbookHooks();
-		else document.addEventListener("swup:enable", setupGuestbookHooks);
-	}
-</script>
+	<!-- 页面级弹窗 -->
+	<GuestbookDetailModal />
+	<GuestbookComposeModal />
+</MainGridLayout>
 
 <style>
-	/* 留言板全屏内容 */
-	.guestbook-fullscreen {
+	.guestbook-container {
 		position: relative;
-		min-height: 100vh;
+		width: 100%;
+		min-height: 560px;
 		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		padding-top: 5.5rem;
+		justify-content: center;
+		align-items: center;
 	}
 
-	/* 标题栏 */
-	.gb-header {
-		padding: 1.5rem 2rem;
-		position: relative;
-		z-index: 10;
-	}
-
-	.gb-header-inner {
-		max-width: 800px;
-		margin: 0 auto;
-	}
-
-	.gb-main {
-		position: absolute;
-		top: 3.75rem;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		overflow: hidden;
-	}
-
-	/* 移动端修复：absolute 定位覆盖页头 */
 	@media (max-width: 640px) {
-		.gb-header {
-			padding: 1rem;
-		}
-
-		.gb-main {
-			position: relative;
+		.guestbook-container {
+			min-height: 480px;
 		}
 	}
 </style>

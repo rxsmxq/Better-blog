@@ -45,9 +45,6 @@ let enterTransform = $state<string | null>(null);
 let cardRef = $state<HTMLDivElement | null>(null);
 // 动画帧ID
 let rafId: number | null = null;
-// 详情弹窗
-let detailCard = $state<GuestbookMessage | null>(null);
-
 // 获取当前可见的卡片（最多5张）
 let visibleCards = $derived(
 	allMessages.slice(currentIndex, currentIndex + 5).map((msg, i) => ({
@@ -341,15 +338,12 @@ onMount(async () => {
 	}
 });
 
-// 打开详情弹窗
+// 打开详情弹窗 — 通过事件通知页面级弹窗
 function openDetail(card: GuestbookMessage, e: Event) {
 	e.stopPropagation();
-	detailCard = card;
-}
-
-// 关闭详情弹窗
-function closeDetail() {
-	detailCard = null;
+	window.dispatchEvent(
+		new CustomEvent("guestbook:open-detail", { detail: card }),
+	);
 }
 
 // 处理新留言事件（由发表留言弹窗触发）
@@ -362,11 +356,6 @@ function handleNewMessage(e: CustomEvent<GuestbookMessage>) {
 
 // 键盘支持
 function handleKeyDown(e: KeyboardEvent) {
-	if (e.key === "Escape" && detailCard) {
-		closeDetail();
-		return;
-	}
-
 	if (visibleCards.length === 0) return;
 
 	const currentCard = visibleCards[0];
@@ -601,74 +590,6 @@ function swipeCard(x: number, y: number) {
 		</div>
 	{/if}
 
-	<!-- 详情弹窗 -->
-	{#if detailCard}
-		<div class="detail-overlay" onclick={closeDetail} onkeydown={(e) => e.key === "Escape" && closeDetail()} role="button" tabindex="-1">
-			<div class="detail-modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-label="留言详情">
-				<!-- 角标装饰 -->
-				<div class="corner-mark top-left"></div>
-				<div class="corner-mark top-right"></div>
-				<div class="corner-mark bottom-left"></div>
-				<div class="corner-mark bottom-right"></div>
-
-				<!-- 头部 -->
-				<div class="detail-header">
-					<div class="header-bg"></div>
-					<div class="header-content">
-						<div class="author-info">
-							<div class="author-avatar"></div>
-							<span class="author-name">{detailCard.author}</span>
-						</div>
-						<span class="message-time">{detailCard.time}</span>
-					</div>
-				</div>
-
-				<!-- 留言信息 -->
-				<div class="detail-body">
-					<div class="body-line"></div>
-					<div class="body-content">
-						<div class="source-tag">
-							<span>SOURCE :: Guestbook</span>
-						</div>
-						<h3 class="message-title">留言 #{detailCard.id.split("_")[1]}</h3>
-						<div class="title-underline"></div>
-						<p class="detail-text">{detailCard.content}</p>
-					</div>
-				</div>
-
-				<!-- 投票统计 -->
-				<div class="detail-stats">
-					<div class="stat-item agree">
-						<span class="stat-icon">&#9650;</span>
-						<span class="stat-label">赞同</span>
-						<span class="stat-count">{detailCard.votes.agree}</span>
-					</div>
-					<div class="stat-item neutral">
-						<span class="stat-icon">&#9644;</span>
-						<span class="stat-label">中立</span>
-						<span class="stat-count">{detailCard.votes.neutral}</span>
-					</div>
-					<div class="stat-item disagree">
-						<span class="stat-icon">&#9660;</span>
-						<span class="stat-label">反对</span>
-						<span class="stat-count">{detailCard.votes.disagree}</span>
-					</div>
-				</div>
-
-				<!-- 底部 -->
-				<div class="card-footer">
-					<div class="footer-bars">
-						<div class="bar"></div>
-						<div class="bar"></div>
-						<div class="bar"></div>
-						<div class="bar"></div>
-						<div class="bar"></div>
-					</div>
-					<span class="footer-text">ESC 关闭</span>
-				</div>
-			</div>
-		</div>
-	{/if}
 </div>
 
 <style>
@@ -703,14 +624,16 @@ function swipeCard(x: number, y: number) {
 	.guestbook-card-stack {
 		position: relative;
 		width: 100%;
-		height: 100%;
-		min-height: 0;
+		min-height: 620px;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		background: transparent;
+		border: 2px solid var(--card-border);
+		border-radius: 16px;
+		padding: 20px;
 	}
 
 	.stack-bg-decoration {
@@ -729,9 +652,9 @@ function swipeCard(x: number, y: number) {
 	/* 卡片容器 */
 	.cards-container {
 		position: relative;
-		width: 90%;
-		max-width: 380px;
-		height: 480px;
+		width: 80%;
+		max-width: 320px;
+		height: 400px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -1089,123 +1012,6 @@ function swipeCard(x: number, y: number) {
 		to { opacity: 1; }
 	}
 
-	/* 详情弹窗 */
-	.detail-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 200;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--card-modal-overlay);
-		backdrop-filter: blur(6px);
-		animation: fadeIn 0.2s ease;
-	}
-
-	.detail-modal {
-		position: relative;
-		width: 90%;
-		max-width: 720px;
-		background: var(--card-bg);
-		border: 2px solid var(--card-border);
-		border-radius: 0.5rem;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		animation: modalIn 0.25s cubic-bezier(0.22, 0.68, 0.25, 1);
-	}
-
-	@keyframes modalIn {
-		from {
-			opacity: 0;
-			transform: scale(0.92) translateY(12px);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1) translateY(0);
-		}
-	}
-
-	.detail-header {
-		position: relative;
-		height: 4rem;
-		border-bottom: 2px solid var(--card-border);
-		padding: 0 2rem;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		overflow: hidden;
-	}
-
-	.detail-body {
-		position: relative;
-		padding: 2rem;
-		display: flex;
-		overflow: hidden;
-	}
-
-	.detail-text {
-		font-size: 1rem;
-		line-height: 1.9;
-		font-family: ui-monospace, monospace;
-		color: var(--card-text-secondary);
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-
-	/* 投票统计区域 */
-	.detail-stats {
-		display: flex;
-		border-top: 1px solid var(--card-line);
-		border-bottom: 1px solid var(--card-line);
-	}
-
-	.stat-item {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.25rem;
-		padding: 0.75rem 0;
-		transition: background 0.2s;
-	}
-
-	.stat-item:not(:last-child) {
-		border-right: 1px solid var(--card-line);
-	}
-
-	.stat-item:hover {
-		background: rgba(255, 255, 255, 0.03);
-	}
-
-	.stat-icon {
-		font-size: 0.75rem;
-		line-height: 1;
-	}
-
-	.stat-item.agree .stat-icon { color: #34d399; }
-	.stat-item.neutral .stat-icon { color: #eab308; }
-	.stat-item.disagree .stat-icon { color: #fb7185; }
-
-	.stat-label {
-		font-size: 0.6rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--card-text-secondary);
-	}
-
-	.stat-count {
-		font-size: 1.5rem;
-		font-weight: 700;
-		font-family: ui-monospace, monospace;
-		color: var(--card-text);
-	}
-
-	.detail-modal .card-footer {
-		cursor: default;
-		padding: 0 2rem;
-	}
-
 	/* 空状态 */
 	.empty-state {
 		display: flex;
@@ -1214,7 +1020,7 @@ function swipeCard(x: number, y: number) {
 		justify-content: center;
 		gap: 0.75rem;
 		color: #71717a;
-		margin-top: -25rem;
+		padding: 4rem 0;
 	}
 
 	.empty-icon {
@@ -1267,8 +1073,12 @@ function swipeCard(x: number, y: number) {
 
 	/* 响应式 */
 	@media (max-width: 640px) {
+		.guestbook-card-stack {
+			min-height: 440px;
+		}
+
 		.cards-container {
-			height: 420px;
+			height: 380px;
 		}
 
 		.card-body {
