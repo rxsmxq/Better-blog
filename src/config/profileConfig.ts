@@ -31,6 +31,12 @@ export const profileConfig: ProfileConfig = {
 			showName: false,
 		},
 		{
+			name: "B站",
+			icon: "fa7-brands:bilibili",
+			url: "https://space.bilibili.com/15446538",
+			showName: false,
+		},
+		{
 			name: "GitHub",
 			icon: "fa7-brands:github",
 			url: "https://github.com/MmzMing",
@@ -39,7 +45,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "Email",
 			icon: "fa7-solid:envelope",
-			url: "mailto:784774835@qq.com",
+			url: "mailto:771220492@qq.com",
 			showName: false,
 		},
 		{

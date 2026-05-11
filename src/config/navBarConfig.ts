@@ -34,18 +34,26 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		url: "/my/",
 		icon: "material-symbols:person",
 		children: [
-			...(siteConfig.pages.gallery ? [LinkPreset.Gallery] : []),
-			...(siteConfig.pages.bangumi ? [LinkPreset.Bangumi] : []),
-			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
 			LinkPreset.About,
+			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+			...(siteConfig.pages.gallery ? [LinkPreset.Gallery] : []),
+			...(siteConfig.pages.bangumi
+				? [
+						{
+							name: "追番",
+							url: "/bangumi/",
+							icon: "material-symbols:play-circle",
+						},
+					]
+				: []),
 		],
 	});
 
-	// 其他及其子菜单
+	// 工具及其子菜单
 	links.push({
-		name: "其他",
+		name: "工具",
 		url: "/other/",
-		icon: "material-symbols:more-horiz",
+		icon: "material-symbols:apps",
 		children: [
 			...(siteConfig.pages.collections ? [LinkPreset.Collections] : []),
 			{
@@ -53,15 +61,15 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				url: "https://stats.mmzhiku.xyz/share/uAfsjwbIKgVPjxtc",
 				icon: "material-symbols:bar-chart",
 				external: true,
-			}
+			},
 		],
 	});
 
 	// 自定义导航栏链接,并且支持多级菜单
 	links.push({
-		name: "链接",
+		name: "联系",
 		url: "/links/",
-		icon: "material-symbols:link",
+		icon: "material-symbols:contact-page",
 
 		// 子菜单
 		children: [
@@ -76,6 +84,18 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				url: "https://qm.qq.com/q/BhF0qBmxvq",
 				external: true,
 				icon: "fa7-brands:qq",
+			},
+			{
+				name: "哈基墩QQ",
+				url: "tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=771220492",
+				external: true,
+				icon: "fa7-brands:qq",
+			},
+			{
+				name: "B站",
+				url: "https://space.bilibili.com/15446538",
+				external: true,
+				icon: "fa7-brands:bilibili",
 			},
 		],
 	});
