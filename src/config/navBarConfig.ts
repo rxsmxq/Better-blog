@@ -48,7 +48,12 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		icon: "material-symbols:more-horiz",
 		children: [
 			...(siteConfig.pages.collections ? [LinkPreset.Collections] : []),
-			...(siteConfig.pages.stats ? [LinkPreset.Stats] : []),
+			{
+				name: "统计",
+				url: "https://stats.mmzhiku.xyz/share/uAfsjwbIKgVPjxtc",
+				icon: "material-symbols:bar-chart",
+				external: true,
+			}
 		],
 	});
 

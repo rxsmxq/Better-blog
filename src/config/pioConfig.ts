@@ -117,7 +117,7 @@ export const live2dModelConfig: Live2DModelConfig = {
 
 	// 渲染分辨率倍率，默认自动使用 window.devicePixelRatio（上限2）
 	// 在高DPI屏幕上设为2可显著提升清晰度，值越大越耗性能
-	resolution: 5,
+	resolution: 10,
 
 	// 交互配置
 	interactive: {

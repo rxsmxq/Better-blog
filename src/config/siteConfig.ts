@@ -190,10 +190,8 @@ export const siteConfig: SiteConfig = {
 		microsoftClarityId: "",
 		// Umami 统计配置
 		umamiAnalytics: {
-			// Umami Website ID
-			websiteId: "",
-			// Umami JS地址，支持使用自建
-			scriptUrl: "https://cloud.umami.is/script.js",
+			websiteId: "5907656e-d254-4c9e-ad73-5ce40bf184bb",
+			scriptUrl: "https://stats.mmzhiku.xyz/script.js",
 			// 是否追踪出站链接
 			trackOutboundLinks: true,
 			// 是否收集浏览器性能指标
