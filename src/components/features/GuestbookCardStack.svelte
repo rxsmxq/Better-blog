@@ -562,8 +562,16 @@ function swipeCard(x: number, y: number) {
 				</div>
 			{/if}
 		{/each}
-	</div>
 
+		<!-- 空状态 -->
+		{#if visibleCards.length === 0}
+			<div class="empty-state">
+				<div class="empty-icon">📭</div>
+				<div class="empty-text">暂无更多留言</div>
+				<div class="empty-subtext">成为第一个留言的人吧</div>
+			</div>
+		{/if}
+	</div>
 
 	<!-- 投票提示 -->
 	<div class="swipe-hint">
@@ -580,15 +588,6 @@ function swipeCard(x: number, y: number) {
 			<span class="hint-text">赞同</span>
 		</div>
 	</div>
-
-	<!-- 空状态 -->
-	{#if visibleCards.length === 0}
-		<div class="empty-state">
-			<div class="empty-icon">📭</div>
-			<div class="empty-text">暂无更多留言</div>
-			<div class="empty-subtext">成为第一个留言的人吧</div>
-		</div>
-	{/if}
 
 </div>
 
@@ -1014,13 +1013,17 @@ function swipeCard(x: number, y: number) {
 
 	/* 空状态 */
 	.empty-state {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: 0.75rem;
 		color: #71717a;
-		padding: 4rem 0;
 	}
 
 	.empty-icon {

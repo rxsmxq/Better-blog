@@ -101,6 +101,7 @@
 		let isSubmitting = false;
 
 		function updateSubmitState() {
+			if (!submitBtn || !authorInput || !contentInput) return;
 			submitBtn.disabled = !authorInput.value.trim() || !contentInput.value.trim() || isSubmitting;
 		}
 
@@ -124,6 +125,7 @@
 
 		// 关闭
 		function closeModal() {
+			if (!modal) return;
 			modal.close();
 			document.body.style.overflow = '';
 		}
