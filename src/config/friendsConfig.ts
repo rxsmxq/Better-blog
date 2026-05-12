@@ -101,7 +101,7 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
-		{
+	{
 		title: "二叉树树",
 		imgurl: "https://q2.qlogo.cn/headimg_dl?dst_uin=2726730791&spec=0",
 		desc: "Protect What You Love.",

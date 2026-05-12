@@ -59,6 +59,17 @@ pages: {
 
 更多配置详见 `src/config/` 目录。
 
+## CI/CD 工作流
+
+注意：这里建议优先在自己设置关闭邮箱订阅，不然你的邮箱会被github疯狂轰炸
+
+| 工作流 | 触发条件 | 说明 |
+|--------|----------|------|
+| `ci.yml` | push/PR 到 master | Astro 类型检查 + Biome Lint 代码质量检查 |
+| `cron-check.yml` | 每日 08:00 自动执行 | 友链可达性巡检，异常自动创建 Issue 报告 |
+| `friend-link-checker.yml` | Issue 创建/评论 | 通过 Issue 自动处理友链申请，提取信息并提交 PR |
+| `claude.yml` / `claude-review.yml` | Issue/PR 评论 | AI 辅助代码审查和问题响应 |
+
 ## 技术栈
 
 - [Astro](https://astro.build)
