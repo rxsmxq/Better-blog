@@ -7,7 +7,7 @@ category: 其他
 draft: false
 ---
 
-# Vercel + Neon 部署 Umami 完整指南
+# Vercel + Neon 免费部署 Umami 完整指南
 
 ## 架构图
 
