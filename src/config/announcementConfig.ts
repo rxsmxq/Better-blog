@@ -6,7 +6,7 @@ export const announcementConfig: AnnouncementConfig = {
 
 	// 公告内容
 	content:
-		"欢迎来到我的博客，可以在这里找到我的最新文章和项目！欢迎交流！欢迎友链！",
+		"欢迎来到我的博客，我是深耕java、python和react技术开发。热爱技术、持续学习，欢迎同好交流探讨，也欢迎大佬互换友链。",
 
 	// 是否允许用户关闭公告
 	closable: true,
