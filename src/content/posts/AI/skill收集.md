@@ -1,12 +1,11 @@
-***
-
-title: SKILL收集
-published: 2026-04-08
+---
+title: Skill 收集
+published: 2026-04-12
 description: 收集一些比较强势，但是还没使用的SKILL
-tags: \[AI, Skill]
+tags: [AI, Skill]
 category: AI
 draft: false
-------------
+---
 
 ## 画图 Skill
 
