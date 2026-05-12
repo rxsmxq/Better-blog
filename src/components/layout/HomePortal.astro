@@ -187,37 +187,6 @@ const stats = [
 		))}
 	</div>
 
-	{/* SOCIAL */}
-	<div class="home-divider text-center">- - - - -</div>
-	<div class="flex items-center justify-center gap-2 flex-wrap">
-		{profileConfig.links.map((item) => (
-			<a
-				rel="me"
-				aria-label={item.name}
-				href={item.url}
-				target={item.url.startsWith("http") ? "_blank" : "_self"}
-				class="social-link-btn"
-			>
-				<Icon name={item.icon} class="text-base" is:inline />
-				<span>{item.name}</span>
-			</a>
-		))}
-	</div>
-
-	{/* CATEGORIES */}
-	<div class="home-divider text-center">- - - - -</div>
-	<section class="section onload-animation">
-		<div class="flex flex-wrap justify-center gap-2 px-2 max-w-full overflow-x-auto">
-			{categories.map((c) => (
-				<a href={c.url} aria-label={`View all posts in ${c.name.trim()}`} class="cat-square-btn text-sm gap-2 shrink-0">
-					<span>{c.name.trim()}</span>
-					<span class="text-(--content-meta) text-xs">{c.count}</span>
-				</a>
-			))}
-		</div>
-	</section>
-	<div class="home-divider text-center">- - - - -</div>
-
 </div>
 
 <style>

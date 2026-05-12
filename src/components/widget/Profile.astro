@@ -2,6 +2,7 @@
 import Icon from "@components/common/Icon.astro";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import NumberTicker from "@/components/common/NumberTicker.svelte";
+import BubbleMenu from "@/components/features/BubbleMenu.svelte";
 import TypewriterText from "@/components/features/TypewriterText.astro";
 import { siteConfig } from "@/config";
 import { profileConfig } from "@/config/profileConfig";
@@ -114,18 +115,11 @@ const stats = [
   <div class="text-center w-full">
     <TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-xl text-(--content-meta)" />
   </div>
-  <div class="flex items-center justify-center gap-3">
-    {profileConfig.links.map(item => {
-      if (item.url.startsWith("mailto:")) {
-        const encodedEmail = Buffer.from(item.url.replace("mailto:", "")).toString("base64");
-        return <a rel="me" aria-label={item.name} href="#" data-encoded-email={encodedEmail} onclick={`(function(){const e=this.getAttribute('data-encoded-email');this.href='mailto:'+atob(e);this.removeAttribute('data-encoded-email');this.removeAttribute('onclick');this.click();return false}).call(this);`} class="w-10 h-10 flex items-center justify-center rounded-full border border-(--line-divider) text-(--deep-text) hover:text-(--primary) hover:border-(--primary) transition-colors">
-          <Icon name={item.icon} class="text-xl" is:inline />
-        </a>;
-      }
-      return <a rel="me" aria-label={item.name} href={item.url} target="_blank" class="w-10 h-10 flex items-center justify-center rounded-full border border-(--line-divider) text-(--deep-text) hover:text-(--primary) hover:border-(--primary) transition-colors">
-        <Icon name={item.icon} class="text-xl" is:inline />
-      </a>;
-    })}
+  <div class="w-full flex justify-center mt-2">
+    <BubbleMenu
+      links={profileConfig.links}
+      client:only
+    />
   </div>
 
   <!-- 站点统计 -->

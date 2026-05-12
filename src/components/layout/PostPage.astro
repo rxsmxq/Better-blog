@@ -2,8 +2,11 @@
 import type { CollectionEntry } from "astro:content";
 import { getPostUrlBySlug } from "@utils/url-utils";
 import AnimatedTabs from "@/components/controls/AnimatedTabs.svelte";
+import BubbleMenu from "@/components/features/BubbleMenu.svelte";
+import CategoryBubbleMenu from "@/components/features/CategoryBubbleMenu.svelte";
 import PostCard from "@/components/layout/PostCard.astro";
-import { siteConfig } from "@/config";
+import { profileConfig, siteConfig } from "@/config";
+import { getCategoryList } from "@/utils/content-utils";
 
 const { page } = Astro.props;
 
@@ -27,9 +30,15 @@ const initialLayoutClass =
 
 const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
 const isListDefault = initialLayoutClass.includes("list-mode");
+
+const categories = await getCategoryList();
 ---
 
-<div id="post-list-toolbar" class="flex items-center justify-center mb-3 px-1">
+<div id="post-list-toolbar" class="flex items-center justify-between mb-3 px-1">
+  <div class="flex items-center gap-2">
+    <BubbleMenu links={profileConfig.links} client:only />
+    <CategoryBubbleMenu categories={categories.map(c => ({ name: c.name.trim(), count: c.count, url: c.url }))} client:only />
+  </div>
   <div class:list={["layout-toggle-group", { "hidden": !allowLayoutSwitch }]}>
     <AnimatedTabs
       client:load
