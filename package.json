@@ -1,7 +1,7 @@
 {
-  "name": "firefly",
+  "name": "firefly-mod",
   "type": "module",
-  "version": "6.9.4",
+  "version": "1.1.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
