@@ -62,6 +62,12 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:bar-chart",
 				external: true,
 			},
+			{
+				name: "简历生成器",
+				url: "https://resume.mmzmingzsk.dpdns.org",
+				icon: "material-symbols:description",
+				external: true,
+			},
 		],
 	});
 

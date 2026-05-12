@@ -1,9 +1,7 @@
 import type { CollectionsApiConfig } from "../types/config";
 
-// 使用 Google favicon 服务获取网站图标
-// 格式：https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=<网站域名>&size=64
-const favicon = (domain: string) =>
-	`https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=64`;
+// 使用 favicon 服务获取网站图标
+const favicon = (domain: string) => `https://favicon.im/${domain}`;
 
 export const collectionsApiConfig: CollectionsApiConfig = {
 	// 页面标题，留空则使用 i18n 翻译
@@ -30,7 +28,23 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("itdog.cn"),
 			enabled: true,
 		},
-
+		// 图片
+		{
+			name: "在线图像工具箱",
+			url: "https://phototool.cn/",
+			description: "在线图片处理工具，支持格式转换、压缩、裁剪、批量下载等功能",
+			category: "图片",
+			icon: favicon("phototool.cn"),
+			enabled: true,
+		},
+		{
+			name: "SauceNAO",
+			url: "https://saucenao.com/",
+			description: "以图搜图引擎，支持动漫插画、同人图来源查找",
+			category: "图片",
+			icon: favicon("saucenao.com"),
+			enabled: true,
+		},
 		// AI 聊天
 		{
 			name: "豆包",
@@ -64,13 +78,173 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("gemini.google.com"),
 			enabled: true,
 		},
-		// 图片
+		// AI
 		{
-			name: "在线图像工具箱",
-			url: "https://phototool.cn/",
-			description: "在线图片处理工具，支持格式转换、压缩、裁剪、批量下载等功能",
-			category: "图片",
-			icon: favicon("phototool.cn"),
+			name: "AI Arena",
+			url: "https://arena.ai/leaderboard",
+			description: "AI 模型竞技排行榜，对比不同大模型的综合能力",
+			category: "AI",
+			icon: favicon("arena.ai"),
+			enabled: true,
+		},
+		{
+			name: "ModelScope 魔搭社区",
+			url: "https://www.modelscope.cn/",
+			description: "阿里达摩院开源模型社区，提供海量 AI 模型与推理服务",
+			category: "AI",
+			icon: favicon("modelscope.cn"),
+			enabled: true,
+		},
+		{
+			name: "Skills Marketplace",
+			url: "https://skillsmp.com/",
+			description: "AI 技能市场，发现和分享 AI 工具与自动化工作流",
+			category: "AI",
+			icon: favicon("skillsmp.com"),
+			enabled: true,
+		},
+		{
+			name: "PromptPilot",
+			url: "https://promptpilot.volcengine.com/",
+			description: "火山引擎推出的 Prompt 优化工具，提升大模型输出质量",
+			category: "AI",
+			icon: favicon("volcengine.com"),
+			enabled: true,
+		},
+		// BOT
+		{
+			name: "NapCat",
+			url: "https://napneko.github.io/",
+			description: "基于 NTQQ 的 QQ 机器人框架，支持插件扩展与多协议接入",
+			category: "BOT",
+			icon: favicon("napneko.github.io"),
+			enabled: true,
+		},
+		{
+			name: "AstrBot",
+			url: "https://astrbot.app/",
+			description: "多平台聊天机器人框架，支持 QQ、Discord、Telegram 等",
+			category: "BOT",
+			icon: favicon("astrbot.app"),
+			enabled: true,
+		},
+		{
+			name: "Mai-bot",
+			url: "https://docs.mai-mai.org/",
+			description: "音乐游戏 MaiMai 相关机器人，支持查分、排位等功能",
+			category: "BOT",
+			icon: favicon("mai-mai.org"),
+			enabled: true,
+		},
+		// UI 组件库
+		{
+			name: "Awwwards",
+			url: "https://www.awwwards.com/",
+			description: "全球最佳网页设计作品评选平台，汇集创意灵感与设计趋势",
+			category: "UI 组件库",
+			icon: favicon("awwwards.com"),
+			enabled: true,
+		},
+		{
+			name: "Magic UI",
+			url: "https://magicui.design/",
+			description: "精美动画组件库，提供可复制粘贴的 UI 动效组件",
+			category: "UI 组件库",
+			icon: favicon("magicui.design"),
+			enabled: true,
+		},
+		{
+			name: "Aceternity UI",
+			url: "https://ui.aceternity.com/",
+			description: "现代化 React 动画组件库，视觉效果出色的开源组件集合",
+			category: "UI 组件库",
+			icon: favicon("aceternity.com"),
+			enabled: true,
+		},
+		{
+			name: "shadcn/ui",
+			url: "https://ui.shadcn.com/",
+			description: "优雅的 React 组件集合，基于 Radix UI 和 Tailwind CSS",
+			category: "UI 组件库",
+			icon: favicon("shadcn.com"),
+			enabled: true,
+		},
+		{
+			name: "React Bits",
+			url: "https://www.reactbits.dev/",
+			description: "React 组件与 Hook 精选集合，实用且易集成",
+			category: "UI 组件库",
+			icon: favicon("reactbits.dev"),
+			enabled: true,
+		},
+		{
+			name: "HeroUI",
+			url: "https://heroui.com/",
+			description: "高性能 React UI 组件库，基于 Tailwind 和 Tailwind Variants",
+			category: "UI 组件库",
+			icon: favicon("heroui.com"),
+			enabled: true,
+		},
+		// 知识库 / 学习
+		{
+			name: "Java 全栈知识体系",
+			url: "https://pdai.tech/",
+			description:
+				"涵盖 Java 核心、并发、JVM、框架、数据库、架构等全栈知识体系",
+			category: "知识库",
+			icon: favicon("pdai.tech"),
+			enabled: true,
+		},
+		{
+			name: "JavaGuide",
+			url: "https://javaguide.cn/",
+			description:
+				"Java 学习 + 面试指南，涵盖 Java 基础、集合、并发、JVM、Spring 等核心知识",
+			category: "知识库",
+			icon: favicon("javaguide.cn"),
+			enabled: true,
+		},
+		{
+			name: "异常教程",
+			url: "https://www.exception.site/",
+			description:
+				"提供 IDEA、PyCharm、WebStorm 等 JetBrains 系列 IDE 激活码与安装教程",
+			category: "知识库",
+			icon: favicon("exception.site"),
+			enabled: true,
+		},
+		{
+			name: "力扣 LeetCode",
+			url: "https://leetcode.cn/",
+			description: "全球极客挚爱的技术成长平台，海量算法题库、面试题与竞赛",
+			category: "知识库",
+			icon: favicon("leetcode.cn"),
+			enabled: true,
+		},
+		{
+			name: "牛客网",
+			url: "https://www.nowcoder.com/",
+			description:
+				"IT 求职备考与技术学习平台，提供笔试、面试题库与在线编程练习",
+			category: "知识库",
+			icon: favicon("nowcoder.com"),
+			enabled: true,
+		},
+		// 动漫&漫画
+		{
+			name: "AGE 动漫",
+			url: "https://www.agedm.io/update",
+			description: "免费动漫资源聚合站，提供高清动漫在线观看与更新推送",
+			category: "动漫&漫画",
+			icon: favicon("agedm.io"),
+			enabled: true,
+		},
+		{
+			name: "ManhwaTop",
+			url: "https://manhwatop.com/",
+			description: "韩漫/漫画阅读平台，热门连载与完结漫画资源",
+			category: "动漫&漫画",
+			icon: favicon("manhwatop.com"),
 			enabled: true,
 		},
 		// 小破站 / 二次元
@@ -131,52 +305,6 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("waifu.pics"),
 			enabled: true,
 		},
-		// 知识库 / 学习
-		{
-			name: "Java 全栈知识体系",
-			url: "https://pdai.tech/",
-			description:
-				"涵盖 Java 核心、并发、JVM、框架、数据库、架构等全栈知识体系",
-			category: "知识库",
-			icon: favicon("pdai.tech"),
-			enabled: true,
-		},
-		{
-			name: "JavaGuide",
-			url: "https://javaguide.cn/",
-			description:
-				"Java 学习 + 面试指南，涵盖 Java 基础、集合、并发、JVM、Spring 等核心知识",
-			category: "知识库",
-			icon: favicon("javaguide.cn"),
-			enabled: true,
-		},
-		{
-			name: "异常教程",
-			url: "https://www.exception.site/",
-			description:
-				"提供 IDEA、PyCharm、WebStorm 等 JetBrains 系列 IDE 激活码与安装教程",
-			category: "知识库",
-			icon: favicon("exception.site"),
-			enabled: true,
-		},
-		{
-			name: "力扣 LeetCode",
-			url: "https://leetcode.cn/",
-			description: "全球极客挚爱的技术成长平台，海量算法题库、面试题与竞赛",
-			category: "知识库",
-			icon: favicon("leetcode.cn"),
-			enabled: true,
-		},
-		{
-			name: "牛客网",
-			url: "https://www.nowcoder.com/",
-			description:
-				"IT 求职备考与技术学习平台，提供笔试、面试题库与在线编程练习",
-			category: "知识库",
-			icon: favicon("nowcoder.com"),
-			enabled: true,
-		},
-
 		// 实用工具 API
 		{
 			name: "IP-API",
