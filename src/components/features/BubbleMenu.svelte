@@ -89,30 +89,30 @@ $effect(() => {
 	});
 });
 
-function isDarkMode() {
-	return (
-		typeof document !== "undefined" &&
-		document.documentElement.classList.contains("dark")
-	);
-}
+let isDark = $state(false);
+
+$effect(() => {
+	if (typeof document === "undefined") return;
+	isDark = document.documentElement.classList.contains("dark");
+	const observer = new MutationObserver(() => {
+		isDark = document.documentElement.classList.contains("dark");
+	});
+	observer.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["class"],
+	});
+	return () => observer.disconnect();
+});
 
 function getHoverBg(item: LinkItem) {
-	const darkMap: Record<string, string> = {
+	const colorMap: Record<string, string> = {
 		qq: "#4a90d9",
 		B站: "#00a1d6",
 		GitHub: "#6e7681",
 		Email: "#e74c3c",
 		RSS: "#f39c12",
 	};
-	const lightMap: Record<string, string> = {
-		qq: "#4a90d9",
-		B站: "#00a1d6",
-		GitHub: "#6e7681",
-		Email: "#e74c3c",
-		RSS: "#f39c12",
-	};
-	const map = isDarkMode() ? darkMap : lightMap;
-	return map[item.name] || "#f3f4f6";
+	return colorMap[item.name] || "#f3f4f6";
 }
 </script>
 
@@ -124,10 +124,10 @@ function getHoverBg(item: LinkItem) {
       onclick={handleToggle}
       aria-label="Toggle social menu"
       aria-pressed={isMenuOpen}
-      style={`background: ${isDarkMode() ? "#ffffff" : menuBg}; color: ${isDarkMode() ? "#111111" : menuContentColor};`}
+      style={`background: ${isDark ? "#ffffff" : menuBg}; color: ${isDark ? "#111111" : menuContentColor};`}
     >
-      <span class="menu-line" style={`background: ${isDarkMode() ? "#111111" : menuContentColor};`} />
-      <span class="menu-line short" style={`background: ${isDarkMode() ? "#111111" : menuContentColor};`} />
+      <span class="menu-line" style={`background: ${isDark ? "#111111" : menuContentColor};`} />
+      <span class="menu-line short" style={`background: ${isDark ? "#111111" : menuContentColor};`} />
     </button>
   </nav>
 
@@ -156,10 +156,10 @@ function getHoverBg(item: LinkItem) {
                 class="pill-link"
                 style={`
                   --item-rot: ${(idx % 2 === 0 ? -8 : 8) + (Math.random() * 4 - 2)}deg;
-                  --pill-bg: ${isDarkMode() ? "#ffffff" : menuBg};
-                  --pill-color: ${isDarkMode() ? "#111111" : menuContentColor};
+                  --pill-bg: ${isDark ? "#ffffff" : menuBg};
+                  --pill-color: ${isDark ? "#111111" : menuContentColor};
                   --hover-bg: ${getHoverBg(item)};
-                  --hover-color: ${isDarkMode() ? "#111111" : "#ffffff"};
+                  --hover-color: ${isDark ? "#111111" : "#ffffff"};
                 `}
                 bind:this={bubblesRef[idx]}
                 onclick={(e) => {
@@ -352,8 +352,8 @@ function getHoverBg(item: LinkItem) {
     will-change: transform, opacity;
   }
 
-  .bubble-menu-items .pill-link .pill-label :global(.iconify) {
-    font-size: 2rem;
+  .bubble-menu-items .pill-link .pill-label :global(.inline-icon) {
+    font-size: 4rem;
   }
 
   .bubble-menu-items .pill-link .pill-name {

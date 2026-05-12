@@ -36,8 +36,8 @@ const categories = await getCategoryList();
 
 <div id="post-list-toolbar" class="flex items-center justify-between mb-3 px-1">
   <div class="flex items-center gap-2">
-    <BubbleMenu links={profileConfig.links} client:only />
-    <CategoryBubbleMenu categories={categories.map(c => ({ name: c.name.trim(), count: c.count, url: c.url }))} client:only />
+    <BubbleMenu links={profileConfig.links} client:load />
+    <CategoryBubbleMenu categories={categories.map(c => ({ name: c.name.trim(), count: c.count, url: c.url }))} client:load />
   </div>
   <div class:list={["layout-toggle-group", { "hidden": !allowLayoutSwitch }]}>
     <AnimatedTabs
