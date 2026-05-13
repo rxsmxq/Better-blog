@@ -1,18 +1,16 @@
 ---
-title: python
+title: python 安装下载
 published: 2026-05-09
-description: 基础知识点
+description: python 安装下载
 tags:
-  - python
-  - 基础
+- python
+- 基础
 category: python
 draft: false
 ---
 
-
 # python 基础
 
-正在学习....
 ## Python的安装
 
 Python下载地址：[Download Python | Python.org](https://www.python.org/downloads/ "Download Python | Python.org")

@@ -158,9 +158,9 @@ const stats = [
 	</section>
 
 	{/* STATS */}
-	<div class="onload-animation mt-4">
-		{[stats.slice(0, 4), stats.slice(4)].map((group) => (
-			<div class="flex flex-row flex-wrap justify-center gap-x-4 gap-y-4 mb-4">
+	<div class="onload-animation mt-4 stats-container">
+		{[stats.slice(0, 4), stats.slice(4)].map((group, index) => (
+			<div class={`flex flex-row flex-wrap justify-center gap-x-4 gap-y-4 ${index === 0 ? 'mb-4' : 'mt-4'}`}>
 				{group.map((stat) => (
 					<div class="flex flex-col items-center gap-2 min-w-[4.5rem]">
 						<div class="flex items-center gap-1.5">
@@ -192,6 +192,18 @@ const stats = [
 	.home-portal {
 		padding-top: 1rem;
 		padding-bottom: 0;
+	}
+
+	.stats-container {
+		border: 2px solid #000;
+		border-radius: 1rem;
+		padding: 1rem;
+		max-width: 24rem;
+		margin-left: auto;
+		margin-right: auto;
+	}
+	:root.dark .stats-container {
+		border-color: #fff;
 	}
 
 
