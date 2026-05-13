@@ -54,8 +54,17 @@ function onError() {
         decoding="async"
         onload={onLoad}
         onerror={onError}
-        class="block w-full h-auto object-cover transition-opacity duration-500 {status === 'loaded' ? 'opacity-100' : 'opacity-0 absolute inset-0'}"
+        class="block w-full h-auto object-cover transition-all duration-500 {status === 'loaded' ? 'opacity-100 group-hover:scale-105' : 'opacity-0 absolute inset-0'}"
       />
+      <!-- 悬停遮罩 + 放大镜图标 -->
+      <div class="absolute inset-0 flex items-center justify-center bg-transparent transition-colors duration-200 group-hover:bg-black/35 pointer-events-none">
+        <svg class="w-7 h-7 text-white opacity-0 scale-75 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </div>
     {:else}
       <div class="flex items-center justify-center w-full aspect-[4/3]">
         <svg class="w-8 h-8 text-neutral-300 dark:text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

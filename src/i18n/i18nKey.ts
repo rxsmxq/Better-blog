@@ -298,6 +298,14 @@ enum I18nKey {
 	galleryAlbums = "galleryAlbums",
 	galleryNoAlbums = "galleryNoAlbums",
 	galleryBackToAlbums = "galleryBackToAlbums",
+	galleryLocalAlbum = "galleryLocalAlbum",
+	galleryNetworkAlbum = "galleryNetworkAlbum",
+	galleryCategory = "galleryCategory",
+	galleryQuantity = "galleryQuantity",
+	galleryRandomFetch = "galleryRandomFetch",
+	galleryFetching = "galleryFetching",
+	galleryFetchError = "galleryFetchError",
+	galleryNoImages = "galleryNoImages",
 
 	// 收藏API页面
 	collections = "collections",

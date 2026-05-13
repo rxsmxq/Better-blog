@@ -310,6 +310,15 @@ export const ja: Translation = {
 	[Key.galleryAlbums]: "冊のアルバム",
 	[Key.galleryNoAlbums]: "アルバムがありません",
 	[Key.galleryBackToAlbums]: "アルバム一覧に戻る",
+	[Key.galleryLocalAlbum]: "ローカルアルバム",
+	[Key.galleryNetworkAlbum]: "ネットワークアルバム",
+	[Key.galleryCategory]: "カテゴリ",
+	[Key.galleryQuantity]: "数量",
+	[Key.galleryRandomFetch]: "ランダム取得",
+	[Key.galleryFetching]: "取得中...",
+	[Key.galleryFetchError]: "取得に失敗しました、もう一度お試しください",
+	[Key.galleryNoImages]:
+		"画像がありません、上のボタンをクリックして取得してください",
 
 	// 收藏APIページ
 	[Key.collections]: "コレクション",

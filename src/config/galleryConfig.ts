@@ -50,4 +50,12 @@ export const galleryConfig: GalleryConfig = {
 	// 瀑布流最小列宽(px)，浏览器根据容器宽度自动计算列数，默认 240
 	// 值越小列数越多，值越大列数越少
 	columnWidth: 240,
+
+	// 网络相册配置
+	networkAlbum: {
+		// 单次获取图片数量限制，默认 10
+		maxQuantity: 10,
+		// 默认获取数量，默认 6
+		defaultQuantity: 6,
+	},
 };

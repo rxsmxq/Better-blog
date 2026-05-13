@@ -312,6 +312,14 @@ export const ru: Translation = {
 	[Key.galleryAlbums]: "альбомов",
 	[Key.galleryNoAlbums]: "Пока нет альбомов",
 	[Key.galleryBackToAlbums]: "Вернуться к альбомам",
+	[Key.galleryLocalAlbum]: "Локальный альбом",
+	[Key.galleryNetworkAlbum]: "Сетевой альбом",
+	[Key.galleryCategory]: "Категория",
+	[Key.galleryQuantity]: "Количество",
+	[Key.galleryRandomFetch]: "Случайный запрос",
+	[Key.galleryFetching]: "Загрузка...",
+	[Key.galleryFetchError]: "Ошибка загрузки, попробуйте снова",
+	[Key.galleryNoImages]: "Нет изображений, нажмите кнопку выше для загрузки",
 
 	// Страница коллекций API
 	[Key.collections]: "Коллекции",

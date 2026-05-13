@@ -304,6 +304,14 @@ export const zh_TW: Translation = {
 	[Key.galleryAlbums]: "本相簿",
 	[Key.galleryNoAlbums]: "暫無相簿",
 	[Key.galleryBackToAlbums]: "返回相簿列表",
+	[Key.galleryLocalAlbum]: "本地相簿",
+	[Key.galleryNetworkAlbum]: "網路相簿",
+	[Key.galleryCategory]: "分類",
+	[Key.galleryQuantity]: "數量",
+	[Key.galleryRandomFetch]: "隨機獲取",
+	[Key.galleryFetching]: "獲取中...",
+	[Key.galleryFetchError]: "獲取失敗，請重試",
+	[Key.galleryNoImages]: "暫無圖片，點擊上方按鈕隨機獲取",
 
 	// 收藏API頁面
 	[Key.collections]: "實用API&TOOL",

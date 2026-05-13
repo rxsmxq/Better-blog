@@ -817,6 +817,13 @@ export type GalleryAlbum = {
 export type GalleryConfig = {
 	albums: GalleryAlbum[];
 	columnWidth?: number; // 瀑布流最小列宽(px)，默认 240，浏览器根据容器宽度自动计算列数
+	// 网络相册配置
+	networkAlbum?: {
+		// 单次获取图片数量限制
+		maxQuantity?: number;
+		// 默认获取数量
+		defaultQuantity?: number;
+	};
 };
 
 // 收藏API单项

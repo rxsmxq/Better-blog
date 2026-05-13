@@ -1,13 +1,13 @@
 ---
 import Icon from "@components/common/Icon.astro";
 import AlbumCard from "@/components/pages/gallery/AlbumCard.astro";
+import NetworkAlbum from "@/components/pages/gallery/NetworkAlbum.svelte";
 import { galleryConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { getAlbumCover, scanAlbumPhotos } from "@/utils/gallery-utils";
 
-// 检查页面是否启用
 if (!siteConfig.pages.gallery) {
 	return Astro.redirect("/404/");
 }
@@ -15,28 +15,34 @@ if (!siteConfig.pages.gallery) {
 const title = i18n(I18nKey.gallery);
 const description = i18n(I18nKey.galleryDescription);
 
-// 构建相册数据（扫描照片、获取封面）
 const albums = galleryConfig.albums.map((album) => {
 	const photos = scanAlbumPhotos(album.id);
 	const cover = getAlbumCover(album, photos);
 	return { ...album, cover, photoCount: photos.length };
 });
 
-// 收集所有标签用于筛选
 const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
+
+const tabs = [
+	{
+		id: "local",
+		name: i18n(I18nKey.galleryLocalAlbum),
+		icon: "material-symbols:folder-rounded",
+	},
+	{
+		id: "network",
+		name: i18n(I18nKey.galleryNetworkAlbum),
+		icon: "material-symbols:wallpaper",
+	},
+];
 ---
 
 <MainGridLayout title={title} description={description}>
-  <div
-    class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
-  >
+  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
     <div class="card-base z-10 px-9 py-6 relative w-full">
-      <!-- 页面标题和描述 -->
       <div class="mb-4">
         <div class="flex items-center gap-3 mb-3">
-          <div
-            class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70"
-          >
+          <div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
             <Icon name="material-symbols:photo-library" class="text-[1.5rem]" />
           </div>
           <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
@@ -50,51 +56,79 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
         )}
       </div>
 
-      <!-- 标签筛选 -->
-      {albums.length > 0 && allTags.length > 0 && (
-        <div class="gallery-filter-outer mb-6">
-          <gallery-filter class="gallery-filter-tabs flex gap-1 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-gallery-filter>
-            <button
-              data-tag="all"
-              class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-white dark:text-neutral-900"
-            >
-              {i18n(I18nKey.all)}
-            </button>
-            {allTags.map((tag) => (
+      <div class="border-b border-(--line-divider) mb-3 relative">
+        <div class="overflow-x-auto" data-tab-scroll-container>
+          <nav class="flex min-w-max space-x-8" aria-label="Gallery Tabs" data-gallery-tab-nav>
+            <div class="gallery-tab-indicator" data-gallery-tab-indicator></div>
+            {tabs.map((tab) => (
               <button
-                data-tag={tag}
-                class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+                class:list={[
+                  "gallery-tab-btn whitespace-nowrap py-4 px-1 font-medium text-sm transition-colors duration-200 flex items-center gap-2",
+                  {
+                    "gallery-tab-btn-active": tab.id === "local",
+                    "gallery-tab-btn-inactive": tab.id !== "local"
+                  }
+                ]}
+                data-gallery-tab={tab.id}
+                type="button"
               >
-                {tag}
+                <Icon name={tab.icon} class="text-[1.1rem]" />
+                {tab.name}
               </button>
             ))}
-            <div class="gallery-filter-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
-          </gallery-filter>
+          </nav>
         </div>
-      )}
+      </div>
 
-      <!-- 相册卡片网格 -->
-      {albums.length > 0 ? (
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
-          {albums.map((album) => (
-            <AlbumCard
-              id={album.id}
-              name={album.name}
-              cover={album.cover}
-              description={album.description}
-              date={album.date}
-              location={album.location}
-              tags={album.tags}
-              photoCount={album.photoCount}
-            />
-          ))}
-        </div>
-      ) : (
-        <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
-          <Icon name="material-symbols:photo-library" class="text-6xl mb-4 opacity-50" />
-          <p class="text-lg">{i18n(I18nKey.galleryNoAlbums)}</p>
-        </div>
-      )}
+      <div data-gallery-section="local">
+        {albums.length > 0 && allTags.length > 0 && (
+          <div class="gallery-filter-outer mb-6">
+            <gallery-filter class="gallery-filter-tabs flex gap-1 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-gallery-filter>
+              <button
+                data-tag="all"
+                class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-white dark:text-neutral-900"
+              >
+                {i18n(I18nKey.all)}
+              </button>
+              {allTags.map((tag) => (
+                <button
+                  data-tag={tag}
+                  class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+                >
+                  {tag}
+                </button>
+              ))}
+              <div class="gallery-filter-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
+            </gallery-filter>
+          </div>
+        )}
+
+        {albums.length > 0 ? (
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
+            {albums.map((album) => (
+              <AlbumCard
+                id={album.id}
+                name={album.name}
+                cover={album.cover}
+                description={album.description}
+                date={album.date}
+                location={album.location}
+                tags={album.tags}
+                photoCount={album.photoCount}
+              />
+            ))}
+          </div>
+        ) : (
+          <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
+            <Icon name="material-symbols:photo-library" class="text-6xl mb-4 opacity-50" />
+            <p class="text-lg">{i18n(I18nKey.galleryNoAlbums)}</p>
+          </div>
+        )}
+      </div>
+
+      <div data-gallery-section="network" class="hidden">
+        <NetworkAlbum client:visible />
+      </div>
     </div>
   </div>
 
@@ -136,7 +170,163 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
     .gallery-filter-btn:active {
       transform: scale(0.95);
     }
+
+    [data-gallery-tab-nav] {
+      position: relative;
+    }
+
+    .gallery-tab-indicator {
+      position: absolute;
+      bottom: 0;
+      height: 2px;
+      background: black;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    :root.dark .gallery-tab-indicator {
+      background: white;
+    }
+
+    .gallery-tab-btn {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+    }
+
+    :root.dark .gallery-tab-btn {
+      color: #9ca3af;
+    }
+
+    .gallery-tab-btn:hover {
+      color: #374151;
+    }
+
+    :root.dark .gallery-tab-btn:hover {
+      color: #d1d5db;
+    }
+
+    .gallery-tab-btn-active {
+      color: black;
+    }
+
+    :root.dark .gallery-tab-btn-active {
+      color: white;
+    }
   </style>
+
+  <script slot="head" is:inline>
+    (function() {
+      function initGalleryTabs() {
+        const tabButtons = document.querySelectorAll('[data-gallery-tab]');
+        const sections = document.querySelectorAll('[data-gallery-section]');
+        const indicator = document.querySelector('[data-gallery-tab-indicator]');
+
+        function updateIndicator(targetBtn) {
+          if (!indicator || !targetBtn) return;
+          const nav = targetBtn.closest('[data-gallery-tab-nav]');
+          if (!nav) return;
+          const navRect = nav.getBoundingClientRect();
+          const btnRect = targetBtn.getBoundingClientRect();
+          indicator.style.left = (btnRect.left - navRect.left) + 'px';
+          indicator.style.width = btnRect.width + 'px';
+          indicator.style.opacity = '1';
+        }
+
+        function activateTab(targetTab) {
+          if (!targetTab) return;
+
+          const targetButton = Array.from(tabButtons).find(
+            (btn) => btn.dataset.galleryTab === targetTab
+          );
+          if (!targetButton) return;
+
+          tabButtons.forEach((btn) => {
+            btn.classList.remove('gallery-tab-btn-active');
+            btn.classList.add('gallery-tab-btn-inactive');
+          });
+
+          targetButton.classList.remove('gallery-tab-btn-inactive');
+          targetButton.classList.add('gallery-tab-btn-active');
+
+          updateIndicator(targetButton);
+
+          sections.forEach((section) => {
+            if (section.dataset.gallerySection === targetTab) {
+              section.classList.remove('hidden');
+            } else {
+              section.classList.add('hidden');
+            }
+          });
+
+          const nextHash = '#gallery-' + encodeURIComponent(targetTab);
+          if (window.location.hash !== nextHash) {
+            window.history.replaceState(null, '', nextHash);
+          }
+        }
+
+        tabButtons.forEach((button) => {
+          button.addEventListener('click', (event) => {
+            const currentButton = event.currentTarget;
+            const targetTab = currentButton.dataset.galleryTab;
+            if (targetTab) {
+              activateTab(targetTab);
+            }
+          });
+        });
+
+        function getTabFromHash() {
+          const hash = window.location.hash.replace(/^#gallery-/, '');
+          if (!hash) return '';
+          try {
+            return decodeURIComponent(hash);
+          } catch {
+            return '';
+          }
+        }
+
+        const initialTab = getTabFromHash();
+        if (initialTab) {
+          activateTab(initialTab);
+        } else {
+          const activeBtn = document.querySelector('.gallery-tab-btn-active');
+          if (activeBtn) {
+            requestAnimationFrame(() => {
+              updateIndicator(activeBtn);
+            });
+          }
+        }
+
+        window.addEventListener('hashchange', () => {
+          const tabFromHash = getTabFromHash();
+          if (tabFromHash) {
+            activateTab(tabFromHash);
+          }
+        });
+
+        window.addEventListener('resize', () => {
+          const activeBtn = document.querySelector('.gallery-tab-btn-active');
+          if (activeBtn) {
+            updateIndicator(activeBtn);
+          }
+        });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initGalleryTabs);
+      } else {
+        initGalleryTabs();
+      }
+
+      document.addEventListener("astro:page-load", initGalleryTabs);
+      document.addEventListener("astro:after-swap", initGalleryTabs);
+    })();
+  </script>
 
   <script slot="head" is:inline>
     (function() {
