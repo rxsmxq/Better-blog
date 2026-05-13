@@ -1,8 +1,8 @@
 ---
-title: Spring-MyBatis
-published: 2026-04-08
+title: 面试-MyBatis
+published: 2026-01-25
 description: 总结MyBatis框架的工作原理与执行流程，包括配置文件读取、SqlSessionFactory构建、Executor执行器、MappedStatement映射对象、输入输出参数映射等核心环节，同时涵盖延迟加载原理与一级二级缓存机制的实现细节。
-tags: [JAVA, Spring-MyBatis]
+tags: [JAVA, MyBatis]
 category: 面试
 draft: false
 ---

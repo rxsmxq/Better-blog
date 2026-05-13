@@ -1,6 +1,6 @@
 ---
-title: Redis
-published: 2026-01-22
+title: 面试-Redis
+published: 2026-02-15
 description: 全面总结Redis核心面试知识点，涵盖Redis高性能原理、IO多路复用模型、常用数据结构、分布式锁实现、缓存一致性方案、缓存穿透击穿雪崩解决方案、RDB与AOF持久化机制、数据过期与淘汰策略、主从复制、哨兵模式及分片集群架构等内容。
 tags: [JAVA, Redis]
 category: 面试

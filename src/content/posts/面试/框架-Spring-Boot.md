@@ -1,5 +1,5 @@
 ---
-title: Spring-Boot
+title: 面试-Spring-Boot
 published: 2026-01-30
 description: 详解Spring Boot自动配置原理与启动执行流程，包括@SpringBootApplication注解的核心作用、@EnableAutoConfiguration自动配置机制、组件扫描范围，以及从创建SpringApplication实例到嵌入式容器启动的完整启动过程。
 tags: [JAVA, Spring-Boot]
