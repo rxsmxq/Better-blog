@@ -36,21 +36,13 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 				style={`--item-index: ${index}`}
 			>
 				{link.children && link.children.length > 0 ? (
-					<div class="mobile-dropdown" data-mobile-dropdown>
-						<button
-							class="nav-drawer-link group"
-							data-mobile-dropdown-trigger
-							aria-expanded="false"
-						>
+					<div class="mobile-dropdown">
+						<div class="nav-drawer-link group nav-drawer-section-title">
 							<div class="flex items-center gap-3">
-								{link.icon && <Icon name={link.icon} is:inline class="text-[1.25rem] nav-drawer-icon" />}
 								<span class="nav-drawer-link-text">{link.name}</span>
 							</div>
-							<Icon name="material-symbols:keyboard-arrow-down-rounded" is:inline
-								class="transition text-[1.35rem] text-(--primary) mobile-dropdown-arrow duration-300"
-							/>
-						</button>
-						<div class="mobile-submenu" data-mobile-submenu>
+						</div>
+						<div class="mobile-submenu mobile-submenu--flat">
 							{link.children.map((child) => (
 								<a href={child.external ? child.url : url(child.url)}
 									class="nav-drawer-sublink group"
@@ -113,7 +105,7 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		z-index: 9999;
 		width: min(80vw, 360px);
 		background: var(--float-panel-bg);
-		border-left: 1px solid var(--line-divider);
+		border-left: none;
 		box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
 		transform: translateX(100%);
 		transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -135,7 +127,7 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		align-items: center;
 		justify-content: space-between;
 		padding: 1rem 1.25rem;
-		border-bottom: 1px solid var(--line-divider);
+		border-bottom: none;
 		flex-shrink: 0;
 	}
 
@@ -153,6 +145,8 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		border-radius: 50%;
 		color: var(--deep-text);
 		transition: background-color 0.2s ease;
+		border: none;
+		background: none;
 	}
 
 	.nav-drawer-close-btn:hover {
@@ -189,12 +183,13 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		justify-content: space-between;
 		width: 100%;
 		padding: 0.875rem 1rem;
-		border-radius: 0.75rem;
+		border-radius: 0;
 		font-weight: 600;
 		color: var(--deep-text);
 		transition: background-color 0.2s ease, color 0.2s ease;
 		text-decoration: none;
 		min-height: 3.25rem;
+		border: none;
 	}
 
 	.nav-drawer-link:hover {
@@ -220,7 +215,7 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.75rem 1rem 0.75rem 2.5rem;
-		border-radius: 0.75rem;
+		border-radius: 0;
 		font-weight: 500;
 		font-size: 0.9375rem;
 		color: var(--deep-text);
@@ -228,6 +223,7 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 		text-decoration: none;
 		min-height: 2.75rem;
+		border: none;
 	}
 
 	.nav-drawer-sublink:hover {
@@ -242,18 +238,33 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 		opacity: 1;
 	}
 
+	.mobile-submenu--flat {
+		border-top: 1px solid var(--line-divider);
+		padding-top: 0.25rem;
+		margin-top: 0.25rem;
+	}
+
 	.mobile-submenu {
 		max-height: 0;
 		overflow: hidden;
 		transition: max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
-	.mobile-dropdown[data-expanded="true"] .mobile-submenu {
-		max-height: 500px;
+	.mobile-submenu--flat {
+		max-height: none;
+		overflow: visible;
 	}
 
-	.mobile-dropdown[data-expanded="true"] .mobile-dropdown-arrow {
-		transform: rotate(180deg);
+	.nav-drawer-section-title {
+		cursor: default;
+		pointer-events: none;
+		opacity: 0.5;
+	}
+
+	.nav-drawer-section-title:hover,
+	.nav-drawer-section-title:active {
+		background-color: transparent;
+		color: var(--deep-text);
 	}
 
 	@media (min-width: 1024px) {
@@ -324,34 +335,7 @@ function initNavDrawer() {
 		closeDrawer();
 	}, { signal });
 
-	// Mobile submenu toggling via event delegation on the drawer body
-	const drawerBody = panel.querySelector('.nav-drawer-body');
-	if (drawerBody) {
-		drawerBody.addEventListener('click', (e) => {
-			const target = e.target as HTMLElement;
-			const trigger = target.closest('[data-mobile-dropdown-trigger]');
-			if (!trigger) return;
 
-			e.preventDefault();
-			const dropdown = trigger.closest('[data-mobile-dropdown]');
-			if (!dropdown) return;
-
-			const isExpanded = dropdown.getAttribute('data-expanded') === 'true';
-
-			// Close all other submenus (accordion behavior)
-			panel.querySelectorAll('[data-mobile-dropdown]').forEach(other => {
-				if (other !== dropdown) {
-					other.setAttribute('data-expanded', 'false');
-					const otherTrigger = other.querySelector('[data-mobile-dropdown-trigger]');
-					if (otherTrigger) otherTrigger.setAttribute('aria-expanded', 'false');
-				}
-			});
-
-			const newState = !isExpanded;
-			dropdown.setAttribute('data-expanded', newState.toString());
-			trigger.setAttribute('aria-expanded', newState.toString());
-		}, { signal });
-	}
 }
 
 initNavDrawer();

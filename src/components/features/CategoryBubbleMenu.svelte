@@ -267,10 +267,10 @@ function getCategoryColor(_name: string, index: number) {
     --item-rot: 0deg;
     --hover-bg: #333333;
     --hover-color: #ffffff;
-    min-width: 200px;
-    min-height: 100px;
-    padding: 20px 40px;
-    font-size: 1.9rem;
+    min-width: 120px;
+    min-height: 56px;
+    padding: 12px 24px;
+    font-size: 1.1rem;
     font-weight: 500;
     border-radius: 999px;
     background: var(--pill-bg);
@@ -298,6 +298,10 @@ function getCategoryColor(_name: string, index: number) {
 
   @media (min-width: 640px) {
     .category-pill-link {
+      min-width: 200px;
+      min-height: 100px;
+      padding: 20px 40px;
+      font-size: 1.9rem;
       transform: rotate(var(--item-rot));
     }
 
@@ -332,8 +336,14 @@ function getCategoryColor(_name: string, index: number) {
   }
 
   .category-count {
-    font-size: 1.2rem;
+    font-size: 0.85rem;
     font-weight: 400;
     opacity: 0.7;
+  }
+
+  @media (min-width: 640px) {
+    .category-count {
+      font-size: 1.2rem;
+    }
   }
 </style>

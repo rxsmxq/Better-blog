@@ -226,3 +226,13 @@ body.wallpaper-transparent .custom-md {
   border-color: #fff;
 }
 
+/* 移动端优化：移除边框和内边距，增加可用宽度 */
+@media (max-width: 768px) {
+  .markdown-bordered {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+  }
+}
+

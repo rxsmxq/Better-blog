@@ -293,10 +293,10 @@ function getHoverBg(item: LinkItem) {
     --item-rot: 0deg;
     --hover-bg: #333333;
     --hover-color: #ffffff;
-    min-width: 200px;
-    min-height: 100px;
-    padding: 20px 40px;
-    font-size: 1.9rem;
+    min-width: 120px;
+    min-height: 56px;
+    padding: 12px 24px;
+    font-size: 1.1rem;
     font-weight: 500;
     border-radius: 999px;
     background: var(--pill-bg);
@@ -319,6 +319,10 @@ function getHoverBg(item: LinkItem) {
 
   @media (min-width: 640px) {
     .bubble-menu-items .pill-link {
+      min-width: 200px;
+      min-height: 100px;
+      padding: 20px 40px;
+      font-size: 1.9rem;
       transform: rotate(var(--item-rot));
     }
 
@@ -353,11 +357,21 @@ function getHoverBg(item: LinkItem) {
   }
 
   .bubble-menu-items .pill-link .pill-label :global(.inline-icon) {
-    font-size: 4rem;
+    font-size: 1.5rem;
   }
 
   .bubble-menu-items .pill-link .pill-name {
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: 600;
+  }
+
+  @media (min-width: 640px) {
+    .bubble-menu-items .pill-link .pill-label :global(.inline-icon) {
+      font-size: 4rem;
+    }
+
+    .bubble-menu-items .pill-link .pill-name {
+      font-size: 1.5rem;
+    }
   }
 </style>
