@@ -390,7 +390,13 @@ async function handleAIChat(request, env) {
 					returnMetadata: true,
 				});
 				if (results.matches?.length > 0) {
-					console.log("Vectorize matches:", results.matches.map((m) => ({ score: m.score, title: m.metadata?.articleTitle })));
+					console.log(
+						"Vectorize matches:",
+						results.matches.map((m) => ({
+							score: m.score,
+							title: m.metadata?.articleTitle,
+						})),
+					);
 					const seenPaths = new Set();
 					const contextParts = [];
 					for (const match of results.matches) {
