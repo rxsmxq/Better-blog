@@ -7,18 +7,10 @@ directory = "./dist"
 
 [vars]
 NODE_VERSION = "22"
-# 第三方 AI API（可选，不填则使用 Cloudflare Workers AI 免费额度）
-AI_API_URL = "https://api-inference.modelscope.cn/v1"
-# AI_API_KEY # 需要在Cloudflare Dashboard → Workers & Pages → 你的 Worker → Settings → Variables and Secrets → 添加 Secret
-AI_EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-8B" # 文本 → 向量（检索用）
-AI_API_MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 向量 + 问题 → 回答（对话用）
-VECTORIZE_DIM = "1024" # 向量维度，需与索引一致
-# 构建脚本批处理大小（默认 500 和 50）
-# BATCH_SIZE=500
-# EMBED_BATCH_SIZE=50
-# 构建脚本批处理大小（默认 500 和 50）
-# BATCH_SIZE=500
-# EMBED_BATCH_SIZE=50
+
+# 敏感信息（API Key）请在 Cloudflare Dashboard → Workers & Pages →
+# 你的 Worker → Settings → Variables and Secrets 中添加 Secret：
+# AI_API_KEY
 
 [[kv_namespaces]]
 binding = "VISITOR_KV"

@@ -8,16 +8,36 @@
  *
  * 环境变量（在 .env 中配置）：
  *   必填：CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
- *   可选（第三方 embedding API）：AI_API_URL, AI_API_KEY, AI_EMBEDDING_MODEL
+ *   可选（第三方 embedding API）：AI_API_KEY
+ *
+ * 非敏感配置统一从 src/config/aiSearchConfig.ts 读取
  */
 
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import { glob } from "glob";
 
-// ── 加载环境变量 ──────────────────────────────────────
+// ── 加载配置文件 ──────────────────────────────────────
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const configPath = path.resolve(__dirname, "../src/config/aiSearchConfig.ts");
+
+let aiConfig;
+try {
+	const configContent = fs.readFileSync(configPath, "utf-8");
+	// 简单解析导出对象（避免引入 TS 编译器）
+	const match = configContent.match(/export\s+const\s+aiSearchConfig\s*=\s*(\{[\s\S]*?\n\});/);
+	if (!match) throw new Error("无法解析 aiSearchConfig");
+	// 使用 Function 构造器安全解析对象字面量
+	aiConfig = new Function(`return ${match[1]}`)();
+} catch (err) {
+	console.error("❌ 读取配置文件失败:", err.message);
+	process.exit(1);
+}
+
+// ── 加载环境变量（敏感信息）─────────────────────────────
 function loadEnv() {
 	const envPath = path.resolve(process.cwd(), ".env");
 	if (!fs.existsSync(envPath)) return;
@@ -28,7 +48,9 @@ function loadEnv() {
 		const eqIdx = trimmed.indexOf("=");
 		if (eqIdx === -1) continue;
 		const key = trimmed.slice(0, eqIdx).trim();
-		const val = trimmed.slice(eqIdx + 1).trim();
+		let val = trimmed.slice(eqIdx + 1).trim();
+		const commentIdx = val.indexOf(" #");
+		if (commentIdx !== -1) val = val.slice(0, commentIdx).trim();
 		if (!process.env[key]) process.env[key] = val;
 	}
 }
@@ -36,14 +58,14 @@ function loadEnv() {
 loadEnv();
 
 // ── 配置 ──────────────────────────────────────────────
-const INDEX_NAME = "blog-ai-search";
-const VECTORIZE_DIM = Number(process.env.VECTORIZE_DIM) || 1024;
-const BATCH_SIZE = Number(process.env.BATCH_SIZE) || 500;
-const EMBED_BATCH_SIZE = Number(process.env.EMBED_BATCH_SIZE) || 50;
+const INDEX_NAME = aiConfig.indexName;
+const VECTORIZE_DIM = aiConfig.vectorizeDim;
+const BATCH_SIZE = aiConfig.batchSize;
+const EMBED_BATCH_SIZE = aiConfig.embedBatchSize;
 const MANIFEST_PATH = path.resolve(process.cwd(), ".vectorize-manifest.json");
 
-// 判断是否使用第三方 embedding API（三者齐备才启用）
-const useThirdParty = !!(process.env.AI_API_URL && process.env.AI_API_KEY && process.env.AI_EMBEDDING_MODEL);
+// 判断是否使用第三方 embedding API（API_KEY 为敏感信息，从环境变量读取）
+const useThirdParty = !!(aiConfig.apiUrl && process.env.AI_API_KEY && aiConfig.embeddingModel);
 
 // Cloudflare 配置（上传向量始终需要）
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
@@ -56,7 +78,7 @@ if (!API_TOKEN || !ACCOUNT_ID) {
 
 const API_BASE = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}`;
 
-console.log(`🔧 Embedding 来源：${useThirdParty ? `第三方 API (${process.env.AI_EMBEDDING_MODEL})` : "Cloudflare Workers AI (bge-base-en-v1.5)"} | 维度：${VECTORIZE_DIM}`);
+// 配置信息已在启动时确认，此处不再重复输出
 
 // ── Manifest 管理 ─────────────────────────────────────
 
@@ -86,19 +108,19 @@ async function loadPosts() {
 
 		if (frontmatter.draft) continue;
 
-		const slug = file.replace("src/content/posts/", "").replace(/\.(md|mdx)$/, "");
+		const slug = file.replace(/\\/g, "/").replace("src/content/posts/", "").replace(/\.(md|mdx)$/, "");
 
 		posts.push({
 			title: frontmatter.title || "无标题",
 			category: frontmatter.category || "",
 			tags: frontmatter.tags || [],
+			published: frontmatter.published || "",
 			slug,
 			content,
 			hash: contentHash(raw),
 		});
 	}
 
-	console.log(`📄 加载了 ${posts.length} 篇文章`);
 	return posts;
 }
 
@@ -136,6 +158,7 @@ function buildChunksForPost(post) {
 	return sections.map((section) => {
 		const chunkText = [
 			`文章：${post.title}`,
+			post.published ? `日期：${post.published}` : "",
 			post.category ? `分类：${post.category}` : "",
 			post.tags.length ? `标签：${post.tags.join(", ")}` : "",
 			`章节：${section.heading}`,
@@ -150,6 +173,7 @@ function buildChunksForPost(post) {
 			metadata: {
 				articleTitle: post.title,
 				articlePath: `/posts/${post.slug}`,
+				published: post.published,
 				category: post.category,
 				tags: post.tags.join(", "),
 				heading: section.heading,
@@ -163,19 +187,20 @@ function buildChunksForPost(post) {
 
 async function generateEmbeddings(texts) {
 	if (useThirdParty) {
-		const baseUrl = process.env.AI_API_URL.replace(/\/+$/, "").replace(/\/chat\/completions$/, "").replace(/\/v1$/, "");
+		const baseUrl = aiConfig.apiUrl.replace(/\/+$/, "").replace(/\/chat\/completions$/, "").replace(/\/v1$/, "");
+		const body = JSON.stringify({
+			model: aiConfig.embeddingModel,
+			input: texts,
+			dimensions: VECTORIZE_DIM,
+			encoding_format: "float",
+		});
 		const res = await fetch(`${baseUrl}/v1/embeddings`, {
 			method: "POST",
 			headers: {
 				Authorization: `Bearer ${process.env.AI_API_KEY}`,
-				"Content-Type": "application/json",
+				"Content-Type": "application/json; charset=utf-8",
 			},
-			body: JSON.stringify({
-				model: process.env.AI_EMBEDDING_MODEL,
-				input: texts,
-				dimensions: VECTORIZE_DIM,
-				encoding_format: "float",
-			}),
+			body: Buffer.from(body, "utf-8"),
 		});
 		if (!res.ok) throw new Error(`Embedding API ${res.status}: ${await res.text()}`);
 		const data = await res.json();
@@ -232,10 +257,9 @@ async function createIndex() {
 	});
 	if (!res.ok) {
 		const text = await res.text();
-		if (text.includes("already exists")) { console.log("   索引已存在，跳过创建"); return; }
+		if (text.includes("already exists")) return;
 		throw new Error(`Create index ${res.status}: ${text}`);
 	}
-	console.log("✅ 索引创建成功");
 }
 
 // ── 同步 chunks ──────────────────────────────────────
@@ -244,7 +268,6 @@ async function syncChunks(chunks) {
 	let processed = 0;
 	for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
 		const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
-		console.log(`\n📊 生成 embedding (${i + 1}-${Math.min(i + EMBED_BATCH_SIZE, chunks.length)}/${chunks.length})...`);
 
 		try {
 			const embeddings = await generateEmbeddings(batch.map((c) => c.text));
@@ -257,12 +280,11 @@ async function syncChunks(chunks) {
 			for (let j = 0; j < vectors.length; j += BATCH_SIZE) {
 				await insertVectors(vectors.slice(j, j + BATCH_SIZE));
 				processed += Math.min(j + BATCH_SIZE, vectors.length) - j;
-				console.log(`   ✅ 已上传 ${processed}/${chunks.length} 个向量`);
 			}
 
 			if (i + EMBED_BATCH_SIZE < chunks.length) await new Promise((r) => setTimeout(r, 500));
 		} catch (err) {
-			console.error(`   ❌ 批次 ${i} 处理失败:`, err.message);
+			console.error(`批次 ${i} 处理失败:`, err.message);
 		}
 	}
 	return processed;
@@ -272,21 +294,17 @@ async function syncChunks(chunks) {
 
 async function main() {
 	const forceRebuild = process.argv.includes("--force");
-	console.log(`🚀 开始构建向量索引（${forceRebuild ? "全量重建" : "增量更新"}）...\n`);
 
 	const posts = await loadPosts();
-	if (posts.length === 0) { console.log("⚠️  没有找到可处理的文章"); return; }
+	if (posts.length === 0) return;
 
 	const manifest = loadManifest();
 
 	if (forceRebuild) {
-		console.log("🗑️  强制全量重建，清空旧索引...");
 		await deleteIndex();
 		await createIndex();
 
 		const allChunks = posts.flatMap((p) => buildChunksForPost(p));
-		console.log(`✂️  切分为 ${allChunks.length} 个段落`);
-
 		const processed = await syncChunks(allChunks);
 
 		const newManifest = {};
@@ -294,7 +312,7 @@ async function main() {
 			newManifest[post.slug] = { hash: post.hash, chunkIds: buildChunksForPost(post).map((c) => c.id) };
 		}
 		saveManifest(newManifest);
-		console.log(`\n🎉 全量重建完成！共上传 ${processed} 个向量`);
+		console.log(`全量重建完成，共上传 ${processed} 个向量`);
 		return;
 	}
 
@@ -306,39 +324,31 @@ async function main() {
 	const changed = posts.filter((p) => manifestSlugs.has(p.slug) && manifest[p.slug].hash !== p.hash);
 	const deleted = [...manifestSlugs].filter((s) => !currentSlugs.has(s));
 
-	console.log(`\n📋 变化检测：新增 ${added.length} 篇，修改 ${changed.length} 篇，删除 ${deleted.length} 篇`);
-
 	if (added.length === 0 && changed.length === 0 && deleted.length === 0) {
-		console.log("✨ 没有变化，跳过更新");
+		console.log("没有变化，跳过更新");
 		return;
 	}
 
 	if (deleted.length > 0) {
-		console.log(`\n🗑️  删除 ${deleted.length} 篇已移除文章的向量...`);
 		const ids = deleted.flatMap((slug) => manifest[slug].chunkIds || []);
 		await deleteVectorsByIds(ids);
 		for (const slug of deleted) delete manifest[slug];
-		console.log(`   已删除 ${ids.length} 个向量`);
 	}
 
 	if (changed.length > 0) {
-		console.log(`\n🗑️  删除 ${changed.length} 篇修改文章的旧向量...`);
 		const ids = changed.flatMap((p) => manifest[p.slug].chunkIds || []);
 		await deleteVectorsByIds(ids);
-		console.log(`   已删除 ${ids.length} 个旧向量`);
 	}
 
 	const toProcess = [...added, ...changed];
 	if (toProcess.length > 0) {
 		const newChunks = toProcess.flatMap((p) => buildChunksForPost(p));
-		console.log(`\n✂️  切分为 ${newChunks.length} 个段落（来自 ${toProcess.length} 篇文章）`);
-
 		const processed = await syncChunks(newChunks);
 
 		for (const post of toProcess) {
 			manifest[post.slug] = { hash: post.hash, chunkIds: buildChunksForPost(post).map((c) => c.id) };
 		}
-		console.log(`\n🎉 增量更新完成！新增/更新 ${processed} 个向量`);
+		console.log(`增量更新完成，新增/更新 ${processed} 个向量`);
 	}
 
 	saveManifest(manifest);

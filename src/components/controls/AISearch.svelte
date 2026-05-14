@@ -2,11 +2,12 @@
 import { marked } from "marked";
 import { onMount, tick } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
+import { aiSearchConfig } from "@/config";
 
 interface Message {
 	role: "user" | "assistant";
 	content: string;
-	refs?: { title: string; path: string; excerpt: string }[];
+	refs?: { title: string; path: string; published?: string; excerpt: string }[];
 	streaming?: boolean;
 }
 
@@ -27,6 +28,7 @@ let isLoading = $state(false);
 let messagesEl: HTMLDivElement;
 let inputEl: HTMLInputElement;
 let abortCtrl: AbortController | null = null;
+let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 let sessionId = $state("");
 let sessionList = $state<SessionMeta[]>([]);
 let showSessionList = $state(false);
@@ -204,7 +206,7 @@ async function send() {
 			throw new Error(errMsg);
 		}
 
-		const reader = res.body?.getReader();
+		reader = res.body?.getReader() ?? null;
 		if (!reader) throw new Error("无法读取响应流");
 
 		const decoder = new TextDecoder();
@@ -255,6 +257,7 @@ async function send() {
 		messages = [...messages];
 		isLoading = false;
 		abortCtrl = null;
+		reader = null;
 		scrollToBottom();
 		saveCurrentSession();
 	}
@@ -262,6 +265,7 @@ async function send() {
 
 function stop() {
 	abortCtrl?.abort();
+	reader?.cancel().catch(() => {});
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -327,7 +331,7 @@ onMount(() => {
             class="ai-avatar-sm"
           />
           <span class="font-bold text-lg">喵墩</span>
-          <span class="text-xs text-50 ml-1">基于博客内容回答</span>
+          <span class="text-xs text-50 ml-1">{aiSearchConfig.modelName}</span>
         </div>
         <div class="flex items-center gap-1">
           {#if sessionList.length > 0}
@@ -337,7 +341,7 @@ onMount(() => {
               onclick={() => (showSessionList = !showSessionList)}
               title="历史会话"
             >
-              <Icon icon="material-symbols:history-outline" />
+              <Icon icon="material-symbols:history" />
             </button>
           {/if}
           <button class="ai-icon-btn" onclick={startNewSession} title="新建会话">
@@ -382,13 +386,13 @@ onMount(() => {
         {#if messages.length === 0}
           <div class="ai-empty">
             <Icon icon="material-symbols:robot-2-outline" size="2xl" />
-            <p class="mt-3 text-50">有什么想问的？我会基于博客内容来回答。</p>
+            <p class="mt-3 text-50">有什么想问的？我会基于博客内容来回答的喵~</p>
             <div class="ai-suggestions">
               <button onclick={() => { inputVal = "介绍一下这个博客的技术栈"; send(); }}>
                 博客的技术栈是什么？
               </button>
-              <button onclick={() => { inputVal = "最近写了哪些文章？"; send(); }}>
-                最近写了哪些文章？
+              <button onclick={() => { inputVal = "介绍一下自己"; send(); }}>
+                介绍一下自己
               </button>
             </div>
           </div>
@@ -417,6 +421,9 @@ onMount(() => {
                     <a href={ref.path} class="ai-ref-link" onclick={() => (isOpen = false)}>
                       <Icon icon="material-symbols:article-outline" size="sm" />
                       <span>{ref.title}</span>
+                      {#if ref.published}
+                        <span class="ai-ref-date">{ref.published}</span>
+                      {/if}
                     </a>
                   {/each}
                 </div>
@@ -814,6 +821,12 @@ onMount(() => {
   .ai-ref-link:hover {
     background: oklch(0.5 0 0 / 0.08);
   }
+  .ai-ref-date {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--text-30, #aaa);
+    white-space: nowrap;
+  }
 
   .ai-input-area {
     display: flex;
@@ -878,7 +891,7 @@ onMount(() => {
     }
     .ai-panel {
       max-width: none;
-      height: 92vh;
+      height: 78vh;
       max-height: none;
       border-radius: 1rem 1rem 0 0;
     }

@@ -1,3 +1,5 @@
+import { aiSearchConfig } from "./config/aiSearchConfig.ts";
+
 export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
@@ -248,13 +250,25 @@ const AI_HEADERS = {
 	"Access-Control-Allow-Headers": "Content-Type",
 };
 
-// 判断是否使用第三方 API（四个变量齐备才启用）
+// 获取配置：非敏感项从 aiSearchConfig 读取，仅 API Key 从环境变量读取
+function getAiConfig(env) {
+	return {
+		apiUrl: aiSearchConfig.apiUrl,
+		apiKey: env.AI_API_KEY,
+		embeddingModel: aiSearchConfig.embeddingModel,
+		chatModel: aiSearchConfig.modelName,
+		vectorizeDim: aiSearchConfig.vectorizeDim,
+	};
+}
+
+// 判断是否使用第三方 API（config 参数和 API Key 都不能为空）
 function useThirdParty(env) {
 	return !!(
-		env.AI_API_URL &&
 		env.AI_API_KEY &&
-		env.AI_EMBEDDING_MODEL &&
-		env.AI_API_MODEL
+		aiSearchConfig.apiUrl &&
+		aiSearchConfig.embeddingModel &&
+		aiSearchConfig.modelName &&
+		aiSearchConfig.vectorizeDim
 	);
 }
 
@@ -270,17 +284,18 @@ function buildApiUrl(base, suffix) {
 
 // 调用 embedding API，返回向量数组
 async function getEmbedding(env, text) {
+	const cfg = getAiConfig(env);
 	if (useThirdParty(env)) {
-		const res = await fetch(buildApiUrl(env.AI_API_URL, "/v1/embeddings"), {
+		const res = await fetch(buildApiUrl(cfg.apiUrl, "/v1/embeddings"), {
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${env.AI_API_KEY}`,
+				Authorization: `Bearer ${cfg.apiKey}`,
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-				model: env.AI_EMBEDDING_MODEL,
+				model: cfg.embeddingModel,
 				input: text,
-				dimensions: Number(env.VECTORIZE_DIM) || 1024,
+				dimensions: cfg.vectorizeDim,
 				encoding_format: "float",
 			}),
 		});
@@ -295,22 +310,20 @@ async function getEmbedding(env, text) {
 
 // 调用文本生成 API，返回 ReadableStream 或 Workers AI 响应
 async function generateAnswer(env, messages) {
+	const cfg = getAiConfig(env);
 	if (useThirdParty(env)) {
-		const res = await fetch(
-			buildApiUrl(env.AI_API_URL, "/v1/chat/completions"),
-			{
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${env.AI_API_KEY}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					model: env.AI_API_MODEL,
-					messages,
-					stream: true,
-				}),
+		const res = await fetch(buildApiUrl(cfg.apiUrl, "/v1/chat/completions"), {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${cfg.apiKey}`,
+				"Content-Type": "application/json",
 			},
-		);
+			body: JSON.stringify({
+				model: cfg.chatModel,
+				messages,
+				stream: true,
+			}),
+		});
 		if (!res.ok) throw new Error(`Chat API ${res.status}: ${await res.text()}`);
 		return { stream: res.body, isThirdParty: true };
 	}
@@ -382,45 +395,36 @@ async function handleAIChat(request, env) {
 		// 1. Embedding → Vectorize 检索
 		let context = "";
 		const articles = [];
-		try {
-			const queryVector = await getEmbedding(env, question);
-			if (queryVector && env.VECTORIZE) {
-				const results = await env.VECTORIZE.query(queryVector, {
-					topK: 10,
-					returnMetadata: true,
-				});
-				if (results.matches?.length > 0) {
-					console.log(
-						"Vectorize matches:",
-						results.matches.map((m) => ({
-							score: m.score,
-							title: m.metadata?.articleTitle,
-						})),
+
+		const queryVector = await getEmbedding(env, question);
+		if (queryVector && env.VECTORIZE) {
+			const results = await env.VECTORIZE.query(queryVector, {
+				topK: 10,
+				returnMetadata: true,
+			});
+			if (results.matches?.length > 0) {
+				const seenPaths = new Set();
+				const contextParts = [];
+				for (const match of results.matches) {
+					// 过滤低相似度结果
+					if (match.score < 0.2) continue;
+					const meta = match.metadata;
+					contextParts.push(
+						`【${meta.articleTitle} - ${meta.heading}】\n${meta.excerpt}`,
 					);
-					const seenPaths = new Set();
-					const contextParts = [];
-					for (const match of results.matches) {
-						// 过滤低相似度结果
-						if (match.score < 0.2) continue;
-						const meta = match.metadata;
-						contextParts.push(
-							`【${meta.articleTitle} - ${meta.heading}】\n${meta.excerpt}`,
-						);
-						if (!seenPaths.has(meta.articlePath)) {
-							seenPaths.add(meta.articlePath);
-							articles.push({
-								title: meta.articleTitle,
-								path: meta.articlePath,
-								excerpt: meta.excerpt,
-								score: match.score,
-							});
-						}
+					if (!seenPaths.has(meta.articlePath)) {
+						seenPaths.add(meta.articlePath);
+						articles.push({
+							title: meta.articleTitle,
+							path: meta.articlePath,
+							published: meta.published,
+							excerpt: meta.excerpt,
+							score: match.score,
+						});
 					}
-					context = contextParts.join("\n\n---\n\n");
 				}
+				context = contextParts.join("\n\n---\n\n");
 			}
-		} catch (err) {
-			console.warn("Embedding/retrieval skipped:", err.message);
 		}
 
 		const PERSONA = `# Role: 猫娘「喵墩」

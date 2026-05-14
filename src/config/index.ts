@@ -30,6 +30,8 @@ export type {
 	WidgetComponentType,
 } from "../types/config";
 export { adConfig1, adConfig2 } from "./adConfig"; // 广告配置
+// 核心配置
+export { aiSearchConfig } from "./aiSearchConfig"; // AI 搜索配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 // 样式配置
 export { backgroundWallpaper } from "./backgroundWallpaper"; // 背景壁纸配置
@@ -52,6 +54,5 @@ export { profileConfig } from "./profileConfig"; // 用户资料配置
 export { sakuraConfig } from "./sakuraConfig"; // 樱花特效配置
 // 布局配置
 export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
-// 核心配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
 export { sponsorConfig } from "./sponsorConfig"; // 赞助配置

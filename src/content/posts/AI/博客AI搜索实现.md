@@ -66,6 +66,74 @@ draft: false
 
 过滤条件：正文少于 50 字的段落丢弃（太短没有检索价值）。
 
+### 实现细节
+
+分块逻辑在 `scripts/build-vectorize-index.js` 的 `splitByHeadings()` 中：
+
+```javascript
+function splitByHeadings(content, articleTitle) {
+  const lines = content.split("\n");
+  const chunks = [];
+  let currentHeadingPath = [];
+  let currentContent = [];
+
+  function flush() {
+    const text = currentContent.join("\n").trim();
+    if (text.length < 50) return;
+    chunks.push({ heading: currentHeadingPath.join(" > ") || articleTitle, text });
+  }
+
+  for (const line of lines) {
+    const headingMatch = line.match(/^(#{1,4})\s+(.+)/);
+    if (headingMatch) {
+      flush();
+      currentContent = [];
+      const level = headingMatch[1].length;
+      const title = headingMatch[2].trim();
+      currentHeadingPath = currentHeadingPath.slice(0, level - 1);
+      currentHeadingPath[level - 1] = title;
+    } else {
+      currentContent.push(line);
+    }
+  }
+  flush();
+  return chunks;
+}
+```
+
+关键点：
+- 只识别 `#` ~ `####` 四级标题，遇到标题就切段
+- `currentHeadingPath` 维护层级路径，如 `缓存问题 > 缓存穿透 > 解决方案`
+- 每个 chunk 的 ID 由 `slug::heading` 哈希生成，保证同一章节始终对应同一向量 ID
+
+### 与 LangChain 递归分块的对比
+
+| 维度 | Heading 分块（本博客） | LangChain RecursiveCharacterTextSplitter |
+|---|---|---|
+| **切分依据** | 语义边界：Markdown 标题层级 | 字符边界：分隔符列表递归切分 |
+| **文档结构理解** | 理解章节层级关系 | 纯文本处理，无结构感知 |
+| **语义完整性** | 高，每个 chunk 对应完整小节 | 低，可能把一句话切成两半 |
+| **Chunk 大小控制** | 被动，取决于标题下内容多少 | 主动，可精确控制 `chunk_size` |
+| **超长处理** | 无，一个标题下几千字仍作为一个 chunk | 有，超长自动继续递归切分 |
+| **元信息注入** | 自动注入文章标题、分类、标签、章节路径 | 默认不注入，需额外处理 |
+| **实现复杂度** | 简单（正则匹配标题） | 中等（递归逻辑 + 分隔符管理） |
+| **适用场景** | 技术文档、博客等结构清晰的 Markdown | 小说、散文、无结构文本 |
+
+LangChain 递归分块的核心逻辑（伪代码）：
+
+```python
+separators = ["\n\n", "\n", ". ", " ", ""]  # 从大到小
+for sep in separators:
+    chunks = text.split(sep)
+    if all(len(c) <= chunk_size for c in chunks):
+        break
+    # 太长的继续用更小的分隔符递归切分
+```
+
+**本博客方案的潜在问题**：如果一个标题下的内容非常长（比如一个 `#` 下面有几千字），生成的 chunk 会很大，可能导致 embedding 质量下降、检索粒度太粗。
+
+**改进方向**：先按 Heading 切分保留语义边界，再对超长段落做二次字符切分，同时让子 chunk 继承父标题路径。
+
 ## 向量化与存储
 
 ### 构建脚本
@@ -98,7 +166,7 @@ node scripts/build-vectorize-index.js --force
 
 配置在 `.env` 中：
 
-```env
+```bash
 # 第三方 embedding API（可选）
 # 格式：OpenAI 兼容的 embeddings 接口，目前我选择的是魔搭社区的 Qwen3-Embedding-8B
 # 原因很简单免费
