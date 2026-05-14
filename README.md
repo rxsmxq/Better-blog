@@ -43,6 +43,16 @@ pnpm build
 
 # 预览构建产物
 pnpm preview
+
+## 开发测试
+# 构建AI索引
+pnpm build-index
+
+# 登录Cloudflare Workers AI
+npx wrangler login
+
+# 构建到cf测试
+npx wrangler deploy
 ```
 
 构建流程为三步：图标生成 → `astro build` → `pagefind --site dist`。

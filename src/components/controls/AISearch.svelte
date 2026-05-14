@@ -10,6 +10,16 @@ interface Message {
 	streaming?: boolean;
 }
 
+interface SessionMeta {
+	id: string;
+	title: string;
+	updatedAt: number;
+}
+
+const STORAGE_SESSIONS_KEY = "ai-chat:sessions";
+const STORAGE_SESSION_PREFIX = "ai-chat:session:";
+const MAX_SESSIONS = 20;
+
 let isOpen = $state(false);
 let inputVal = $state("");
 let messages = $state<Message[]>([]);
@@ -17,8 +27,116 @@ let isLoading = $state(false);
 let messagesEl: HTMLDivElement;
 let inputEl: HTMLInputElement;
 let abortCtrl: AbortController | null = null;
+let sessionId = $state("");
+let sessionList = $state<SessionMeta[]>([]);
+let showSessionList = $state(false);
 
-// 打开/关闭面板
+function generateSessionId(): string {
+	return `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getSessionTitle(msgs: Message[]): string {
+	const firstUser = msgs.find((m) => m.role === "user");
+	if (!firstUser) return "新对话";
+	return firstUser.content.length > 20
+		? `${firstUser.content.slice(0, 20)}...`
+		: firstUser.content;
+}
+
+function loadSessionListFromStorage(): SessionMeta[] {
+	try {
+		const raw = localStorage.getItem(STORAGE_SESSIONS_KEY);
+		return raw ? JSON.parse(raw) : [];
+	} catch {
+		return [];
+	}
+}
+
+function saveSessionListToStorage(list: SessionMeta[]) {
+	try {
+		localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(list));
+	} catch {}
+}
+
+function saveCurrentSession() {
+	if (!sessionId || messages.length === 0) return;
+	if (messages.some((m) => m.streaming)) return;
+	try {
+		localStorage.setItem(
+			STORAGE_SESSION_PREFIX + sessionId,
+			JSON.stringify(messages),
+		);
+		const existing = sessionList.find((s) => s.id === sessionId);
+		if (existing) {
+			existing.title = getSessionTitle(messages);
+			existing.updatedAt = Date.now();
+		} else {
+			sessionList.unshift({
+				id: sessionId,
+				title: getSessionTitle(messages),
+				updatedAt: Date.now(),
+			});
+		}
+		if (sessionList.length > MAX_SESSIONS) {
+			const removed = sessionList.splice(MAX_SESSIONS);
+			for (const s of removed) {
+				try {
+					localStorage.removeItem(STORAGE_SESSION_PREFIX + s.id);
+				} catch {}
+			}
+		}
+		sessionList = [...sessionList];
+		saveSessionListToStorage(sessionList);
+	} catch {}
+}
+
+function loadSessionMessages(id: string): Message[] {
+	try {
+		const raw = localStorage.getItem(STORAGE_SESSION_PREFIX + id);
+		return raw ? JSON.parse(raw) : [];
+	} catch {
+		return [];
+	}
+}
+
+function deleteSession(id: string) {
+	try {
+		localStorage.removeItem(STORAGE_SESSION_PREFIX + id);
+	} catch {}
+	sessionList = sessionList.filter((s) => s.id !== id);
+	saveSessionListToStorage(sessionList);
+	if (id === sessionId) {
+		startNewSession();
+	}
+}
+
+function startNewSession() {
+	saveCurrentSession();
+	sessionId = generateSessionId();
+	messages = [];
+	showSessionList = false;
+}
+
+function switchSession(id: string) {
+	if (id === sessionId) {
+		showSessionList = false;
+		return;
+	}
+	saveCurrentSession();
+	sessionId = id;
+	messages = loadSessionMessages(id);
+	showSessionList = false;
+	scrollToBottom();
+}
+
+function formatTime(ts: number): string {
+	const diff = Date.now() - ts;
+	if (diff < 60000) return "刚刚";
+	if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
+	if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
+	return `${Math.floor(diff / 86400000)} 天前`;
+}
+
 export function toggle() {
 	isOpen = !isOpen;
 	if (isOpen) {
@@ -30,7 +148,6 @@ function close() {
 	isOpen = false;
 }
 
-// 自动滚动到底部
 function scrollToBottom() {
 	tick().then(() => {
 		if (messagesEl) {
@@ -39,7 +156,6 @@ function scrollToBottom() {
 	});
 }
 
-// 渲染 markdown
 function renderMd(text: string): string {
 	try {
 		return marked.parse(text, { breaks: true }) as string;
@@ -48,7 +164,6 @@ function renderMd(text: string): string {
 	}
 }
 
-// 发送消息
 async function send() {
 	const q = inputVal.trim();
 	if (!q || isLoading) return;
@@ -60,7 +175,6 @@ async function send() {
 	isLoading = true;
 	abortCtrl = new AbortController();
 
-	// 添加 AI 消息占位
 	const aiIdx = messages.length;
 	messages = [
 		...messages,
@@ -69,7 +183,6 @@ async function send() {
 	scrollToBottom();
 
 	try {
-		// 构建历史消息（最近 6 条）
 		const history = messages
 			.slice(0, -1)
 			.slice(-6)
@@ -78,7 +191,7 @@ async function send() {
 		const res = await fetch("/api/ai-chat", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ question: q, history }),
+			body: JSON.stringify({ question: q, history, sessionId }),
 			signal: abortCtrl.signal,
 		});
 
@@ -113,7 +226,7 @@ async function send() {
 
 					if (data.type === "chunk") {
 						messages[aiIdx].content += data.text;
-						messages = [...messages]; // 触发响应式更新
+						messages = [...messages];
 						scrollToBottom();
 					} else if (data.type === "refs") {
 						messages[aiIdx].refs = data.articles;
@@ -143,31 +256,28 @@ async function send() {
 		isLoading = false;
 		abortCtrl = null;
 		scrollToBottom();
+		saveCurrentSession();
 	}
 }
 
-// 停止生成
 function stop() {
 	abortCtrl?.abort();
 }
 
-// 清空对话
-function clearChat() {
-	messages = [];
-}
-
-// 键盘事件
 function handleKeydown(e: KeyboardEvent) {
 	if (e.key === "Enter" && !e.shiftKey) {
 		e.preventDefault();
 		send();
 	}
 	if (e.key === "Escape") {
-		close();
+		if (showSessionList) {
+			showSessionList = false;
+		} else {
+			close();
+		}
 	}
 }
 
-// 点击遮罩关闭
 function handleOverlayClick(e: MouseEvent) {
 	if ((e.target as HTMLElement).classList.contains("ai-overlay")) {
 		close();
@@ -175,7 +285,15 @@ function handleOverlayClick(e: MouseEvent) {
 }
 
 onMount(() => {
-	// 全局快捷键 Ctrl+K 打开
+	sessionList = loadSessionListFromStorage();
+	if (sessionList.length > 0) {
+		const latest = sessionList[0];
+		sessionId = latest.id;
+		messages = loadSessionMessages(latest.id);
+	} else {
+		sessionId = generateSessionId();
+	}
+
 	const keyHandler = (e: KeyboardEvent) => {
 		if ((e.ctrlKey || e.metaKey) && e.key === "k") {
 			e.preventDefault();
@@ -184,11 +302,11 @@ onMount(() => {
 	};
 	window.addEventListener("keydown", keyHandler);
 
-	// 监听导航栏触发的事件
 	const toggleHandler = () => toggle();
 	window.addEventListener("toggle-ai-search", toggleHandler);
 
 	return () => {
+		saveCurrentSession();
 		window.removeEventListener("keydown", keyHandler);
 		window.removeEventListener("toggle-ai-search", toggleHandler);
 	};
@@ -203,21 +321,61 @@ onMount(() => {
       <!-- 标题栏 -->
       <div class="ai-header">
         <div class="flex items-center gap-2">
-          <Icon icon="material-symbols:smart-toy-outline" size="lg" />
-          <span class="font-bold text-lg">AI 搜索</span>
+          <img
+            src="/assets/images/aut.png"
+            alt="喵墩"
+            class="ai-avatar-sm"
+          />
+          <span class="font-bold text-lg">喵墩</span>
           <span class="text-xs text-50 ml-1">基于博客内容回答</span>
         </div>
         <div class="flex items-center gap-1">
-          {#if messages.length > 0}
-            <button class="ai-icon-btn" onclick={clearChat} title="清空对话">
-              <Icon icon="material-symbols:delete-sweep-outline" />
+          {#if sessionList.length > 0}
+            <button
+              class="ai-icon-btn"
+              class:ai-icon-btn-active={showSessionList}
+              onclick={() => (showSessionList = !showSessionList)}
+              title="历史会话"
+            >
+              <Icon icon="material-symbols:history-outline" />
             </button>
           {/if}
+          <button class="ai-icon-btn" onclick={startNewSession} title="新建会话">
+            <Icon icon="material-symbols:add-circle-outline" />
+          </button>
           <button class="ai-icon-btn" onclick={close} title="关闭">
             <Icon icon="material-symbols:close" />
           </button>
         </div>
       </div>
+
+      <!-- 历史会话列表 -->
+      {#if showSessionList}
+        <div class="ai-session-list">
+          {#each sessionList as sess}
+            <button
+              class="ai-session-item"
+              class:ai-session-item-active={sess.id === sessionId}
+              onclick={() => switchSession(sess.id)}
+            >
+              <div class="ai-session-info">
+                <span class="ai-session-title">{sess.title}</span>
+                <span class="ai-session-time">{formatTime(sess.updatedAt)}</span>
+              </div>
+              <span
+                class="ai-session-delete"
+                onclick={(e) => { e.stopPropagation(); deleteSession(sess.id); }}
+                title="删除会话"
+              >
+                <Icon icon="material-symbols:close" size="sm" />
+              </span>
+            </button>
+          {/each}
+          {#if sessionList.length === 0}
+            <div class="ai-session-empty">暂无历史会话</div>
+          {/if}
+        </div>
+      {/if}
 
       <!-- 消息列表 -->
       <div class="ai-messages" bind:this={messagesEl}>
@@ -242,7 +400,7 @@ onMount(() => {
               {#if msg.role === "user"}
                 <Icon icon="material-symbols:person-outline" />
               {:else}
-                <Icon icon="material-symbols:smart-toy-outline" />
+                <img src="/assets/images/aut.png" alt="喵墩" class="ai-msg-avatar-img" />
               {/if}
             </div>
             <div class="ai-msg-body">
@@ -369,6 +527,93 @@ onMount(() => {
     background: oklch(0.5 0 0 / 0.1);
     color: var(--text-90, #333);
   }
+  .ai-icon-btn-active {
+    background: oklch(0.5 0 0 / 0.1);
+    color: var(--primary);
+  }
+
+  .ai-session-list {
+    max-height: 12rem;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border-bottom: 1px solid oklch(0.85 0 0 / 0.2);
+    flex-shrink: 0;
+  }
+  :root.dark .ai-session-list {
+    border-bottom-color: oklch(0.3 0 0 / 0.3);
+  }
+
+  .ai-session-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .ai-session-item:hover {
+    background: oklch(0.5 0 0 / 0.08);
+  }
+  .ai-session-item-active {
+    background: oklch(0.5 0 0 / 0.1);
+  }
+
+  .ai-session-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .ai-session-title {
+    font-size: 0.85rem;
+    color: var(--text-90, #222);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  :root.dark .ai-session-title {
+    color: var(--text-90, #eee);
+  }
+
+  .ai-session-time {
+    font-size: 0.7rem;
+    color: var(--text-30, #aaa);
+    margin-top: 0.1rem;
+  }
+
+  .ai-session-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.3rem;
+    color: var(--text-30, #aaa);
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+  .ai-session-item:hover .ai-session-delete {
+    opacity: 1;
+  }
+  .ai-session-delete:hover {
+    background: oklch(0.5 0 0 / 0.1);
+    color: var(--text-70, #555);
+  }
+
+  .ai-session-empty {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-30, #aaa);
+  }
 
   .ai-messages {
     flex: 1;
@@ -440,6 +685,20 @@ onMount(() => {
   .ai-msg.user .ai-msg-avatar {
     background: var(--primary);
     color: white;
+  }
+
+  .ai-msg-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+  }
+
+  .ai-avatar-sm {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    object-fit: cover;
   }
 
   .ai-msg-body {

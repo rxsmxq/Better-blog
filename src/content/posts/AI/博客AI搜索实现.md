@@ -160,21 +160,23 @@ const results = await env.VECTORIZE.query(queryVector, {
 
 过滤 `score < 0.2` 的低相似度结果，去重后拼接上下文。
 
-### 3. Prompt 拼接
+### 3. Prompt 拼接与 system 注入防护
+
+系统提示（system prompt）决定了 AI 的人格和行为准则。如果用户通过构造请求在 `history` 中插入 `role: "system"` 的消息，就可能覆盖或绕过预设人格——这称为 **system 注入攻击**。
+
+防护措施：在拼接 messages 之前，过滤掉 history 中所有 `role === "system"` 的条目，确保只有服务端硬编码的 systemPrompt 生效：
 
 ```javascript
-const systemPrompt = `你是一个博客 AI 助手。根据以下博客内容回答用户问题。
+const safeHistory = history.filter((m) => m.role !== "system").slice(-6);
 
-规则：
-- 如果内容中有相关信息，基于内容回答，并在最后附上参考文章
-- 如果内容中没有相关信息，直接回答你知道的，并说明"以下回答不是来自博客内容"
-- 回答使用 Markdown 格式
-- 保持回答简洁明了
-- 使用中文回答
-
-博客内容：
-${context}`;
+const messages = [
+  { role: "system", content: systemPrompt },
+  ...safeHistory,
+  { role: "user", content: question },
+];
 ```
+
+当前人格设定为猫娘「喵墩」，系统提示包含完整的角色背景、语言规范、性格画像等，与博客检索规则拼接后传给 LLM。
 
 ### 4. 流式返回
 
@@ -203,6 +205,7 @@ data: {"type":"done"}                     ← 结束
 - **参考文章**：AI 回答下方显示可点击的原文链接
 - **多轮对话**：保留最近 6 条历史消息作为上下文
 - **Markdown 渲染**：使用 `marked` 库，支持代码块、列表、引用
+- **会话管理**：localStorage 持久化，支持新建、切换、删除、上限控制
 
 关键状态管理：
 
@@ -210,9 +213,153 @@ data: {"type":"done"}                     ← 结束
 let messages = $state<Message[]>([]);
 let isLoading = $state(false);
 let abortCtrl: AbortController | null = null;
+let sessionId = $state("");
+let sessionList = $state<SessionMeta[]>([]);
+let showSessionList = $state(false);
 ```
 
 流式读取使用 `ReadableStream` + `TextDecoder`，逐行解析 SSE data。
+
+### 会话管理
+
+#### 数据结构设计
+
+```typescript
+interface SessionMeta {
+  id: string;      // 会话唯一标识
+  title: string;   // 自动提取的第一条用户消息（前20字）
+  updatedAt: number; // 最后更新时间戳
+}
+```
+
+localStorage 存储策略：
+- `ai-chat:sessions` — 会话元数据列表（JSON 数组）
+- `ai-chat:session:{id}` — 单个会话的完整消息记录
+
+#### 新建会话
+
+标题栏「新建会话」按钮（`add-circle-outline` 图标），点击后：
+1. 保存当前会话到 localStorage
+2. 生成新的 `sessionId`
+3. 清空消息列表，开始新对话
+
+```typescript
+function startNewSession() {
+  saveCurrentSession();
+  sessionId = generateSessionId();
+  messages = [];
+  showSessionList = false;
+}
+```
+
+#### 历史会话列表
+
+标题栏「历史」按钮（`history-outline` 图标），点击展开/收起下拉面板：
+
+```svelte
+{#if showSessionList}
+  <div class="ai-session-list">
+    {#each sessionList as sess}
+      <button
+        class="ai-session-item"
+        class:ai-session-item-active={sess.id === sessionId}
+        onclick={() => switchSession(sess.id)}
+      >
+        <div class="ai-session-info">
+          <span class="ai-session-title">{sess.title}</span>
+          <span class="ai-session-time">{formatTime(sess.updatedAt)}</span>
+        </div>
+        <!-- 悬停显示删除按钮 -->
+        <span onclick={(e) => { e.stopPropagation(); deleteSession(sess.id); }}>
+          <Icon icon="material-symbols:close" size="sm" />
+        </span>
+      </button>
+    {/each}
+  </div>
+{/if}
+```
+
+#### 会话切换
+
+点击历史会话项切换到该会话，自动保存当前会话后加载目标会话的消息：
+
+```typescript
+function switchSession(id: string) {
+  if (id === sessionId) { showSessionList = false; return; }
+  saveCurrentSession();
+  sessionId = id;
+  messages = loadSessionMessages(id);
+  showSessionList = false;
+  scrollToBottom();
+}
+```
+
+#### 会话删除
+
+鼠标悬停会话项时出现删除按钮（`close` 图标），删除后若删除的是当前会话则自动新建会话：
+
+```typescript
+function deleteSession(id: string) {
+  localStorage.removeItem(STORAGE_SESSION_PREFIX + id);
+  sessionList = sessionList.filter((s) => s.id !== id);
+  saveSessionListToStorage(sessionList);
+  if (id === sessionId) {
+    startNewSession();
+  }
+}
+```
+
+#### 会话上限与自动清理
+
+最多保留 **20 个会话**，超出时自动清理最旧的：
+
+```typescript
+const MAX_SESSIONS = 20;
+
+// 保存时检查上限
+if (sessionList.length > MAX_SESSIONS) {
+  const removed = sessionList.splice(MAX_SESSIONS);
+  for (const s of removed) {
+    localStorage.removeItem(STORAGE_SESSION_PREFIX + s.id);
+  }
+}
+```
+
+#### 自动保存时机
+
+- **每次 AI 回复完成后**：`send()` 的 `finally` 块中调用 `saveCurrentSession()`
+- **组件卸载时**：`onMount` 返回的清理函数中保存
+- **新建/切换会话前**：先保存当前会话再操作
+
+```typescript
+function saveCurrentSession() {
+  if (!sessionId || messages.length === 0) return;
+  if (messages.some((m) => m.streaming)) return; // 流式中不保存
+  localStorage.setItem(STORAGE_SESSION_PREFIX + sessionId, JSON.stringify(messages));
+  // 更新 sessionList 元数据...
+}
+```
+
+#### 初始化恢复
+
+组件挂载时自动恢复最近会话：
+
+```typescript
+onMount(() => {
+  sessionList = loadSessionListFromStorage();
+  if (sessionList.length > 0) {
+    const latest = sessionList[0];
+    sessionId = latest.id;
+    messages = loadSessionMessages(latest.id);
+  } else {
+    sessionId = generateSessionId();
+  }
+  // ...
+  return () => {
+    saveCurrentSession(); // 卸载时保存
+  };
+});
+```
 
 ## 敏感配置处理
 
