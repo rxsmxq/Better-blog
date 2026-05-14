@@ -878,11 +878,67 @@ onMount(() => {
     }
     .ai-panel {
       max-width: none;
-      height: 90vh;
+      height: 92vh;
+      max-height: none;
       border-radius: 1rem 1rem 0 0;
     }
+    .ai-header {
+      padding: 0.6rem 0.75rem;
+    }
+    .ai-header .text-xs {
+      display: none;
+    }
+    .ai-messages {
+      padding: 0.75rem;
+      gap: 0.75rem;
+    }
     .ai-msg-body {
-      max-width: 90%;
+      max-width: 88%;
+    }
+    .ai-msg-content {
+      font-size: 0.95rem;
+      padding: 0.5rem 0.7rem;
+    }
+    .ai-input-area {
+      padding: 0.6rem 0.75rem;
+      gap: 0.4rem;
+    }
+    .ai-input {
+      font-size: 16px; /* 防止 iOS 缩放 */
+      padding: 0.6rem 0.7rem;
+    }
+    .ai-send-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .ai-icon-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .ai-suggestions {
+      gap: 0.4rem;
+    }
+    .ai-suggestions button {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.6rem;
+    }
+    .ai-session-list {
+      max-height: 10rem;
+    }
+    .ai-session-delete {
+      opacity: 1;
+      width: 1.75rem;
+      height: 1.75rem;
+      min-width: 32px;
+      min-height: 32px;
+    }
+    .ai-msg-content :global(pre) {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.5rem;
     }
   }
 </style>

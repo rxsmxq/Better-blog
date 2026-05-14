@@ -48,6 +48,10 @@ const tags = await getTagList();
 				</button>
 			)}
 
+			<button class="dock-btn" id="dock-ai-search-btn" aria-label="AI 搜索" type="button" data-tooltip="AI 搜索">
+				<Icon name="material-symbols:smart-toy-outline" class="text-xl" />
+			</button>
+
 			<button class="dock-btn" id="dock-search-btn" aria-label={i18n(I18nKey.search)} type="button" data-tooltip={i18n(I18nKey.search)}>
 				<Icon name="material-symbols:search" class="text-xl" />
 			</button>
@@ -362,6 +366,14 @@ const tags = await getTagList();
 		document.getElementById("dock-comment-btn")?.addEventListener("click", (e) => {
 			e.stopPropagation();
 			document.getElementById("post-comments")?.scrollIntoView({ behavior: "smooth", block: "start" });
+		});
+
+		// AI 搜索
+		document.getElementById("dock-ai-search-btn")?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			window.dispatchEvent(new CustomEvent("toggle-ai-search"));
+			closeAllDrawers();
+			collapseDock();
 		});
 
 		function updateScrollDependent() {

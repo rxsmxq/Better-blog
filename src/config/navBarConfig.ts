@@ -55,12 +55,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		url: "/other/",
 		icon: "material-symbols:apps",
 		children: [
-			{
-				name: "AI 搜索",
-				url: "#",
-				icon: "material-symbols:smart-toy-outline",
-				action: "toggle-ai-search",
-			},
 			...(siteConfig.pages.collections ? [LinkPreset.Collections] : []),
 			{
 				name: "统计",
