@@ -1,0 +1,629 @@
+<script lang="ts">
+import { marked } from "marked";
+import { onMount, tick } from "svelte";
+import Icon from "@/components/common/Icon.svelte";
+
+interface Message {
+	role: "user" | "assistant";
+	content: string;
+	refs?: { title: string; path: string; excerpt: string }[];
+	streaming?: boolean;
+}
+
+let isOpen = $state(false);
+let inputVal = $state("");
+let messages = $state<Message[]>([]);
+let isLoading = $state(false);
+let messagesEl: HTMLDivElement;
+let inputEl: HTMLInputElement;
+let abortCtrl: AbortController | null = null;
+
+// 打开/关闭面板
+export function toggle() {
+	isOpen = !isOpen;
+	if (isOpen) {
+		tick().then(() => inputEl?.focus());
+	}
+}
+
+function close() {
+	isOpen = false;
+}
+
+// 自动滚动到底部
+function scrollToBottom() {
+	tick().then(() => {
+		if (messagesEl) {
+			messagesEl.scrollTop = messagesEl.scrollHeight;
+		}
+	});
+}
+
+// 渲染 markdown
+function renderMd(text: string): string {
+	try {
+		return marked.parse(text, { breaks: true }) as string;
+	} catch {
+		return text;
+	}
+}
+
+// 发送消息
+async function send() {
+	const q = inputVal.trim();
+	if (!q || isLoading) return;
+
+	inputVal = "";
+	messages = [...messages, { role: "user", content: q }];
+	scrollToBottom();
+
+	isLoading = true;
+	abortCtrl = new AbortController();
+
+	// 添加 AI 消息占位
+	const aiIdx = messages.length;
+	messages = [
+		...messages,
+		{ role: "assistant", content: "", streaming: true, refs: [] },
+	];
+	scrollToBottom();
+
+	try {
+		// 构建历史消息（最近 6 条）
+		const history = messages
+			.slice(0, -1)
+			.slice(-6)
+			.map((m) => ({ role: m.role, content: m.content }));
+
+		const res = await fetch("/api/ai-chat", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ question: q, history }),
+			signal: abortCtrl.signal,
+		});
+
+		if (!res.ok) {
+			let errMsg = `请求失败 (${res.status})`;
+			try {
+				const errBody = await res.json();
+				if (errBody.error) errMsg = errBody.error;
+			} catch {}
+			throw new Error(errMsg);
+		}
+
+		const reader = res.body?.getReader();
+		if (!reader) throw new Error("无法读取响应流");
+
+		const decoder = new TextDecoder();
+		let buffer = "";
+
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+
+			buffer += decoder.decode(value, { stream: true });
+			const lines = buffer.split("\n");
+			buffer = lines.pop() || "";
+
+			for (const line of lines) {
+				if (!line.startsWith("data: ")) continue;
+				const json = line.slice(6);
+				try {
+					const data = JSON.parse(json);
+
+					if (data.type === "chunk") {
+						messages[aiIdx].content += data.text;
+						messages = [...messages]; // 触发响应式更新
+						scrollToBottom();
+					} else if (data.type === "refs") {
+						messages[aiIdx].refs = data.articles;
+						messages = [...messages];
+					} else if (data.type === "error") {
+						messages[aiIdx].content += `\n\n> 错误：${data.error}`;
+						messages = [...messages];
+					} else if (data.type === "done") {
+						// 流结束
+					}
+				} catch {
+					// 忽略解析错误
+				}
+			}
+		}
+	} catch (err: unknown) {
+		const e = err instanceof Error ? err : new Error(String(err));
+		if (e.name === "AbortError") {
+			messages[aiIdx].content += "\n\n> *(已取消)*";
+		} else {
+			messages[aiIdx].content = `抱歉，请求出错了：${e.message}。请稍后再试。`;
+		}
+		messages = [...messages];
+	} finally {
+		messages[aiIdx].streaming = false;
+		messages = [...messages];
+		isLoading = false;
+		abortCtrl = null;
+		scrollToBottom();
+	}
+}
+
+// 停止生成
+function stop() {
+	abortCtrl?.abort();
+}
+
+// 清空对话
+function clearChat() {
+	messages = [];
+}
+
+// 键盘事件
+function handleKeydown(e: KeyboardEvent) {
+	if (e.key === "Enter" && !e.shiftKey) {
+		e.preventDefault();
+		send();
+	}
+	if (e.key === "Escape") {
+		close();
+	}
+}
+
+// 点击遮罩关闭
+function handleOverlayClick(e: MouseEvent) {
+	if ((e.target as HTMLElement).classList.contains("ai-overlay")) {
+		close();
+	}
+}
+
+onMount(() => {
+	// 全局快捷键 Ctrl+K 打开
+	const keyHandler = (e: KeyboardEvent) => {
+		if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+			e.preventDefault();
+			toggle();
+		}
+	};
+	window.addEventListener("keydown", keyHandler);
+
+	// 监听导航栏触发的事件
+	const toggleHandler = () => toggle();
+	window.addEventListener("toggle-ai-search", toggleHandler);
+
+	return () => {
+		window.removeEventListener("keydown", keyHandler);
+		window.removeEventListener("toggle-ai-search", toggleHandler);
+	};
+});
+</script>
+
+{#if isOpen}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="ai-overlay" onclick={handleOverlayClick}>
+    <div class="ai-panel">
+      <!-- 标题栏 -->
+      <div class="ai-header">
+        <div class="flex items-center gap-2">
+          <Icon icon="material-symbols:smart-toy-outline" size="lg" />
+          <span class="font-bold text-lg">AI 搜索</span>
+          <span class="text-xs text-50 ml-1">基于博客内容回答</span>
+        </div>
+        <div class="flex items-center gap-1">
+          {#if messages.length > 0}
+            <button class="ai-icon-btn" onclick={clearChat} title="清空对话">
+              <Icon icon="material-symbols:delete-sweep-outline" />
+            </button>
+          {/if}
+          <button class="ai-icon-btn" onclick={close} title="关闭">
+            <Icon icon="material-symbols:close" />
+          </button>
+        </div>
+      </div>
+
+      <!-- 消息列表 -->
+      <div class="ai-messages" bind:this={messagesEl}>
+        {#if messages.length === 0}
+          <div class="ai-empty">
+            <Icon icon="material-symbols:robot-2-outline" size="2xl" />
+            <p class="mt-3 text-50">有什么想问的？我会基于博客内容来回答。</p>
+            <div class="ai-suggestions">
+              <button onclick={() => { inputVal = "介绍一下这个博客的技术栈"; send(); }}>
+                博客的技术栈是什么？
+              </button>
+              <button onclick={() => { inputVal = "最近写了哪些文章？"; send(); }}>
+                最近写了哪些文章？
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        {#each messages as msg, i}
+          <div class="ai-msg {msg.role}">
+            <div class="ai-msg-avatar">
+              {#if msg.role === "user"}
+                <Icon icon="material-symbols:person-outline" />
+              {:else}
+                <Icon icon="material-symbols:smart-toy-outline" />
+              {/if}
+            </div>
+            <div class="ai-msg-body">
+              <div class="ai-msg-content prose-sm">
+                {@html renderMd(msg.content)}
+                {#if msg.streaming}
+                  <span class="ai-cursor"></span>
+                {/if}
+              </div>
+              {#if msg.refs && msg.refs.length > 0}
+                <div class="ai-refs">
+                  <div class="ai-refs-title">参考文章</div>
+                  {#each msg.refs as ref}
+                    <a href={ref.path} class="ai-ref-link" onclick={() => (isOpen = false)}>
+                      <Icon icon="material-symbols:article-outline" size="sm" />
+                      <span>{ref.title}</span>
+                    </a>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="ai-input-area">
+        <input
+          bind:this={inputEl}
+          bind:value={inputVal}
+          onkeydown={handleKeydown}
+          placeholder="输入你的问题..."
+          disabled={isLoading}
+          class="ai-input"
+        />
+        {#if isLoading}
+          <button class="ai-send-btn" onclick={stop} title="停止生成">
+            <Icon icon="material-symbols:stop-circle-outline" />
+          </button>
+        {:else}
+          <button
+            class="ai-send-btn"
+            onclick={send}
+            disabled={!inputVal.trim()}
+            title="发送"
+          >
+            <Icon icon="material-symbols:send-outline" />
+          </button>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .ai-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.15s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .ai-panel {
+    width: 100%;
+    max-width: 42rem;
+    height: 80vh;
+    max-height: 600px;
+    background: var(--float-panel-bg, #fff);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.2s ease;
+  }
+
+  :root.dark .ai-panel {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  }
+
+  .ai-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid oklch(0.85 0 0 / 0.2);
+    flex-shrink: 0;
+  }
+
+  :root.dark .ai-header {
+    border-bottom-color: oklch(0.3 0 0 / 0.3);
+  }
+
+  .ai-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-50, #888);
+    transition: all 0.15s;
+  }
+  .ai-icon-btn:hover {
+    background: oklch(0.5 0 0 / 0.1);
+    color: var(--text-90, #333);
+  }
+
+  .ai-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .ai-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-30, #aaa);
+  }
+
+  .ai-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: center;
+  }
+  .ai-suggestions button {
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(0.8 0 0 / 0.3);
+    background: transparent;
+    color: var(--text-70, #555);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ai-suggestions button:hover {
+    background: oklch(0.5 0 0 / 0.08);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .ai-msg {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .ai-msg.user {
+    flex-direction: row-reverse;
+  }
+
+  .ai-msg-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+  .ai-msg.assistant .ai-msg-avatar {
+    background: oklch(0.93 0 0);
+    color: oklch(0.3 0 0);
+  }
+  :root.dark .ai-msg.assistant .ai-msg-avatar {
+    background: oklch(0.25 0 0);
+    color: oklch(0.8 0 0);
+  }
+  .ai-msg.user .ai-msg-avatar {
+    background: var(--primary);
+    color: white;
+  }
+
+  .ai-msg-body {
+    max-width: 80%;
+    min-width: 0;
+  }
+
+  .ai-msg-content {
+    padding: 0.6rem 0.9rem;
+    border-radius: 0.75rem;
+    line-height: 1.6;
+    word-break: break-word;
+    font-size: 0.9rem;
+  }
+  .ai-msg.assistant .ai-msg-content {
+    background: oklch(0.96 0 0);
+    color: var(--text-90, #222);
+  }
+  :root.dark .ai-msg.assistant .ai-msg-content {
+    background: oklch(0.2 0 0);
+    color: var(--text-90, #eee);
+  }
+  .ai-msg.user .ai-msg-content {
+    background: var(--primary);
+    color: white;
+  }
+
+  /* markdown 内容样式 */
+  .ai-msg-content :global(p) {
+    margin: 0.3em 0;
+  }
+  .ai-msg-content :global(p:first-child) {
+    margin-top: 0;
+  }
+  .ai-msg-content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .ai-msg-content :global(code) {
+    background: oklch(0.9 0 0 / 0.6);
+    padding: 0.1em 0.3em;
+    border-radius: 0.25em;
+    font-size: 0.85em;
+  }
+  :root.dark .ai-msg-content :global(code) {
+    background: oklch(0.3 0 0 / 0.5);
+  }
+  .ai-msg-content :global(pre) {
+    background: oklch(0.15 0 0);
+    color: oklch(0.85 0 0);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 0.4em 0;
+    font-size: 0.8rem;
+  }
+  .ai-msg-content :global(pre code) {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  .ai-msg-content :global(ul),
+  .ai-msg-content :global(ol) {
+    padding-left: 1.2em;
+    margin: 0.3em 0;
+  }
+  .ai-msg-content :global(blockquote) {
+    border-left: 3px solid var(--primary);
+    padding-left: 0.6em;
+    margin: 0.3em 0;
+    opacity: 0.7;
+  }
+
+  .ai-cursor {
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    background: var(--primary);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.8s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .ai-refs {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid oklch(0.85 0 0 / 0.3);
+  }
+  :root.dark .ai-refs {
+    border-top-color: oklch(0.3 0 0 / 0.3);
+  }
+  .ai-refs-title {
+    font-size: 0.7rem;
+    color: var(--text-30, #aaa);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .ai-ref-link {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--primary);
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .ai-ref-link:hover {
+    background: oklch(0.5 0 0 / 0.08);
+  }
+
+  .ai-input-area {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid oklch(0.85 0 0 / 0.2);
+    flex-shrink: 0;
+  }
+  :root.dark .ai-input-area {
+    border-top-color: oklch(0.3 0 0 / 0.3);
+  }
+
+  .ai-input {
+    flex: 1;
+    border: 1px solid oklch(0.8 0 0 / 0.3);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    background: transparent;
+    color: var(--text-90, #222);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .ai-input:focus {
+    border-color: var(--primary);
+  }
+  .ai-input::placeholder {
+    color: var(--text-30, #aaa);
+  }
+  :root.dark .ai-input {
+    border-color: oklch(0.35 0 0 / 0.4);
+    color: var(--text-90, #eee);
+  }
+
+  .ai-send-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.75rem;
+    border: none;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  .ai-send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .ai-send-btn:not(:disabled):hover {
+    opacity: 0.85;
+  }
+
+  @media (max-width: 640px) {
+    .ai-overlay {
+      padding: 0;
+      align-items: flex-end;
+    }
+    .ai-panel {
+      max-width: none;
+      height: 90vh;
+      border-radius: 1rem 1rem 0 0;
+    }
+    .ai-msg-body {
+      max-width: 90%;
+    }
+  }
+</style>

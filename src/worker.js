@@ -12,8 +12,16 @@ export default {
 			return handleGuestbook(request, env, url);
 		}
 
+		// AI 搜索 API
+		if (url.pathname === "/api/ai-chat") {
+			return handleAIChat(request, env);
+		}
+
 		// 其他请求返回静态资源
-		return env.ASSETS.fetch(request);
+		if (env.ASSETS) {
+			return env.ASSETS.fetch(request);
+		}
+		return new Response("Not Found", { status: 404 });
 	},
 };
 
@@ -230,4 +238,288 @@ async function handleVote(env, id, request) {
 	await env.VISITOR_KV.put(`guestbook:msg:${id}`, JSON.stringify(message));
 
 	return Response.json(message, { headers: GB_HEADERS });
+}
+
+// ── AI 搜索 API ──────────────────────────────────────
+
+const AI_HEADERS = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "POST, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type",
+};
+
+// 判断是否使用第三方 API（四个变量齐备才启用）
+function useThirdParty(env) {
+	return !!(
+		env.AI_API_URL &&
+		env.AI_API_KEY &&
+		env.AI_EMBEDDING_MODEL &&
+		env.AI_API_MODEL
+	);
+}
+
+// 拼接 base URL + path，自动去掉末尾的 /v1、/chat/completions 等
+function buildApiUrl(base, suffix) {
+	return (
+		base
+			.replace(/\/+$/, "")
+			.replace(/\/v1\/?$/, "")
+			.replace(/\/chat\/completions\/?$/, "") + suffix
+	);
+}
+
+// 调用 embedding API，返回向量数组
+async function getEmbedding(env, text) {
+	if (useThirdParty(env)) {
+		const res = await fetch(buildApiUrl(env.AI_API_URL, "/v1/embeddings"), {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${env.AI_API_KEY}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				model: env.AI_EMBEDDING_MODEL,
+				input: text,
+				dimensions: Number(env.VECTORIZE_DIM) || 1024,
+				encoding_format: "float",
+			}),
+		});
+		if (!res.ok)
+			throw new Error(`Embedding API ${res.status}: ${await res.text()}`);
+		const data = await res.json();
+		return data.data?.[0]?.embedding;
+	}
+	const result = await env.AI.run("@cf/baai/bge-base-en-v1.5", { text });
+	return result.data[0];
+}
+
+// 调用文本生成 API，返回 ReadableStream 或 Workers AI 响应
+async function generateAnswer(env, messages) {
+	if (useThirdParty(env)) {
+		const res = await fetch(
+			buildApiUrl(env.AI_API_URL, "/v1/chat/completions"),
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${env.AI_API_KEY}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					model: env.AI_API_MODEL,
+					messages,
+					stream: true,
+				}),
+			},
+		);
+		if (!res.ok) throw new Error(`Chat API ${res.status}: ${await res.text()}`);
+		return { stream: res.body, isThirdParty: true };
+	}
+	const result = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+		messages,
+		stream: true,
+	});
+	return { stream: result, isThirdParty: false };
+}
+
+// 从 SSE 流中读取文本（第三方 API OpenAI 格式）
+async function* readThirdPartyStream(stream) {
+	const reader = stream.getReader();
+	const decoder = new TextDecoder();
+	let buffer = "";
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		buffer += decoder.decode(value, { stream: true });
+		const lines = buffer.split("\n");
+		buffer = lines.pop();
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (!trimmed?.startsWith("data: ")) continue;
+			if (trimmed === "data: [DONE]") continue;
+			try {
+				const content = JSON.parse(trimmed.slice(6))?.choices?.[0]?.delta
+					?.content;
+				if (content) yield content;
+			} catch {}
+		}
+	}
+}
+
+// 从 Workers AI 流中读取文本
+async function* readWorkersAIStream(stream) {
+	const reader = stream.getReader();
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		if (value)
+			yield typeof value === "string" ? value : new TextDecoder().decode(value);
+	}
+}
+
+async function handleAIChat(request, env) {
+	if (request.method === "OPTIONS") {
+		return new Response(null, { headers: AI_HEADERS });
+	}
+	if (request.method !== "POST") {
+		return new Response("Method Not Allowed", {
+			status: 405,
+			headers: AI_HEADERS,
+		});
+	}
+
+	try {
+		const body = await request.json().catch(() => ({}));
+		const question = (body.question || "").trim();
+		const history = body.history || [];
+
+		if (!question) {
+			return Response.json(
+				{ error: "question is required" },
+				{ status: 400, headers: AI_HEADERS },
+			);
+		}
+
+		// 1. Embedding → Vectorize 检索
+		let context = "";
+		const articles = [];
+		try {
+			const queryVector = await getEmbedding(env, question);
+			if (queryVector && env.VECTORIZE) {
+				const results = await env.VECTORIZE.query(queryVector, {
+					topK: 10,
+					returnMetadata: true,
+				});
+				if (results.matches?.length > 0) {
+					console.log("Vectorize matches:", results.matches.map((m) => ({ score: m.score, title: m.metadata?.articleTitle })));
+					const seenPaths = new Set();
+					const contextParts = [];
+					for (const match of results.matches) {
+						// 过滤低相似度结果
+						if (match.score < 0.2) continue;
+						const meta = match.metadata;
+						contextParts.push(
+							`【${meta.articleTitle} - ${meta.heading}】\n${meta.excerpt}`,
+						);
+						if (!seenPaths.has(meta.articlePath)) {
+							seenPaths.add(meta.articlePath);
+							articles.push({
+								title: meta.articleTitle,
+								path: meta.articlePath,
+								excerpt: meta.excerpt,
+								score: match.score,
+							});
+						}
+					}
+					context = contextParts.join("\n\n---\n\n");
+				}
+			}
+		} catch (err) {
+			console.warn("Embedding/retrieval skipped:", err.message);
+		}
+
+		// 2. 构建 prompt
+		const systemPrompt = `你是一个博客 AI 助手。根据以下博客内容回答用户问题。
+
+规则：
+- 如果内容中有相关信息，基于内容回答，并在最后附上参考文章
+- 如果内容中没有相关信息，直接回答你知道的，并说明"以下回答不是来自博客内容"
+- 回答使用 Markdown 格式
+- 保持回答简洁明了，适合技术博客读者
+- 使用中文回答
+
+博客内容：
+${context || "（未检索到相关内容）"}`;
+
+		const messages = [
+			{ role: "system", content: systemPrompt },
+			...history.slice(-6),
+			{ role: "user", content: question },
+		];
+
+		// 3. 文本生成
+		let aiResult;
+		try {
+			aiResult = await generateAnswer(env, messages);
+		} catch (err) {
+			console.error("AI generation error:", err);
+			return Response.json(
+				{ error: `AI generation failed: ${err.message}` },
+				{ status: 500, headers: AI_HEADERS },
+			);
+		}
+
+		// 4. SSE 流式响应
+		const { readable, writable } = new TransformStream();
+		const writer = writable.getWriter();
+		const encoder = new TextEncoder();
+
+		(async () => {
+			try {
+				if (articles.length > 0) {
+					await writer.write(
+						encoder.encode(
+							`data: ${JSON.stringify({ type: "refs", articles })}\n\n`,
+						),
+					);
+				}
+
+				const streamGen = aiResult.isThirdParty
+					? readThirdPartyStream(aiResult.stream)
+					: readWorkersAIStream(aiResult.stream);
+
+				for await (const text of streamGen) {
+					await writer.write(
+						encoder.encode(
+							`data: ${JSON.stringify({ type: "chunk", text })}\n\n`,
+						),
+					);
+				}
+
+				// Workers AI 非流式回退
+				if (!aiResult.isThirdParty && aiResult.stream?.response) {
+					const text =
+						typeof aiResult.stream.response === "string"
+							? aiResult.stream.response
+							: JSON.stringify(aiResult.stream.response);
+					await writer.write(
+						encoder.encode(
+							`data: ${JSON.stringify({ type: "chunk", text })}\n\n`,
+						),
+					);
+				}
+
+				await writer.write(
+					encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`),
+				);
+			} catch (err) {
+				console.error("Stream error:", err);
+				try {
+					await writer.write(
+						encoder.encode(
+							`data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`,
+						),
+					);
+				} catch {}
+			} finally {
+				try {
+					await writer.close();
+				} catch {}
+			}
+		})();
+
+		return new Response(readable, {
+			headers: {
+				...AI_HEADERS,
+				"Content-Type": "text/event-stream",
+				"Cache-Control": "no-cache",
+				Connection: "keep-alive",
+			},
+		});
+	} catch (err) {
+		console.error("AI Chat error:", err);
+		return Response.json(
+			{ error: err.message || "Internal server error" },
+			{ status: 500, headers: AI_HEADERS },
+		);
+	}
 }

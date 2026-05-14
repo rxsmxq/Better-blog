@@ -54,20 +54,32 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 		</button>
 		<div class="dropdown-menu" data-dropdown-menu>
 			<DropdownPanel class="dropdown-content">
-				{processedLink.children?.map((child, index) => (
-					<DropdownItem
-						href={child.external ? child.url : url(child.url)}
-						target={child.external ? "_blank" : undefined}
-						isLast={index === (processedLink.children?.length || 0) - 1}
-						class="dropdown-item"
-					>
-						{child.icon && <Icon name={child.icon} is:inline class="text-[1.25rem] mr-3 navbar-icon" />}
-						<span>{child.name}</span>
-						{child.external && (
-							<Icon name="fa7-solid:arrow-up-right-from-square" is:inline class="text-[0.75rem] text-black/25 dark:text-white/25 ml-auto" />
-						)}
-					</DropdownItem>
-				))}
+				{processedLink.children?.map((child, index) => {
+					const isLast = index === (processedLink.children?.length || 0) - 1;
+					return child.action ? (
+						<button
+							type="button"
+							class={`dropdown-item action-item flex transition whitespace-nowrap items-center justify-start! w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95 ${isLast ? "" : "mb-0.5"}`}
+							data-action={child.action}
+						>
+							{child.icon && <Icon name={child.icon} is:inline class="text-[1.25rem] mr-3 navbar-icon" />}
+							<span>{child.name}</span>
+						</button>
+					) : (
+						<DropdownItem
+							href={child.external ? child.url : url(child.url)}
+							target={child.external ? "_blank" : undefined}
+							isLast={isLast}
+							class="dropdown-item"
+						>
+							{child.icon && <Icon name={child.icon} is:inline class="text-[1.25rem] mr-3 navbar-icon" />}
+							<span>{child.name}</span>
+							{child.external && (
+								<Icon name="fa7-solid:arrow-up-right-from-square" is:inline class="text-[0.75rem] text-black/25 dark:text-white/25 ml-auto" />
+							)}
+						</DropdownItem>
+					);
+				})}
 			</DropdownPanel>
 		</div>
 	) : (
@@ -165,6 +177,13 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 		background-color: transparent !important;
 	}
 
+	/* action 按钮：禁用 expand-animation 背景 */
+	.action-item::before,
+	.action-item:hover::before,
+	.action-item:active::before {
+		background-color: transparent !important;
+	}
+
 	@media (max-width: 768px) {
 		.dropdown-container {
 			@apply hidden;
@@ -230,6 +249,26 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 					}
 				}
 			});
+		});
+
+		// 处理 action 按钮点击
+		document.addEventListener('click', function(e) {
+			const actionBtn = (e.target as HTMLElement).closest('[data-action]');
+			if (actionBtn) {
+				const action = actionBtn.getAttribute('data-action');
+				if (action) {
+					window.dispatchEvent(new CustomEvent(action));
+					// 关闭下拉菜单
+					const dropdown = actionBtn.closest('[data-dropdown]');
+					if (dropdown) {
+						const trigger = dropdown.querySelector('[data-dropdown-trigger]');
+						const menu = dropdown.querySelector('[data-dropdown-menu]');
+						if (trigger && menu) {
+							closeDropdown(dropdown, trigger, menu);
+						}
+					}
+				}
+			}
 		});
 	});
 	

@@ -7,6 +7,7 @@ import HomePortal from "@components/layout/HomePortal.astro";
 import Navbar from "@components/layout/Navbar.astro";
 import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
 import type { MarkdownHeading } from "astro";
+import AISearch from "@/components/controls/AISearch.svelte";
 import FloatingDock from "@/components/controls/FloatingDock.astro";
 import CategoryBar from "@/components/layout/CategoryBar.astro";
 import CategoryFollowBar from "@/components/layout/CategoryFollowBar.astro";
@@ -135,6 +136,8 @@ const navLinks = navBarConfig.links.map((item) => {
 </div>
 
 <FloatingDock headings={headings} />
+
+<AISearch client:load />
 
 </Layout>
 

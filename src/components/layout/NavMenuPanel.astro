@@ -43,20 +43,12 @@ const processedLinks = Astro.props.links.map((link: NavBarLink) => ({
 							</div>
 						</div>
 						<div class="mobile-submenu mobile-submenu--flat">
-							{link.children.map((child) => (
-								<a href={child.external ? child.url : url(child.url)}
-									class="nav-drawer-sublink group"
-									target={child.external ? "_blank" : null}
-								>
-									<div class="flex items-center gap-3">
-										{child.icon && <Icon name={child.icon} is:inline class="text-[1.1rem]" />}
-										<span>{child.name}</span>
-									</div>
-									{child.external && <Icon name="fa7-solid:arrow-up-right-from-square" is:inline
-										class="text-[0.7rem] text-black/25 dark:text-white/25"
-									/>}
-								</a>
-							))}
+							{link.children.map((child) => {
+								if (child.action) {
+									return <button type="button" class="nav-drawer-sublink group" data-action={child.action}><div class="flex items-center gap-3">{child.icon && <Icon name={child.icon} is:inline class="text-[1.1rem]" />}<span>{child.name}</span></div></button>;
+								}
+								return <a href={child.external ? child.url : url(child.url)} class="nav-drawer-sublink group" target={child.external ? "_blank" : null}><div class="flex items-center gap-3">{child.icon && <Icon name={child.icon} is:inline class="text-[1.1rem]" />}<span>{child.name}</span></div>{child.external && <Icon name="fa7-solid:arrow-up-right-from-square" is:inline class="text-[0.7rem] text-black/25 dark:text-white/25" />}</a>;
+							})}
 						</div>
 					</div>
 				) : (
@@ -324,6 +316,18 @@ function initNavDrawer() {
 	}
 
 	overlay.addEventListener('click', () => closeDrawer(), { signal });
+
+	// 处理 action 按钮
+	panel.addEventListener('click', (e) => {
+		const actionBtn = (e.target as HTMLElement).closest('[data-action]');
+		if (actionBtn) {
+			const action = actionBtn.getAttribute('data-action');
+			if (action) {
+				window.dispatchEvent(new CustomEvent(action));
+				closeDrawer();
+			}
+		}
+	}, { signal });
 
 	document.addEventListener('keydown', (e) => {
 		if (e.key === 'Escape' && panel.classList.contains('is-open')) {
