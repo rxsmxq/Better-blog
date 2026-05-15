@@ -226,23 +226,33 @@ const RATE_LIMIT_MAX = 5;
 async function checkRateLimit(env, ip) {
 	const key = `guestbook:ratelimit:${ip}`;
 	const record = await env.VISITOR_KV.get(key);
-	
+
 	if (record) {
 		const data = JSON.parse(record);
 		const now = Date.now();
 		const elapsed = (now - data.timestamp) / 1000;
-		
+
 		if (elapsed < RATE_LIMIT_WINDOW) {
 			if (data.count >= RATE_LIMIT_MAX) {
-				return { allowed: false, remaining: 0, retryAfter: Math.ceil(RATE_LIMIT_WINDOW - elapsed) };
+				return {
+					allowed: false,
+					remaining: 0,
+					retryAfter: Math.ceil(RATE_LIMIT_WINDOW - elapsed),
+				};
 			}
 			data.count++;
-			await env.VISITOR_KV.put(key, JSON.stringify(data), { expirationTtl: RATE_LIMIT_WINDOW });
+			await env.VISITOR_KV.put(key, JSON.stringify(data), {
+				expirationTtl: RATE_LIMIT_WINDOW,
+			});
 			return { allowed: true, remaining: RATE_LIMIT_MAX - data.count };
 		}
 	}
-	
-	await env.VISITOR_KV.put(key, JSON.stringify({ count: 1, timestamp: Date.now() }), { expirationTtl: RATE_LIMIT_WINDOW });
+
+	await env.VISITOR_KV.put(
+		key,
+		JSON.stringify({ count: 1, timestamp: Date.now() }),
+		{ expirationTtl: RATE_LIMIT_WINDOW },
+	);
 	return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
 }
 
@@ -250,39 +260,42 @@ function validateInput(author, content) {
 	if (!author || !content) {
 		return { valid: false, error: "author and content are required" };
 	}
-	
+
 	if (author.length < 2 || author.length > 30) {
 		return { valid: false, error: "author must be 2-30 characters" };
 	}
-	
+
 	if (content.length < 5 || content.length > 500) {
 		return { valid: false, error: "content must be 5-500 characters" };
 	}
-	
+
 	const fullText = (author + content).toLowerCase();
 	for (const keyword of BLOCKED_KEYWORDS) {
 		if (fullText.includes(keyword.toLowerCase())) {
 			return { valid: false, error: "content contains prohibited content" };
 		}
 	}
-	
+
 	if (content.length > 0 && content.length < 5) {
 		return { valid: false, error: "content is too short" };
 	}
-	
+
 	return { valid: true };
 }
 
 async function handleCreateMessage(env, request) {
-	const ip = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown";
-	
+	const ip =
+		request.headers.get("CF-Connecting-IP") ||
+		request.headers.get("X-Forwarded-For") ||
+		"unknown";
+
 	const rateLimit = await checkRateLimit(env, ip);
 	if (!rateLimit.allowed) {
 		return Response.json(
 			{ error: "Too many requests, please try again later" },
-			{ 
-				status: 429, 
-				headers: { ...GB_HEADERS, "Retry-After": String(rateLimit.retryAfter) }
+			{
+				status: 429,
+				headers: { ...GB_HEADERS, "Retry-After": String(rateLimit.retryAfter) },
 			},
 		);
 	}

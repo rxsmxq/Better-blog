@@ -45,6 +45,7 @@
 							placeholder="输入你的昵称..."
 							maxlength={30}
 						/>
+						<div class="field-hint">2-30个字符</div>
 					</div>
 
 					<div class="field-group">
@@ -60,7 +61,25 @@
 							maxlength={500}
 						></textarea>
 						<div class="char-count" id="gb-char-count">0/500</div>
+						<div class="field-hint">5-500个字符，不支持HTML和脚本</div>
 					</div>
+				</div>
+
+				<div id="gb-error-message" class="error-message" style="display: none;">
+					<span class="error-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"/>
+							<line x1="12" y1="8" x2="12" y2="12"/>
+							<line x1="12" y1="16" x2="12.01" y2="16"/>
+						</svg>
+					</span>
+					<span class="error-text"></span>
+					<button class="error-close" data-close-error>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="6" x2="6" y2="18"/>
+							<line x1="6" y1="6" x2="18" y2="18"/>
+						</svg>
+					</button>
 				</div>
 			</div>
 		</div>
@@ -147,11 +166,68 @@
 			closeModal();
 		});
 
+		const errorMessageEl = document.getElementById('gb-error-message');
+
+		function showErrorMessage(message) {
+			if (!errorMessageEl) return;
+			const errorTextEl = errorMessageEl.querySelector('.error-text');
+			if (errorTextEl) {
+				errorTextEl.textContent = message;
+			}
+			errorMessageEl.style.display = 'flex';
+			setTimeout(() => {
+				errorMessageEl.classList.add('show');
+			}, 10);
+		}
+
+		function hideErrorMessage() {
+			if (!errorMessageEl) return;
+			errorMessageEl.classList.remove('show');
+			setTimeout(() => {
+				errorMessageEl.style.display = 'none';
+			}, 300);
+		}
+
+		if (errorMessageEl) {
+			errorMessageEl.addEventListener('click', (e) => {
+				if (e.target.closest('[data-close-error]')) {
+					hideErrorMessage();
+				}
+			});
+		}
+
+		function getErrorMessage(status, errorText) {
+			switch (status) {
+				case 400:
+					if (errorText.includes('prohibited')) {
+						return '内容包含不安全的内容，请检查是否包含脚本或特殊标签';
+					}
+					if (errorText.includes('author')) {
+						return '昵称长度必须在2-30个字符之间';
+					}
+					if (errorText.includes('content')) {
+						if (errorText.includes('short')) {
+							return '内容太短，至少需要5个字符';
+						}
+						return '内容长度必须在5-500个字符之间';
+					}
+					return '输入内容无效，请检查后重试';
+				case 429:
+					return '发送太频繁了，请稍后再试';
+				case 500:
+					return '服务器内部错误，请稍后重试';
+				default:
+					return `提交失败 (${status})，请稍后重试`;
+			}
+		}
+
 		// 提交
 		submitBtn.addEventListener('click', async () => {
 			const author = authorInput.value.trim();
 			const content = contentInput.value.trim();
 			if (!author || !content || isSubmitting) return;
+
+			hideErrorMessage();
 
 			isSubmitting = true;
 			submitBtn.textContent = '发送中...';
@@ -164,6 +240,22 @@
 				closeModal();
 			} catch (err) {
 				console.error('Failed to post message:', err);
+				let errorMsg = '❌ 提交失败，请稍后重试';
+				if (err.response) {
+					const status = err.response.status;
+					const text = await err.response.text();
+					let errorText = '';
+					try {
+						const json = JSON.parse(text);
+						errorText = json.error || '';
+					} catch {
+						errorText = text;
+					}
+					errorMsg = getErrorMessage(status, errorText);
+				} else if (err.message) {
+					errorMsg = '❌ ' + err.message;
+				}
+				showErrorMessage(errorMsg);
 			} finally {
 				isSubmitting = false;
 				submitBtn.textContent = '发送留言 >>';
@@ -502,6 +594,83 @@
 	}
 	:root.dark .char-count {
 		color: #a1a1aa;
+	}
+
+	.field-hint {
+		font-size: 0.55rem;
+		color: #71717a;
+		opacity: 0.7;
+		margin-top: 0.25rem;
+	}
+	:root.dark .field-hint {
+		color: #52525b;
+	}
+
+	.error-message {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		background: #fef2f2;
+		border: 1px solid #fecaca;
+		border-radius: 0.375rem;
+		margin-top: 1rem;
+		transform: translateY(-10px);
+		opacity: 0;
+		transition: all 0.3s ease;
+	}
+	:root.dark .error-message {
+		background: #450a0a;
+		border-color: #7f1d1d;
+	}
+	.error-message.show {
+		transform: translateY(0);
+		opacity: 1;
+	}
+	.error-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		background: #ef4444;
+		color: white;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.error-icon svg {
+		width: 0.875rem;
+		height: 0.875rem;
+		fill: currentColor;
+	}
+	.error-text {
+		flex: 1;
+		font-size: 0.75rem;
+		color: #991b1b;
+		line-height: 1.5;
+	}
+	:root.dark .error-text {
+		color: #fca5a5;
+	}
+	.error-close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		color: #9ca3af;
+		cursor: pointer;
+		padding: 0.25rem;
+		line-height: 1;
+		transition: color 0.2s;
+	}
+	.error-close svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+	.error-close:hover {
+		color: #ef4444;
 	}
 
 	/* 底部 */
