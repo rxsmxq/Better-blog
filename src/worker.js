@@ -177,17 +177,130 @@ async function handleGetMessage(env, id) {
 	return Response.json(JSON.parse(raw), { headers: GB_HEADERS });
 }
 
-async function handleCreateMessage(env, request) {
-	const body = await request.json().catch(() => ({}));
-	const author = (body.author || "").trim().slice(0, 30);
-	const content = (body.content || "").trim().slice(0, 500);
+function escapeHtml(str) {
+	if (!str) return str;
+	return str
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
 
+const BLOCKED_KEYWORDS = [
+	"javascript:",
+	"vbscript:",
+	"onclick",
+	"onload",
+	"onerror",
+	"onmouseover",
+	"onfocus",
+	"onblur",
+	"onkeydown",
+	"onkeyup",
+	"eval(",
+	"document.cookie",
+	"document.write",
+	"location.href",
+	"<script",
+	"</script",
+	"<iframe",
+	"</iframe",
+	"<object",
+	"</object",
+	"<embed",
+	"</embed",
+	"<applet",
+	"<svg",
+	"<form",
+	"<input",
+	"<button",
+	"alert(",
+	"confirm(",
+	"prompt(",
+];
+
+const RATE_LIMIT_WINDOW = 60;
+const RATE_LIMIT_MAX = 5;
+
+async function checkRateLimit(env, ip) {
+	const key = `guestbook:ratelimit:${ip}`;
+	const record = await env.VISITOR_KV.get(key);
+	
+	if (record) {
+		const data = JSON.parse(record);
+		const now = Date.now();
+		const elapsed = (now - data.timestamp) / 1000;
+		
+		if (elapsed < RATE_LIMIT_WINDOW) {
+			if (data.count >= RATE_LIMIT_MAX) {
+				return { allowed: false, remaining: 0, retryAfter: Math.ceil(RATE_LIMIT_WINDOW - elapsed) };
+			}
+			data.count++;
+			await env.VISITOR_KV.put(key, JSON.stringify(data), { expirationTtl: RATE_LIMIT_WINDOW });
+			return { allowed: true, remaining: RATE_LIMIT_MAX - data.count };
+		}
+	}
+	
+	await env.VISITOR_KV.put(key, JSON.stringify({ count: 1, timestamp: Date.now() }), { expirationTtl: RATE_LIMIT_WINDOW });
+	return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
+}
+
+function validateInput(author, content) {
 	if (!author || !content) {
+		return { valid: false, error: "author and content are required" };
+	}
+	
+	if (author.length < 2 || author.length > 30) {
+		return { valid: false, error: "author must be 2-30 characters" };
+	}
+	
+	if (content.length < 5 || content.length > 500) {
+		return { valid: false, error: "content must be 5-500 characters" };
+	}
+	
+	const fullText = (author + content).toLowerCase();
+	for (const keyword of BLOCKED_KEYWORDS) {
+		if (fullText.includes(keyword.toLowerCase())) {
+			return { valid: false, error: "content contains prohibited content" };
+		}
+	}
+	
+	if (content.length > 0 && content.length < 5) {
+		return { valid: false, error: "content is too short" };
+	}
+	
+	return { valid: true };
+}
+
+async function handleCreateMessage(env, request) {
+	const ip = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "unknown";
+	
+	const rateLimit = await checkRateLimit(env, ip);
+	if (!rateLimit.allowed) {
 		return Response.json(
-			{ error: "author and content are required" },
+			{ error: "Too many requests, please try again later" },
+			{ 
+				status: 429, 
+				headers: { ...GB_HEADERS, "Retry-After": String(rateLimit.retryAfter) }
+			},
+		);
+	}
+
+	const body = await request.json().catch(() => ({}));
+	const rawAuthor = (body.author || "").trim().slice(0, 30);
+	const rawContent = (body.content || "").trim().slice(0, 500);
+
+	const validation = validateInput(rawAuthor, rawContent);
+	if (!validation.valid) {
+		return Response.json(
+			{ error: validation.error },
 			{ status: 400, headers: GB_HEADERS },
 		);
 	}
+
+	const author = escapeHtml(rawAuthor);
+	const content = escapeHtml(rawContent);
 
 	// 自增 ID
 	const counterRaw = await env.VISITOR_KV.get("guestbook:counter");
