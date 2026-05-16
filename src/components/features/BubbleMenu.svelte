@@ -124,10 +124,10 @@ function getHoverBg(item: LinkItem) {
       onclick={handleToggle}
       aria-label="Toggle social menu"
       aria-pressed={isMenuOpen}
-      style={`background: ${isDark ? "#ffffff" : menuBg}; color: ${isDark ? "#111111" : menuContentColor};`}
+      style=""
     >
-      <span class="menu-line" style={`background: ${isDark ? "#111111" : menuContentColor};`} />
-      <span class="menu-line short" style={`background: ${isDark ? "#111111" : menuContentColor};`} />
+      <span class="menu-line" />
+      <span class="menu-line short" />
     </button>
   </nav>
 
@@ -224,14 +224,31 @@ function getHoverBg(item: LinkItem) {
   }
 
   .bubble-menu .menu-btn {
-    border: none;
+    border: 2px solid #000;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: var(--pill-bg);
+    background: transparent;
+    color: #000;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  :global(.dark) .bubble-menu .menu-btn {
+    border-color: #fff;
+    color: #fff;
+  }
+
+  .bubble-menu .menu-btn:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  :global(.dark) .bubble-menu .menu-btn:hover {
+    background: #fff;
+    color: #000;
   }
 
   .bubble-menu .menu-line {
@@ -240,9 +257,11 @@ function getHoverBg(item: LinkItem) {
     border-radius: 2px;
     display: block;
     margin: 0 auto;
+    background: currentColor;
     transition:
       transform 0.3s ease,
-      opacity 0.3s ease;
+      opacity 0.3s ease,
+      background 0.3s ease;
     transform-origin: center;
   }
 

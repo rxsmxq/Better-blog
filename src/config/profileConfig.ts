@@ -14,8 +14,20 @@ export const profileConfig: ProfileConfig = {
 	// 名字
 	name: "MmzMing",
 
-	// 个人签名
-	bio: "Hello，我是 MmzMing。",
+	// 首页展示名字（留空则使用 name）
+	displayName: "MmzMing",
+
+	// 职业/身份标签
+	occupation: "[后端开发 / 技术博主]",
+
+	// 个人签名（支持多条，会循环打字+删除效果）
+	bio: [
+		"哈基咪南北绿多，阿西噶阿西，阿西哈呀库奶龙，哈基咪哈基",
+		"且视他人之疑目如盏盏鬼火，大胆地去走你的夜路",
+		"万头攒动火树银花之处不必找我，如欲相见，我在各种悲喜交集处，能做的事就是长途跋涉返璞归真",
+		"很喜欢一句话：孩子你一定要好好学习，不然长大了...就没有能力帮助别人了",
+		"先生我好像病了，看到正确答案反到楞住了",
+	],
 
 	// 链接配置
 	// 已经预装的图标集：fa7-brands，fa7-regular，fa7-solid，material-symbols，simple-icons

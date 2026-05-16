@@ -216,7 +216,9 @@ export type ProfileConfig = {
 	avatar?: string;
 	avatarOffWork?: string;
 	name: string;
-	bio?: string;
+	displayName?: string; // 首页展示名字（如 MmMing）
+	occupation?: string; // 职业/身份标签（如 后端开发 / 技术博主）
+	bio?: string | string[];
 	links: {
 		name: string;
 		url: string;

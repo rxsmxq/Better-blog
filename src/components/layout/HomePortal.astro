@@ -152,13 +152,26 @@ const stats = [
 				<span class="status-text" id="status-text">下班</span>
 			</div>
 		</div>
-		<div class="text-center w-full">
-			<TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-xl text-(--content-meta)" />
+		<div class="text-center w-full flex flex-col items-center">
+			{profileConfig.displayName && (
+				<span class="profile-display-name">{profileConfig.displayName}</span>
+			)}
+			{profileConfig.occupation && (
+				<span class="profile-occupation">{profileConfig.occupation}</span>
+			)}
+			<TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-base text-(--content-meta) mt-3" />
 		</div>
 	</section>
 
+	{/* 站点统计标题 */}
+	<div class="onload-animation section-title-wrapper mt-4">
+		<div class="section-title-container">
+			<span class="section-title">站点统计</span>
+		</div>
+	</div>
+
 	{/* STATS */}
-	<div class="onload-animation mt-4 stats-container">
+	<div class="onload-animation mt-4 mb-4 stats-container">
 		{[stats.slice(0, 4), stats.slice(4)].map((group, index) => (
 			<div class={`flex flex-row flex-wrap justify-center gap-x-4 gap-y-4 ${index === 0 ? 'mb-4' : 'mt-4'}`}>
 				{group.map((stat) => (
@@ -184,6 +197,13 @@ const stats = [
 				))}
 			</div>
 		))}
+	</div>
+
+	{/* 文章列表标题 */}
+	<div class="onload-animation section-title-wrapper">
+		<div class="section-title-container">
+			<span class="section-title">博客文章</span>
+		</div>
 	</div>
 
 </div>
@@ -375,6 +395,46 @@ const stats = [
 	:root.dark .cat-square-btn:hover {
 		background-color: white;
 		color: black;
+	}
+
+	/* === Profile Info === */
+	.profile-display-name {
+		font-size: 2rem;
+		font-weight: 700;
+		color: #000;
+		letter-spacing: 0.05em;
+	}
+	:root.dark .profile-display-name {
+		color: #fff;
+	}
+	.profile-occupation {
+		font-size: 1rem;
+		font-weight: 400;
+		color: oklch(0.65 0 0);
+		letter-spacing: 0.05em;
+	}
+
+	/* === Section Title === */
+	.section-title-wrapper {
+		width: 100%;
+		max-width: 24rem;
+		margin-left: auto;
+		margin-right: auto;
+	}
+	.section-title-container {
+		text-align: center;
+		padding-top: 2.34375rem;
+		padding-bottom: 0.78125rem;
+	}
+	.section-title {
+		font-size: 1.75rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		color: #000;
+		text-transform: uppercase;
+	}
+	:root.dark .section-title {
+		color: #fff;
 	}
 </style>
 
