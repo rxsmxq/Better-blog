@@ -171,3 +171,9 @@ export function pathsEqual(path1: string, path2: string): boolean {
 
 	return normalize(path1) === normalize(path2);
 }
+
+declare global {
+	interface Window {
+		navigateToPage: typeof navigateToPage;
+	}
+}

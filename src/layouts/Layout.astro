@@ -183,6 +183,11 @@ const siteLang = lang.replace("_", "-");
 </html>
 
 <script>
+  import { navigateToPage } from "@/utils/navigation-utils";
+  window.navigateToPage = navigateToPage;
+</script>
+
+<script>
   import { pathsEqual } from "@/utils/url-utils";
   import { expressiveCodeConfig, siteConfig } from "@/config";
 

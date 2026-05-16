@@ -360,8 +360,7 @@ const tags = await getTagList();
 		});
 		document.getElementById("dock-home-btn")?.addEventListener("click", (e) => {
 			e.stopPropagation();
-			if ((window as any).swup) (window as any).swup.navigate("/");
-			else window.location.href = "/";
+			window.navigateToPage("/");
 		});
 		document.getElementById("dock-comment-btn")?.addEventListener("click", (e) => {
 			e.stopPropagation();

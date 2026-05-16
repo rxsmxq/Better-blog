@@ -18,12 +18,7 @@ import { url } from "@/utils/url-utils";
 
 <script is:raw is:inline define:vars={{ homeUrl: url("/")}}>
   window.backToHome = function() {
-    const url = homeUrl;
-    if (window.swup) {
-      window.swup.navigate(url);
-    } else {
-      window.location.href = url;
-    }
+    window.navigateToPage(homeUrl);
   };
 </script>
 

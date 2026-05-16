@@ -80,15 +80,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 关键工具函数
 
 - `src/utils/setting-utils.ts` — 管理显示设置（主题、壁纸、布局模式），持久化到 localStorage
-- `src/utils/toc-utils.ts` — 目录生成
+- `src/utils/navigation-utils.ts` — 统一导航函数 `navigateToPage()`，处理外部链接/锚点/Swup SPA/降级；全局可用 `window.navigateToPage`
+- `src/utils/toc-utils.ts` — 目录生成（TOCManager 类，SidebarTOC 和 FloatingDock TOC 共用）
 - `src/utils/responsive-utils.ts` — 侧边栏栅格类、响应式断点
 - `src/utils/content-utils.ts` — 文章排序、过滤、分页
 - `src/utils/image-utils.ts` — 图片格式、质量、referrer 策略
-- `src/utils/url-utils.ts` — URL 处理工具
+- `src/utils/url-utils.ts` — URL 处理工具（`url()`、`getPostUrlBySlug()`、`getTagUrl()` 等）
 
-### Swup（页面过渡）
+### 页面导航系统（Swup）
 
-Swup 启用了特定容器（`#swup-container`、`#left-sidebar-dynamic`、`#right-sidebar-dynamic`、`#floating-toc-wrapper` 等）。锚点链接跳过 popstate 处理，由浏览器原生处理。`animateHistoryBrowsing: false` — 历史导航不播放动画。
+使用 `@swup/astro@1.8.0`（swup v4）做 SPA 页面切换。配置在 `astro.config.mjs`，关键选项：`theme: false`（自定义 CSS 过渡）、`animationClass: "transition-swup-"`（避免与 Tailwind `transition-*` 冲突）、`cache: true`、`preload: true`。
+
+**Swup 容器**（`MainGridLayout.astro`）：`#swup-container`（主内容）、`#left-sidebar-dynamic`、`#right-sidebar-dynamic`（占位，满足多容器协议）。Navbar、SideBar、FloatingDock 等在容器**之外**，SPA 切换时保持不变。
+
+**过渡动画**：`src/styles/transition.css` 定义 `.transition-swup-main`（进入：opacity+translateY 350ms）和 `.transition-swup-leaving`（离开：250ms）。自定义 `is-page-transitioning` 类（Layout.astro 管理）覆盖整个过渡期 + 400ms 缓冲，供 `waves.css`/`layout-styles.css`/`navbar.css` 抑制视觉闪烁。
+
+**程序化导航**：统一使用 `navigateToPage(url)`（`src/utils/navigation-utils.ts`），全局可用 `window.navigateToPage`（Layout.astro 注册）。禁止用 `window.location.href` 做内部导航（会导致整页刷新）。组件生命周期文档见 `docs/navigation-lifecycle.md`。
+
+**组件重新初始化模式**：Swup 容器外的组件需监听事件来更新状态。推荐使用 `astro:page-load`（由 @swup/astro 桥接触发，每次导航触发一次）。避免同时监听 `swup:contentReplaced` + `swup:content:replace` + `swup:page:view`（同一次导航会触发多次）。`data-swup-ignore-script` 标记的脚本不随 Swup 重执行（用于 Analytics、MusicManager 等持久脚本）。
+
+**`document.startViewTransition()`** 仅用于主题切换（`setting-utils.ts`），与 Swup 页面过渡无关。
 
 ### Biome 配置
 
