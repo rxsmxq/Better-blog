@@ -168,7 +168,7 @@
 
 		const errorMessageEl = document.getElementById('gb-error-message');
 
-		function showErrorMessage(message) {
+		function showErrorMessage(message: string) {
 			if (!errorMessageEl) return;
 			const errorTextEl = errorMessageEl.querySelector('.error-text');
 			if (errorTextEl) {
@@ -190,13 +190,13 @@
 
 		if (errorMessageEl) {
 			errorMessageEl.addEventListener('click', (e) => {
-				if (e.target.closest('[data-close-error]')) {
+				if (e.target instanceof Element && e.target.closest('[data-close-error]')) {
 					hideErrorMessage();
 				}
 			});
 		}
 
-		function getErrorMessage(status, errorText) {
+		function getErrorMessage(status: number, errorText: string) {
 			switch (status) {
 				case 400:
 					if (errorText.includes('prohibited')) {

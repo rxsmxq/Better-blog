@@ -264,6 +264,13 @@ export default defineConfig({
 					) {
 						return;
 					}
+					// gsap 在 Svelte 事件处理器中使用，Vite tree-shaking 误报
+					if (
+						warning.message.includes('"gsap"') &&
+						warning.message.includes("but never used")
+					) {
+						return;
+					}
 					warn(warning);
 				},
 			},
