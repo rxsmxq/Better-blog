@@ -129,6 +129,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "楠枝小笺",
+		imgurl: "https://www.nannax.top/upload/IMG_20260412_164454.ico",
+		desc: "安安静静地存在，就已经很好啦。",
+		siteurl: "https://www.nannax.top/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
