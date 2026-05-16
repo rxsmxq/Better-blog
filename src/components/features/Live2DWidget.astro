@@ -66,8 +66,9 @@ const size = config.size || { width: 280, height: 250 };
 <MessageBox />
 
 <script is:inline define:vars={{ config, modelPathUrl: url(config.model.path) }}>
-  let live2dApp = null;
-  let live2dModel = null;
+  // 使用 window 持久化引用，避免 Swup 导航后局部变量丢失
+  let live2dApp = window._live2dApp || null;
+  let live2dModel = window._live2dModel || null;
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -123,6 +124,10 @@ const size = config.size || { width: 280, height: 250 };
       live2dModel.y = size.height / 2;
 
       live2dApp.stage.addChild(live2dModel);
+
+      // 持久化到 window，Swup 导航后可恢复引用
+      window._live2dApp = live2dApp;
+      window._live2dModel = live2dModel;
 
       // Click interaction — trigger random motion + expression + message
       const allMotionGroups = ["Expression", "TapShort", "TapLong", "Other"];
@@ -343,25 +348,45 @@ const size = config.size || { width: 280, height: 250 };
   function handleResponsive() {
     const widget = document.getElementById("live2d-widget");
     if (!widget) return;
+    // 用户手动关闭时不强制覆盖
+    if (localStorage.getItem("live2d-hidden") === "true") return;
     if (config.responsive?.hideOnMobile) {
       const breakpoint = config.responsive.mobileBreakpoint || 768;
-      widget.style.display = window.innerWidth <= breakpoint ? "none" : "block";
+      widget.style.display = window.innerWidth <= breakpoint ? "none" : "";
     }
+  }
+
+  // 检查是否需要重新初始化（canvas 被替换或 PIXI 引用丢失）
+  function needsReinit() {
+    if (!window.live2dModelInitialized) return true;
+    const canvas = document.getElementById("live2d-canvas");
+    // canvas 被替换（不在 DOM 或 PIXI 引用的 view 不是当前 canvas）
+    if (!canvas || (window._live2dApp && window._live2dApp.renderer.view !== canvas)) {
+      window.live2dModelInitialized = false;
+      window._live2dApp = null;
+      window._live2dModel = null;
+      return true;
+    }
+    return false;
   }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
-      if (!window.live2dModelInitialized) {
+      if (needsReinit()) {
         initLive2D();
         window.live2dModelInitialized = true;
       }
+      live2dApp = window._live2dApp;
+      live2dModel = window._live2dModel;
       handleResponsive();
     });
   } else {
-    if (!window.live2dModelInitialized) {
+    if (needsReinit()) {
       initLive2D();
       window.live2dModelInitialized = true;
     }
+    live2dApp = window._live2dApp;
+    live2dModel = window._live2dModel;
     handleResponsive();
   }
 

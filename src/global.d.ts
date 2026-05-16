@@ -13,6 +13,10 @@ declare global {
 		// biome-ignore lint/suspicious/noExplicitAny: External library
 		swup: any;
 		live2dModelInitialized?: boolean;
+		// biome-ignore lint/suspicious/noExplicitAny: External library (PIXI live2d)
+		_live2dApp?: any;
+		// biome-ignore lint/suspicious/noExplicitAny: External library (PIXI live2d)
+		_live2dModel?: any;
 		spineModelInitialized?: boolean;
 		floatingTOCListenersInitialized?: boolean;
 		// biome-ignore lint/suspicious/noExplicitAny: External library

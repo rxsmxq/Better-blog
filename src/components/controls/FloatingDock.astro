@@ -307,20 +307,29 @@ const tags = await getTagList();
 			}
 		});
 
-		// Live2D / Spine 显隐切换
-		function bindToggleVisibility(btnId: string, targetId: string) {
+		// Live2D / Spine 显隐切换（状态持久化到 localStorage）
+		function bindToggleVisibility(btnId: string, targetId: string, storageKey: string) {
 			const btn = document.getElementById(btnId);
 			const target = document.getElementById(targetId);
 			if (!btn || !target) return;
+
+			// 读取持久化的隐藏状态
+			const savedHidden = localStorage.getItem(storageKey) === "true";
+			if (savedHidden) {
+				(target as HTMLElement).style.display = "none";
+				btn.setAttribute("data-active", "false");
+			}
+
 			btn.addEventListener("click", (e) => {
 				e.stopPropagation();
 				const isHidden = (target as HTMLElement).style.display === "none";
 				(target as HTMLElement).style.display = isHidden ? "" : "none";
 				btn.setAttribute("data-active", String(isHidden));
+				localStorage.setItem(storageKey, String(!isHidden));
 			});
 		}
-		bindToggleVisibility("dock-live2d-btn", "live2d-widget");
-		bindToggleVisibility("dock-spine-btn", "spine-model-container");
+		bindToggleVisibility("dock-live2d-btn", "live2d-widget", "live2d-hidden");
+		bindToggleVisibility("dock-spine-btn", "spine-model-container", "spine-hidden");
 
 		// 主题切换：点击直接切换亮/暗
 		const themeBtnEl = document.getElementById("dock-theme-btn");
