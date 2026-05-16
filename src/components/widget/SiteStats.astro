@@ -1,7 +1,5 @@
 ---
 import Icon from "@components/common/Icon.astro";
-import WidgetLayout from "@/components/common/WidgetLayout.astro";
-import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import {
@@ -17,163 +15,275 @@ interface Props {
 
 const { class: className, style } = Astro.props;
 
-// 从配置中获取站点开始日期
-const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
-
-// 获取所有文章
 const posts = await getSortedPosts();
 const categories = await getCategoryList();
 const tags = await getTagList();
 
-// 计算总字数
 let totalWords = 0;
 for (const post of posts) {
 	if (post.body) {
-		// 移除代码块和内联代码后计算字数
-		let text = post.body
-			.replace(/```[\s\S]*?```/g, "") // 移除代码块
-			.replace(/`[^`]*`/g, "") // 移除内联代码
-			.replace(/\s+/g, " ") // 合并空白
+		const text = post.body
+			.replace(/```[\s\S]*?```/g, "")
+			.replace(/`[^`]*`/g, "")
+			.replace(/\s+/g, " ")
 			.trim();
-
-		// 分别计算中文字符和英文字符
-		const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
-		const englishChars = text.match(/[a-zA-Z]/g) || [];
-
-		totalWords += chineseChars.length + englishChars.length;
+		const cn = text.match(/[一-龥]/g) || [];
+		const en = text.match(/[a-zA-Z]/g) || [];
+		totalWords += cn.length + en.length;
 	}
 }
 
-// 格式化数字（添加千位分隔符）
-function formatNumber(num: number): string {
-	return num.toLocaleString();
-}
+const postCount = posts.length;
+const categoryCount = categories.length;
+const tagCount = tags.length;
+const wordCountFormatted = totalWords.toLocaleString();
 
-// 获取最新文章日期（用于客户端计算）
-const latestPost = posts.reduce((latest, post) => {
-	if (!latest) return post;
-	return post.data.published > latest.data.published ? post : latest;
-}, posts[0]);
-
-const lastPostDate = latestPost
-	? latestPost.data.published.toISOString()
-	: null;
-
-const todayText = i18n(I18nKey.today);
-
-const stats = [
-	{
-		icon: "material-symbols:article-outline",
-		label: i18n(I18nKey.siteStatsPostCount),
-		value: posts.length,
-	},
-	{
-		icon: "material-symbols:folder-outline",
-		label: i18n(I18nKey.siteStatsCategoryCount),
-		value: categories.length,
-	},
-	{
-		icon: "material-symbols:label-outline",
-		label: i18n(I18nKey.siteStatsTagCount),
-		value: tags.length,
-	},
-	{
-		icon: "material-symbols:text-ad-outline-rounded",
-		label: i18n(I18nKey.siteStatsTotalWords),
-		value: totalWords,
-		formatted: true,
-	},
-	{
-		icon: "material-symbols:calendar-clock-outline",
-		label: i18n(I18nKey.siteStatsRunningDays),
-		value: 0, // 将由客户端更新
-		suffix: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
-		dynamic: true,
-		id: "running-days",
-	},
-	{
-		icon: "mingcute:heartbeat-line",
-		label: i18n(I18nKey.siteStatsLastUpdate),
-		value: 0, // 将由客户端更新
-		suffix: i18n(I18nKey.siteStatsDaysAgo).replace("{days}", ""),
-		dynamic: true,
-		id: "last-update",
-	},
-];
+const textLine1 = `${i18n(I18nKey.siteStatsVisitorPrefix)}${i18n(I18nKey.siteStatsLoading)}${i18n(I18nKey.siteStatsVisitorSuffix)}`;
+const textLine2 = `${i18n(I18nKey.siteStatsPageViewPrefix)}${i18n(I18nKey.siteStatsLoading)}${i18n(I18nKey.siteStatsPageViewSuffix)}`;
+const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 ---
 
-<WidgetLayout name={i18n(I18nKey.siteStats)} id="site-stats" class={className} style={style}>
-  <div class="flex flex-col gap-2">
-    {stats.map((stat) => (
-      <div class="flex items-center justify-between px-3 py-1.5">
-        <div class="flex items-center gap-2.5">
-          <div class="text-(--primary) text-xl">
-            <Icon name={stat.icon} />
-          </div>
-          <span class="text-neutral-700 dark:text-neutral-300 font-medium text-sm">
-            {stat.label}
-          </span>
-        </div>
-        <div class="flex items-center">
-          <span 
-            class="text-base font-bold text-neutral-900 dark:text-neutral-100"
-            data-stat-id={stat.id}
-          >
-            {stat.formatted ? formatNumber(stat.value) : stat.value}
-          </span>
-          {stat.suffix && (
-            <span class="text-sm text-neutral-500 dark:text-neutral-400 ml-1">
-              {stat.suffix}
-            </span>
-          )}
-        </div>
-      </div>
-    ))}
-  </div>
-</WidgetLayout>
+<div class={className} style={style}>
+	<div class="text-reveal-card relative w-full overflow-hidden cursor-pointer select-none"
+		id="text-reveal-container"
+		data-posts={postCount}
+		data-categories={categoryCount}
+		data-tags={tagCount}
+		data-words={totalWords}
+	>
+		{/* 粒子背景 */}
+		<div class="stars-container absolute inset-0 z-10 pointer-events-none overflow-hidden [mask-image:radial-gradient(ellipse_at_center,rgba(0,0,0,0.8)_20%,transparent_70%)]" id="stars-container"></div>
 
-<script is:inline define:vars={{ siteStartDate, lastPostDate, todayText }}>
-  function updateDynamicStats() {
-    const today = new Date();
+		{/* 内容区域 */}
+		<div class="relative flex flex-col items-center justify-center py-14">
+			{/* 底层文字 - 灰色（默认显示：访客/访问量） */}
+			<div class="reveal-base text-center">
+				<p class="text-xl sm:text-2xl font-bold text-neutral-300 dark:text-neutral-600 leading-relaxed" id="text-line-1"
+					data-visitor-prefix={i18n(I18nKey.siteStatsVisitorPrefix)}
+					data-visitor-suffix={i18n(I18nKey.siteStatsVisitorSuffix)}
+				>
+					{textLine1}
+				</p>
+				<p class="text-base sm:text-lg font-bold text-neutral-300 dark:text-neutral-600 mt-2 leading-relaxed" id="text-line-2"
+					data-pageview-prefix={i18n(I18nKey.siteStatsPageViewPrefix)}
+					data-pageview-suffix={i18n(I18nKey.siteStatsPageViewSuffix)}
+				>
+					{textLine2}
+				</p>
+			</div>
 
-    // 更新运行天数
-    const startDate = new Date(siteStartDate);
-    const diffTime = Math.abs(today.getTime() - startDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+			{/* 上层遮罩 - 鼠标悬停时揭示第二层数据 */}
+			<div class="reveal-overlay absolute inset-0 z-20 pointer-events-none will-change-transform"
+				style="clip-path: inset(0 100% 0 0);">
+				<div class="absolute inset-0 flex flex-col items-center justify-center bg-(--page-bg)">
+					<div class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-100 leading-relaxed" id="reveal-line-1">
+						<Icon name="material-symbols:article-outline" class="text-xl sm:text-2xl" />
+						<span>{revealLine1}</span>
+					</div>
+					<div class="flex items-center gap-3 text-base sm:text-lg font-bold text-neutral-600 dark:text-neutral-300 mt-2 leading-relaxed flex-wrap justify-center" id="reveal-line-2">
+						<span class="inline-flex items-center gap-1"><Icon name="material-symbols:folder-outline" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsCategoryCount)} {categoryCount}</span>
+						<span class="text-neutral-400 dark:text-neutral-500">·</span>
+						<span class="inline-flex items-center gap-1"><Icon name="material-symbols:label-outline" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsTagCount)} {tagCount}</span>
+						<span class="text-neutral-400 dark:text-neutral-500">·</span>
+						<span class="inline-flex items-center gap-1"><Icon name="material-symbols:description-rounded" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsTotalWords)} {wordCountFormatted}</span>
+					</div>
+				</div>
+			</div>
+		</div>
 
-    const runningDaysElements = document.querySelectorAll('[data-stat-id="running-days"]');
-    runningDaysElements.forEach((element) => {
-      element.textContent = diffDays.toString();
-    });
+		{/* 竖线光标 */}
+		<div class="reveal-cursor absolute top-0 bottom-0 w-[8px] z-30 pointer-events-none opacity-0 will-change-transform"
+			style="left: 0%; background: linear-gradient(to bottom, transparent, var(--primary), transparent);">
+		</div>
+	</div>
+</div>
 
-    // 更新最后活动时间
-    if (lastPostDate) {
-      const lastPost = new Date(lastPostDate);
-      const timeSinceLastPost = Math.abs(today.getTime() - lastPost.getTime());
-      const daysSinceLastUpdate = Math.floor(timeSinceLastPost / (1000 * 60 * 60 * 24));
+<style is:global>
+	.star {
+		position: absolute;
+		width: 2px;
+		height: 2px;
+		background-color: black;
+		border-radius: 50%;
+		pointer-events: none;
+		box-shadow: 0 0 4px 1px rgba(0,0,0,0.4);
+	}
+	:root.dark .star {
+		background-color: rgba(255,255,255,0.6);
+		box-shadow: 0 0 3px 1px rgba(255,255,255,0.3);
+	}
+</style>
 
-      const lastUpdateElements = document.querySelectorAll('[data-stat-id="last-update"]');
-      lastUpdateElements.forEach((element) => {
-        if (daysSinceLastUpdate === 0) {
-          element.textContent = todayText;
-          if (element.nextElementSibling) {
-            element.nextElementSibling.style.display = 'none';
-          }
-        } else {
-          element.textContent = daysSinceLastUpdate.toString();
-          if (element.nextElementSibling) {
-            element.nextElementSibling.style.display = '';
-          }
-        }
-      });
-    }
-  }
+<script is:inline>
+(function() {
+	// ========== Stars (粒子) ==========
+	function initStars() {
+		var containers = document.querySelectorAll('.stars-container');
+		containers.forEach(function(container) {
+			if (container.dataset.starsInitialized) return;
+			container.dataset.starsInitialized = 'true';
 
-  // 页面加载时更新
-  updateDynamicStats();
+			var starCount = 100;
+			for (var i = 0; i < starCount; i++) {
+				var star = document.createElement('span');
+				star.className = 'star';
+				var startX = Math.random() * 100;
+				var startY = Math.random() * 100;
+				star.style.left = startX + '%';
+				star.style.top = startY + '%';
+				star.style.opacity = '1';
+				star.dataset.startX = String(startX);
+				star.dataset.startY = String(startY);
+				star.dataset.moveX = String((Math.random() * 8 - 4));
+				star.dataset.moveY = String((Math.random() * 8 - 4));
+				star.dataset.speed = String(Math.random() * 10 + 20);
+				star.dataset.delay = String(Math.random() * 5);
+				container.appendChild(star);
+			}
+		});
+	}
 
-  // 页面切换时重新更新
-  document.addEventListener("swup:contentReplaced", () => {
-    setTimeout(updateDynamicStats, 100);
-  });
+	function animateStars() {
+		var stars = document.querySelectorAll('.star');
+		var now = Date.now() / 1000;
+		stars.forEach(function(star) {
+			var startX = parseFloat(star.dataset.startX || '0');
+			var startY = parseFloat(star.dataset.startY || '0');
+			var moveX = parseFloat(star.dataset.moveX || '0');
+			var moveY = parseFloat(star.dataset.moveY || '0');
+			var speed = parseFloat(star.dataset.speed || '20');
+			var delay = parseFloat(star.dataset.delay || '0');
+			var t = (now + delay) % speed / speed;
+			var x = startX + moveX * Math.sin(t * Math.PI * 2);
+			var y = startY + moveY * Math.sin(t * Math.PI * 2);
+			var isDark = document.documentElement.classList.contains('dark');
+			var minOpacity = isDark ? 0.2 : 0.4;
+			var maxOpacity = isDark ? 0.6 : 1.0;
+			var opacity = minOpacity + (maxOpacity - minOpacity) * Math.abs(Math.sin(t * Math.PI * 2));
+			star.style.left = x + '%';
+			star.style.top = y + '%';
+			star.style.opacity = String(opacity);
+		});
+		requestAnimationFrame(animateStars);
+	}
+
+	// ========== Text Reveal Card ==========
+	function initTextReveal() {
+		var cards = document.querySelectorAll('.text-reveal-card');
+		cards.forEach(function(card) {
+			if (card.dataset.revealInitialized) return;
+			card.dataset.revealInitialized = 'true';
+
+			var overlay = card.querySelector('.reveal-overlay');
+			var cursor = card.querySelector('.reveal-cursor');
+			if (!overlay || !cursor) return;
+
+			var targetPercentage = 0;
+			var currentPercentage = 0;
+			var isMouseOver = false;
+			var left = 0;
+			var localWidth = 0;
+
+			function updateRect() {
+				var rect = card.getBoundingClientRect();
+				left = rect.left;
+				localWidth = rect.width;
+			}
+			updateRect();
+			window.addEventListener('resize', updateRect);
+
+			function animate() {
+				var ease = isMouseOver ? 0.3 : 0.08;
+				var diff = targetPercentage - currentPercentage;
+				currentPercentage += diff * ease;
+
+				if (!isMouseOver && Math.abs(diff) < 0.5) {
+					currentPercentage = 0;
+				}
+
+				var clipValue = 'inset(0 ' + (100 - currentPercentage) + '% 0 0)';
+				overlay.style.clipPath = clipValue;
+
+				var rotateDeg = (currentPercentage - 50) * 0.1;
+				cursor.style.left = currentPercentage + '%';
+				cursor.style.transform = 'translateX(-50%) rotate(' + rotateDeg + 'deg)';
+				cursor.style.opacity = currentPercentage > 0 ? '1' : '0';
+
+				requestAnimationFrame(animate);
+			}
+			requestAnimationFrame(animate);
+
+			function mouseMoveHandler(e) {
+				e.preventDefault();
+				var relativeX = e.clientX - left;
+				targetPercentage = (relativeX / localWidth) * 100;
+				targetPercentage = Math.max(0, Math.min(100, targetPercentage));
+			}
+
+			function mouseLeaveHandler() {
+				isMouseOver = false;
+				targetPercentage = 0;
+			}
+
+			function mouseEnterHandler() {
+				isMouseOver = true;
+				updateRect();
+			}
+
+			card.addEventListener('mousemove', mouseMoveHandler);
+			card.addEventListener('mouseleave', mouseLeaveHandler);
+			card.addEventListener('mouseenter', mouseEnterHandler);
+		});
+	}
+
+	function fetchStats() {
+		var textLine1 = document.getElementById('text-line-1');
+		var textLine2 = document.getElementById('text-line-2');
+
+		fetch('/api/count', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ path: location.pathname }),
+		})
+		.then(function(r) { return r.json(); })
+		.then(function(data) {
+			var uv = data.uv != null ? Number(data.uv).toLocaleString() : '--';
+			var pv = data.pv != null ? Number(data.pv).toLocaleString() : '--';
+			if (textLine1) {
+				var prefix1 = textLine1.dataset.visitorPrefix || '你是造访本站的第 ';
+				var suffix1 = textLine1.dataset.visitorSuffix || ' 位旅人，很高兴与你相遇。';
+				textLine1.textContent = prefix1 + uv + suffix1;
+			}
+			if (textLine2) {
+				var prefix2 = textLine2.dataset.pageviewPrefix || '小破站访问量为 ';
+				var suffix2 = textLine2.dataset.pageviewSuffix || '';
+				textLine2.textContent = prefix2 + pv + suffix2;
+			}
+		})
+		.catch(function() {
+			if (textLine1) {
+				var prefix1 = textLine1.dataset.visitorPrefix || '你是造访本站的第 ';
+				var suffix1 = textLine1.dataset.visitorSuffix || ' 位旅人，很高兴与你相遇。';
+				textLine1.textContent = prefix1 + '--' + suffix1;
+			}
+			if (textLine2) {
+				var prefix2 = textLine2.dataset.pageviewPrefix || '小破站访问量为 ';
+				var suffix2 = textLine2.dataset.pageviewSuffix || '';
+				textLine2.textContent = prefix2 + '--' + suffix2;
+			}
+		});
+	}
+
+	initStars();
+	animateStars();
+	initTextReveal();
+	fetchStats();
+
+	document.addEventListener('astro:page-load', function() {
+		initStars();
+		animateStars();
+		initTextReveal();
+		fetchStats();
+	});
+})();
 </script>

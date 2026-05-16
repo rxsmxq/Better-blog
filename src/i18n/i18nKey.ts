@@ -255,6 +255,15 @@ enum I18nKey {
 	siteStatsVisitors = "siteStatsVisitors",
 	siteStatsPageViews = "siteStatsPageViews",
 	siteStatsLoading = "siteStatsLoading",
+	siteStatsVisitorPrefix = "siteStatsVisitorPrefix",
+	siteStatsVisitorSuffix = "siteStatsVisitorSuffix",
+	siteStatsPageViewPrefix = "siteStatsPageViewPrefix",
+	siteStatsPageViewSuffix = "siteStatsPageViewSuffix",
+	siteStatsHoverHint = "siteStatsHoverHint",
+	siteStatsRevealLine1 = "siteStatsRevealLine1",
+	siteStatsRevealLine2 = "siteStatsRevealLine2",
+	footerRunningDays = "footerRunningDays",
+	footerLastUpdate = "footerLastUpdate",
 	today = "today",
 
 	// 日历组件

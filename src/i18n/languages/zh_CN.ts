@@ -259,6 +259,16 @@ export const zh_CN: Translation = {
 	[Key.siteStatsVisitors]: "访客",
 	[Key.siteStatsPageViews]: "访问",
 	[Key.siteStatsLoading]: "--",
+	[Key.siteStatsVisitorPrefix]: "您是造访本站的第 ",
+	[Key.siteStatsVisitorSuffix]: " 位旅人，很高兴与您相遇。",
+	[Key.siteStatsPageViewPrefix]: "小破站访问量为 ",
+	[Key.siteStatsPageViewSuffix]: "",
+	[Key.siteStatsHoverHint]: "悬停查看更多",
+	[Key.siteStatsRevealLine1]:
+		"{posts} 篇文章 · {categories} 个分类 · {tags} 个标签",
+	[Key.siteStatsRevealLine2]: "累计 {words} 字",
+	[Key.footerRunningDays]: "已运行 {days} 天",
+	[Key.footerLastUpdate]: "最后更新于 {days} 天前",
 	[Key.today]: "今天",
 
 	// 日历组件

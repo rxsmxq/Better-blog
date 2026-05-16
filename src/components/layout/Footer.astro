@@ -1,7 +1,10 @@
 ---
 import fs from "node:fs";
 import path from "node:path";
-import { footerConfig, profileConfig } from "@/config";
+import { footerConfig, profileConfig, siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import { getSortedPosts } from "@/utils/content-utils";
 import { url } from "@/utils/url-utils";
 
 const currentYear = new Date().getFullYear();
@@ -23,8 +26,25 @@ if (footerConfig.enable) {
 		console.warn("FooterConfig.html文件读取失败:", error.message);
 	}
 }
----
 
+// 从配置中获取站点开始日期
+const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
+
+// 获取最新文章日期（用于计算最后活动时间）
+const posts = await getSortedPosts();
+const latestPost = posts.reduce((latest, post) => {
+	if (!latest) return post;
+	return post.data.published > latest.data.published ? post : latest;
+}, posts[0]);
+
+const lastPostDate = latestPost
+	? latestPost.data.published.toISOString()
+	: null;
+
+const runningDaysText = i18n(I18nKey.footerRunningDays);
+const lastUpdateText = i18n(I18nKey.footerLastUpdate);
+const todayText = i18n(I18nKey.today);
+---
 
 <div
   class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"
@@ -37,6 +57,18 @@ if (footerConfig.enable) {
   <div class="transition text-50 text-sm text-center wrap">
     <div class="mb-2">
       {customFooterHtml && <div set:html={customFooterHtml} />}
+    </div>
+    {/* 站点运行信息 */}
+    <div class="m-0.5 flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs">
+      <span class="flex items-center gap-1">
+        <span class="iconify text-sm" data-icon="material-symbols:calendar-clock-outline"></span>
+        <span id="footer-running-days" data-template={runningDaysText}>--</span>
+      </span>
+      <span class="text-neutral-300 dark:text-neutral-600">|</span>
+      <span class="flex items-center gap-1">
+        <span class="iconify text-sm" data-icon="mingcute:heartbeat-line"></span>
+        <span id="footer-last-update" data-template={lastUpdateText} data-today={todayText}>--</span>
+      </span>
     </div>
     <div class="m-0.5">
       &copy; <span id="copyright-year">{currentYear}</span>
@@ -72,3 +104,44 @@ if (footerConfig.enable) {
     -->
   </div>
 </div>
+
+<script is:inline define:vars={{ siteStartDate, lastPostDate }}>
+  function updateFooterStats() {
+    const today = new Date();
+
+    // 更新运行天数
+    const startDate = new Date(siteStartDate);
+    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const runningDaysEl = document.getElementById('footer-running-days');
+    if (runningDaysEl) {
+      const template = runningDaysEl.dataset.template || '已运行 {days} 天';
+      runningDaysEl.textContent = template.replace('{days}', diffDays.toString());
+    }
+
+    // 更新最后活动时间
+    const lastUpdateEl = document.getElementById('footer-last-update');
+    if (lastUpdateEl && lastPostDate) {
+      const lastPost = new Date(lastPostDate);
+      const timeSinceLastPost = Math.abs(today.getTime() - lastPost.getTime());
+      const daysSinceLastUpdate = Math.floor(timeSinceLastPost / (1000 * 60 * 60 * 24));
+      const template = lastUpdateEl.dataset.template || '最后更新于 {days} 天前';
+      const todayText = lastUpdateEl.dataset.today || '今天';
+
+      if (daysSinceLastUpdate === 0) {
+        lastUpdateEl.textContent = todayText;
+      } else {
+        lastUpdateEl.textContent = template.replace('{days}', daysSinceLastUpdate.toString());
+      }
+    }
+  }
+
+  // 页面加载时更新
+  updateFooterStats();
+
+  // 页面切换时重新更新
+  document.addEventListener("astro:page-load", () => {
+    setTimeout(updateFooterStats, 100);
+  });
+</script>

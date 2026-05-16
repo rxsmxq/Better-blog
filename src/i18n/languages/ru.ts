@@ -269,6 +269,16 @@ export const ru: Translation = {
 	[Key.siteStatsVisitors]: "Посетители",
 	[Key.siteStatsPageViews]: "Просмотры",
 	[Key.siteStatsLoading]: "--",
+	[Key.siteStatsVisitorPrefix]: "Вы",
+	[Key.siteStatsVisitorSuffix]: "-й посетитель",
+	[Key.siteStatsPageViewPrefix]: "Всего просмотров:",
+	[Key.siteStatsPageViewSuffix]: "",
+	[Key.siteStatsHoverHint]: "Наведите для подробностей",
+	[Key.siteStatsRevealLine1]:
+		"{posts} статей · {categories} категорий · {tags} тегов",
+	[Key.siteStatsRevealLine2]: "Всего {words} слов",
+	[Key.footerRunningDays]: "Работает {days} дней",
+	[Key.footerLastUpdate]: "Последнее обновление {days} дней назад",
 	[Key.today]: "Сегодня",
 
 	// Компонент календаря

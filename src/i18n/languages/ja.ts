@@ -267,6 +267,16 @@ export const ja: Translation = {
 	[Key.siteStatsVisitors]: "訪問者",
 	[Key.siteStatsPageViews]: "閲覧数",
 	[Key.siteStatsLoading]: "--",
+	[Key.siteStatsVisitorPrefix]: "あなたは",
+	[Key.siteStatsVisitorSuffix]: "人目の訪問者です",
+	[Key.siteStatsPageViewPrefix]: "総アクセス数:",
+	[Key.siteStatsPageViewSuffix]: "",
+	[Key.siteStatsHoverHint]: "ホバーして詳細を見る",
+	[Key.siteStatsRevealLine1]:
+		"記事 {posts} · カテゴリー {categories} · タグ {tags}",
+	[Key.siteStatsRevealLine2]: "累計 {words} 文字",
+	[Key.footerRunningDays]: "運用 {days} 日",
+	[Key.footerLastUpdate]: "最終更新は {days} 日前",
 	[Key.today]: "今日",
 
 	// カレンダーコンポーネント

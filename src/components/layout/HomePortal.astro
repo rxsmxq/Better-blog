@@ -6,115 +6,11 @@
  * 包含：Profile / Announcement / Stats / Categories / Tags
  * 重组件（Music / Calendar / Live2D / Spine）由右下浮动坞触达，不在此处。
  */
-import Icon from "@components/common/Icon.astro";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
-import NumberTicker from "@/components/common/NumberTicker.svelte";
 import TypewriterText from "@/components/features/TypewriterText.astro";
+import SiteStats from "@/components/widget/SiteStats.astro";
 import { profileConfig, siteConfig } from "@/config";
-import I18nKey from "@/i18n/i18nKey";
-import { i18n } from "@/i18n/translation";
-import {
-	getCategoryList,
-	getSortedPosts,
-	getTagList,
-} from "@/utils/content-utils";
 import { url } from "@/utils/url-utils";
-
-const posts = await getSortedPosts();
-const categories = await getCategoryList();
-const tags = await getTagList();
-
-let totalWords = 0;
-for (const post of posts) {
-	if (post.body) {
-		const text = post.body
-			.replace(/```[\s\S]*?```/g, "")
-			.replace(/`[^`]*`/g, "")
-			.replace(/\s+/g, " ")
-			.trim();
-		const cn = text.match(/[一-龥]/g) || [];
-		const en = text.match(/[a-zA-Z]/g) || [];
-		totalWords += cn.length + en.length;
-	}
-}
-
-const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
-const latestPost = posts[0];
-
-// 计算运行天数（服务端计算）
-const startDate = new Date(siteStartDate);
-const today = new Date();
-const diffTime = Math.abs(today.getTime() - startDate.getTime());
-const runningDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-// 计算活跃天数
-let lastUpdateDays = 0;
-let isToday = false;
-if (latestPost) {
-	const lastPost = latestPost.data.published;
-	const timeSinceLastPost = Math.abs(today.getTime() - lastPost.getTime());
-	lastUpdateDays = Math.floor(timeSinceLastPost / (1000 * 60 * 60 * 24));
-	isToday = lastUpdateDays === 0;
-}
-
-const stats = [
-	{
-		icon: "material-symbols:article-outline",
-		label: i18n(I18nKey.siteStatsPostCount),
-		value: posts.length,
-	},
-	{
-		icon: "material-symbols:folder-outline",
-		label: i18n(I18nKey.siteStatsCategoryCount),
-		value: categories.length,
-	},
-	{
-		icon: "material-symbols:label-outline",
-		label: i18n(I18nKey.siteStatsTagCount),
-		value: tags.length,
-	},
-	{
-		icon: "material-symbols:text-ad-outline-rounded",
-		label: i18n(I18nKey.siteStatsTotalWords),
-		value: totalWords,
-		formatted: true,
-	},
-	{
-		icon: "material-symbols:calendar-clock-outline",
-		label: i18n(I18nKey.siteStatsRunningDays),
-		value: runningDays,
-		hideValue: runningDays === 0,
-		suffix:
-			runningDays === 0
-				? i18n(I18nKey.today)
-				: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
-	},
-	{
-		icon: "mingcute:heartbeat-line",
-		label: i18n(I18nKey.siteStatsLastUpdate),
-		value: isToday ? 0 : lastUpdateDays,
-		hideValue: isToday,
-		suffix: isToday
-			? i18n(I18nKey.today)
-			: i18n(I18nKey.siteStatsDaysAgo).replace("{days}", ""),
-	},
-	{
-		icon: "material-symbols:eye-tracking-outline",
-		label: i18n(I18nKey.siteStatsVisitors),
-		value: 0,
-		hideValue: true,
-		suffix: i18n(I18nKey.siteStatsLoading),
-		id: "counter-uv",
-	},
-	{
-		icon: "material-symbols:visibility-outline-rounded",
-		label: i18n(I18nKey.siteStatsPageViews),
-		value: 0,
-		hideValue: true,
-		suffix: i18n(I18nKey.siteStatsLoading),
-		id: "counter-pv",
-	},
-];
 ---
 
 <div class="home-portal">
@@ -170,34 +66,8 @@ const stats = [
 		</div>
 	</div>
 
-	{/* STATS */}
-	<div class="onload-animation mt-4 mb-4 stats-container">
-		{[stats.slice(0, 4), stats.slice(4)].map((group, index) => (
-			<div class={`flex flex-row flex-wrap justify-center gap-x-4 gap-y-4 ${index === 0 ? 'mb-4' : 'mt-4'}`}>
-				{group.map((stat) => (
-					<div class="flex flex-col items-center gap-2 min-w-[4.5rem]">
-						<div class="flex items-center gap-1.5">
-							<Icon name={stat.icon} class="text-base text-neutral-600 dark:text-neutral-300" />
-							<span class="text-xs text-neutral-600 dark:text-neutral-300 font-medium">
-								{stat.label}
-							</span>
-						</div>
-						{stat.hideValue ? (
-							<span class="text-sm font-bold text-neutral-900 dark:text-neutral-100" data-stat-id={stat.id || undefined}>{stat.suffix}</span>
-						) : (
-							<NumberTicker
-								value={stat.value}
-								formatted={stat.formatted || false}
-								suffix={stat.suffix || ''}
-								class="text-sm font-bold text-neutral-900 dark:text-neutral-100"
-								client:visible
-							/>
-						)}
-					</div>
-				))}
-			</div>
-		))}
-	</div>
+	{/* STATS - Text Reveal Card */}
+	<SiteStats class="onload-animation mt-1 mb-4 stats-container" />
 
 	{/* 文章列表标题 */}
 	<div class="onload-animation section-title-wrapper">
@@ -217,15 +87,15 @@ const stats = [
 	.stats-container {
 		border: 2px solid #000;
 		border-radius: 1rem;
-		padding: 1rem;
+		padding: 0;
 		max-width: 24rem;
 		margin-left: auto;
 		margin-right: auto;
+		overflow: hidden;
 	}
 	:root.dark .stats-container {
 		border-color: #fff;
 	}
-
 
 	/* === Avatar Magic Rings === */
 	.avatar-ripple-wrapper {
@@ -423,8 +293,8 @@ const stats = [
 	}
 	.section-title-container {
 		text-align: center;
-		padding-top: 2.34375rem;
-		padding-bottom: 0.78125rem;
+		padding-top: 1.5rem;
+		padding-bottom: 0.25rem;
 	}
 	.section-title {
 		font-size: 1.75rem;
@@ -511,29 +381,4 @@ import { initMagicRings } from '@components/features/MagicRings.ts';
 })();
 </script>
 
-<script is:inline>
-(function() {
-	function updateCounter() {
-		var uvEl = document.querySelector('[data-stat-id="counter-uv"]');
-		var pvEl = document.querySelector('[data-stat-id="counter-pv"]');
-		if (!uvEl || !pvEl) return;
 
-		fetch('/api/count', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ path: location.pathname }),
-		})
-		.then(function(r) { return r.json(); })
-		.then(function(data) {
-			if (data.uv != null) uvEl.textContent = Number(data.uv).toLocaleString();
-			if (data.pv != null) pvEl.textContent = Number(data.pv).toLocaleString();
-		})
-		.catch(function() {});
-	}
-
-	updateCounter();
-	document.addEventListener('swup:contentReplaced', function() {
-		setTimeout(updateCounter, 200);
-	});
-})();
-</script>
