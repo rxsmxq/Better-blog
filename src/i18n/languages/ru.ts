@@ -274,8 +274,7 @@ export const ru: Translation = {
 	[Key.siteStatsPageViewPrefix]: "Всего просмотров:",
 	[Key.siteStatsPageViewSuffix]: "",
 	[Key.siteStatsHoverHint]: "Наведите для подробностей",
-	[Key.siteStatsRevealLine1]:
-		"{posts} статей · {categories} категорий · {tags} тегов",
+	[Key.siteStatsRevealLine1]: "{posts} статей · {categories} категорий · {tags} тегов",
 	[Key.siteStatsRevealLine2]: "Всего {words} слов",
 	[Key.footerRunningDays]: "Работает {days} дней",
 	[Key.footerLastUpdate]: "Последнее обновление {days} дней назад",

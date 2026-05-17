@@ -273,8 +273,7 @@ export const en: Translation = {
 	[Key.siteStatsPageViewPrefix]: "Total views:",
 	[Key.siteStatsPageViewSuffix]: "",
 	[Key.siteStatsHoverHint]: "Hover to see more",
-	[Key.siteStatsRevealLine1]:
-		"{posts} posts · {categories} categories · {tags} tags",
+	[Key.siteStatsRevealLine1]: "{posts} posts · {categories} categories · {tags} tags",
 	[Key.siteStatsRevealLine2]: "{words} words total",
 	[Key.footerRunningDays]: "Running for {days} days",
 	[Key.footerLastUpdate]: "Last updated {days} days ago",
