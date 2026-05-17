@@ -53,10 +53,11 @@ draft: false
 2. 缓存空值...
 ```
 
-每个段落保留上下文：文章标题 + 分类 + 标签 + 章节标题路径 + 正文。打包成一个 chunk：
+每个段落保留上下文：文章标题 + 日期 + 分类 + 标签 + 章节标题路径 + 正文。打包成一个 chunk：
 
 ```
 文章：Redis 缓存设计
+日期：2025-03-15
 分类：笔记
 标签：Redis, 缓存
 章节：缓存问题 > 缓存穿透
@@ -64,7 +65,7 @@ draft: false
 缓存穿透是指查询一个一定不存在的数据...
 ```
 
-过滤条件：正文少于 50 字的段落丢弃（太短没有检索价值）。
+空字段（如无分类、无标签）自动省略，通过 `.filter(Boolean)` 过滤空行。过滤条件：正文少于 50 字的段落丢弃（太短没有检索价值）。
 
 ### 实现细节
 
@@ -105,6 +106,7 @@ function splitByHeadings(content, articleTitle) {
 - 只识别 `#` ~ `####` 四级标题，遇到标题就切段
 - `currentHeadingPath` 维护层级路径，如 `缓存问题 > 缓存穿透 > 解决方案`
 - 每个 chunk 的 ID 由 `slug::heading` 哈希生成，保证同一章节始终对应同一向量 ID
+- 每个 chunk 携带 metadata（`articleTitle`、`articlePath`、`published`、`category`、`tags`、`heading`、`excerpt`），供检索结果展示和去重使用
 
 ### 与 LangChain 递归分块的对比
 
@@ -115,7 +117,7 @@ function splitByHeadings(content, articleTitle) {
 | **语义完整性** | 高，每个 chunk 对应完整小节 | 低，可能把一句话切成两半 |
 | **Chunk 大小控制** | 被动，取决于标题下内容多少 | 主动，可精确控制 `chunk_size` |
 | **超长处理** | 无，一个标题下几千字仍作为一个 chunk | 有，超长自动继续递归切分 |
-| **元信息注入** | 自动注入文章标题、分类、标签、章节路径 | 默认不注入，需额外处理 |
+| **元信息注入** | 自动注入文章标题、日期、分类、标签、章节路径 | 默认不注入，需额外处理 |
 | **实现复杂度** | 简单（正则匹配标题） | 中等（递归逻辑 + 分隔符管理） |
 | **适用场景** | 技术文档、博客等结构清晰的 Markdown | 小说、散文、无结构文本 |
 
@@ -145,15 +147,7 @@ for sep in separators:
 3. 调用 embedding API 生成向量
 4. 批量写入 Cloudflare Vectorize
 
-支持增量更新——通过 `.vectorize-manifest.json` 记录每篇文章的内容 hash，只处理新增/修改/删除的文章。
-
-```bash
-# 增量更新
-node scripts/build-vectorize-index.js
-
-# 全量重建
-node scripts/build-vectorize-index.js --force
-```
+支持增量更新——通过 `.vectorize-manifest.json` 记录每篇文章的内容 hash，只处理新增/修改/删除的文章。具体用法和底层 API 见下文「向量索引上传」小节。
 
 ### Embedding 来源
 
@@ -164,33 +158,92 @@ node scripts/build-vectorize-index.js --force
 | 第三方 API | Qwen3-Embedding-8B | 1024 | 中文效果好，需要 API Key |
 | Workers AI | bge-base-en-v1.5 | 768 | 免费，英文为主 |
 
-配置在 `.env` 中：
+对话模型同样有两种模式：
+
+| 模式 | 模型 | 特点 |
+|---|---|---|
+| 第三方 API | DeepSeek-V4-Flash | 效果好，需要 API Key |
+| Workers AI | llama-3-8b-instruct | 免费，英文为主 |
+
+配置在 `.env` 中（仅敏感信息），参考 `.env.example`：
 
 ```bash
-# 第三方 embedding API（可选）
-# 格式：OpenAI 兼容的 embeddings 接口，目前我选择的是魔搭社区的 Qwen3-Embedding-8B
-# 原因很简单免费
-AI_API_URL=https://api-inference.modelscope.cn/v1
-AI_API_KEY=sk-xxx
-AI_EMBEDDING_MODEL=Qwen/Qwen3-Embedding-8B
+# Cloudflare 凭证（必填）
+CLOUDFLARE_API_TOKEN=xxx
+CLOUDFLARE_ACCOUNT_ID=xxx
 
-# 向量维度（需与索引一致）
-VECTORIZE_DIM=1024
+# 第三方 AI API Key（可选，有则走第三方 API，无则回退 Workers AI）
+AI_API_KEY=sk-xxx
 ```
 
-### Vectorize 操作
+非敏感配置（API 地址、模型名称、向量维度等）统一在 `aiSearchConfig.ts` 中管理，无需在 `.env` 重复配置。
 
-通过 Cloudflare REST API 操作（不是 Wrangler CLI）：
+### Cloudflare 凭证获取
+
+**CLOUDFLARE_API_TOKEN**：
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 右上角头像 → **My Profile** → **API Tokens** → **Create Token**
+3. 选择 **Create Custom Token**，权限勾选：
+   - **Account** → **Vectorize** → **Edit**
+   - **Account** → **Workers AI** → **Use**
+4. 创建后复制 Token（页面关闭后无法再查看）
+
+**CLOUDFLARE_ACCOUNT_ID**：
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 点击任意域名 → 概览页右侧栏 **API** 区域 → 复制 **Account ID**
+3. 或直接从 URL 中复制：`https://dash.cloudflare.com/<account_id>/...`
+
+**AI_API_KEY**（可选）：
+
+当前使用魔搭社区（ModelScope）的免费接口，注册即可获取：
+
+1. 注册 [ModelScope](https://modelscope.cn)
+2. 右上角头像 → **API-KEY 管理** → **创建 API Key**
+
+### Worker Secret 配置
+
+Worker 运行时需要的 `AI_API_KEY` 不能写在代码中，需在 Cloudflare Dashboard 配置：
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. **Workers & Pages** → 选择你的 Worker → **Settings** → **Variables and Secrets**
+3. 添加 **Secret** 类型变量：`AI_API_KEY`，值为第三方 API 的 Key
+
+### 向量索引上传
+
+构建脚本 `scripts/build-vectorize-index.js` 通过 Cloudflare REST API 操作 Vectorize（不是 Wrangler CLI）：
+
+```bash
+# 首次使用前，确保 .env 已配置 CLOUDFLARE_API_TOKEN 和 CLOUDFLARE_ACCOUNT_ID
+
+# 增量更新（只处理新增/修改/删除的文章）
+node scripts/build-vectorize-index.js
+
+# 全量重建（删除旧索引，重新创建并上传所有文章向量）
+node scripts/build-vectorize-index.js --force
+```
+
+全量重建流程：删除旧索引 → 创建新索引（指定维度和 cosine 度量）→ 分批生成 embedding → 分批插入向量。增量更新通过 `.vectorize-manifest.json` 记录每篇文章的内容 hash，只处理有变化的文章。
+
+底层 API 调用：
 
 ```javascript
-// 插入
+// 插入向量
 await fetch(`${API_BASE}/vectorize/v2/indexes/${INDEX_NAME}/insert`, {
   method: "POST",
   headers: { Authorization: `Bearer ${API_TOKEN}` },
   body: JSON.stringify({ vectors }),
 });
 
-// 查询
+// 删除向量
+await fetch(`${API_BASE}/vectorize/v2/indexes/${INDEX_NAME}/delete-by-ids`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${API_TOKEN}` },
+  body: JSON.stringify({ ids: batch }),
+});
+
+// 查询（Worker 运行时通过绑定调用，不需要 API Token）
 const results = await env.VECTORIZE.query(queryVector, {
   topK: 10,
   returnMetadata: true,
@@ -201,22 +254,56 @@ const results = await env.VECTORIZE.query(queryVector, {
 
 `src/worker.js` 中的 `handleAIChat` 处理 `/api/ai-chat`：
 
-### 1. Embedding
+### 1. 统一配置管理
+
+所有 AI 相关配置集中在 `src/config/aiSearchConfig.ts`，前端组件、构建脚本、Worker 三方共享：
+
+```typescript
+export const aiSearchConfig = {
+  apiUrl: "https://api-inference.modelscope.cn/v1",  // API 地址
+  modelName: "deepseek-ai/DeepSeek-V4-Flash",         // LLM 对话模型
+  embeddingModel: "Qwen/Qwen3-Embedding-8B",          // 向量模型
+  vectorizeDim: 1024,                                  // 向量维度
+  batchSize: 500,                                      // 构建脚本批大小
+  embedBatchSize: 50,                                  // Embedding 请求批大小
+  indexName: "blog-ai-search",                         // Vectorize 索引名
+};
+```
+
+Worker 运行时通过 `getAiConfig(env)` 读取配置，非敏感项从 `aiSearchConfig` 取值，仅 API Key 从环境变量 `env.AI_API_KEY` 注入。当配置项和 API Key 都存在时走第三方 API，否则回退到 Cloudflare Workers AI 内置模型。
+
+### 2. Embedding
 
 ```javascript
 async function getEmbedding(env, text) {
+  const cfg = getAiConfig(env);
   if (useThirdParty(env)) {
-    // 调用第三方 API
-    const res = await fetch(`${baseUrl}/v1/embeddings`, { ... });
-    return data.data[0].embedding;
+    const res = await fetch(buildApiUrl(cfg.apiUrl, "/v1/embeddings"), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: cfg.embeddingModel,
+        input: text,
+        dimensions: cfg.vectorizeDim,
+        encoding_format: "float",
+      }),
+    });
+    if (!res.ok)
+      throw new Error(`Embedding API ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    return data.data?.[0]?.embedding;
   }
-  // Workers AI
   const result = await env.AI.run("@cf/baai/bge-base-en-v1.5", { text });
   return result.data[0];
 }
 ```
 
-### 2. 向量检索
+模型名和维度均从 `aiSearchConfig` 读取，切换模型只需改配置文件。
+
+### 3. 向量检索
 
 ```javascript
 const queryVector = await getEmbedding(env, question);
@@ -226,9 +313,9 @@ const results = await env.VECTORIZE.query(queryVector, {
 });
 ```
 
-过滤 `score < 0.2` 的低相似度结果，去重后拼接上下文。
+过滤 `score < 0.2` 的低相似度结果，按 `articlePath` 去重后拼接上下文。每条匹配结果格式为 `【文章标题 - 章节标题】\n摘要`，用 `---` 分隔。去重后的文章信息（标题、路径、发布日期、摘要、相似度分数）作为 `refs` 事件先于回答发送。
 
-### 3. Prompt 拼接与 system 注入防护
+### 4. Prompt 拼接与 system 注入防护
 
 系统提示（system prompt）决定了 AI 的人格和行为准则。如果用户通过构造请求在 `history` 中插入 `role: "system"` 的消息，就可能覆盖或绕过预设人格——这称为 **system 注入攻击**。
 
@@ -246,20 +333,18 @@ const messages = [
 
 当前人格设定为猫娘「喵墩」，系统提示包含完整的角色背景、语言规范、性格画像等，与博客检索规则拼接后传给 LLM。
 
-### 4. 流式返回
+### 5. 流式返回
 
-SSE 格式，三种事件类型：
+SSE 格式，四种事件类型：
 
 ```
 data: {"type":"refs","articles":[...]}   ← 参考文章（先发）
 data: {"type":"chunk","text":"..."}       ← 回答文本片段
+data: {"type":"error","error":"..."}      ← 错误信息
 data: {"type":"done"}                     ← 结束
 ```
 
-支持两种 LLM 后端：
-
-- **第三方 API**（DeepSeek-V4-Flash）：OpenAI 兼容格式，解析 `data: [DONE]` 流
-- **Workers AI**（Llama-3-8B-Instruct）：Cloudflare 原生流
+LLM 后端由 `aiSearchConfig` 决定：配置了 `apiUrl` + `modelName` + `AI_API_KEY` 时走第三方 API（OpenAI 兼容格式流），否则回退 Workers AI（`@cf/meta/llama-3-8b-instruct`，Cloudflare 原生流）。
 
 ## 前端组件
 
@@ -274,6 +359,10 @@ data: {"type":"done"}                     ← 结束
 - **多轮对话**：保留最近 6 条历史消息作为上下文
 - **Markdown 渲染**：使用 `marked` 库，支持代码块、列表、引用
 - **会话管理**：localStorage 持久化，支持新建、切换、删除、上限控制
+- **建议按钮**：空对话时显示预设问题，点击直接发送
+- **模型名显示**：标题栏展示当前使用的对话模型名称
+- **停止生成**：生成中可点击停止按钮中断流式响应
+- **错误处理**：SSE `error` 事件和请求异常均以引用块形式展示
 
 关键状态管理：
 
@@ -281,12 +370,13 @@ data: {"type":"done"}                     ← 结束
 let messages = $state<Message[]>([]);
 let isLoading = $state(false);
 let abortCtrl: AbortController | null = null;
+let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 let sessionId = $state("");
 let sessionList = $state<SessionMeta[]>([]);
 let showSessionList = $state(false);
 ```
 
-流式读取使用 `ReadableStream` + `TextDecoder`，逐行解析 SSE data。
+流式读取使用 `ReadableStream` + `TextDecoder`，逐行解析 SSE data。生成中可通过 `AbortController` 中断请求，同时取消 `reader`。前端处理四种 SSE 事件：`refs`（参考文章）、`chunk`（文本片段）、`error`（错误信息）、`done`（结束）。
 
 ### 会话管理
 
@@ -322,7 +412,7 @@ function startNewSession() {
 
 #### 历史会话列表
 
-标题栏「历史」按钮（`history-outline` 图标），点击展开/收起下拉面板：
+标题栏「历史」按钮（`history` 图标），点击展开/收起下拉面板：
 
 ```svelte
 {#if showSessionList}
@@ -431,20 +521,7 @@ onMount(() => {
 
 ## 敏感配置处理
 
-`wrangler.toml` 被 git 跟踪，不能硬编码 API Key。解决方案：
-
-```toml
-AI_API_KEY = "$AI_API_KEY"  # 部署时从环境变量注入
-```
-
-本地开发用 `.env`（已在 `.gitignore`），CI/CD 用 GitHub Actions Secrets：
-
-```yaml
-- name: Deploy
-  run: pnpm wrangler deploy
-  env:
-    AI_API_KEY: ${{ secrets.AI_API_KEY }}
-```
+非敏感配置集中在 `src/config/aiSearchConfig.ts`，三方共享。敏感信息（API Key）的配置方式见上文「Worker Secret 配置」小节。
 
 ## 资源消耗
 
@@ -462,8 +539,9 @@ AI_API_KEY = "$AI_API_KEY"  # 部署时从环境变量注入
 |---|---|
 | `scripts/build-vectorize-index.js` | 向量索引构建脚本 |
 | `src/worker.js` → `handleAIChat` | Worker 端 RAG 问答 API |
+| `src/config/aiSearchConfig.ts` | AI 搜索统一配置中心 |
 | `src/components/controls/AISearch.svelte` | 前端聊天 UI |
-| `.env.example` | 环境变量模板 |
+| `.env.example` | 环境变量模板（含获取说明） |
 | `wrangler.toml` | Vectorize + AI 绑定配置 |
 | `.vectorize-manifest.json` | 增量更新 manifest（gitignored） |
 
