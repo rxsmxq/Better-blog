@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from "svelte";
+import { onDestroy, onMount } from "svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
 import {
 	fetchGuestbookMessages,
@@ -41,10 +41,31 @@ let votes = $state<Record<string, "agree" | "disagree" | "neutral">>({});
 // 新卡片入场动画偏移
 let enteringCardId = $state<string | null>(null);
 let enterTransform = $state<string | null>(null);
-// 卡片引用
-let cardRef = $state<HTMLDivElement | null>(null);
-// 动画帧ID
+
+// 动画与定时器管理，防止组件卸载时内存泄漏
 let rafId: number | null = null;
+let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
+let handleNew: ((e: Event) => void) | null = null;
+
+function safeSetTimeout(fn: () => void, ms: number) {
+	const id = setTimeout(() => {
+		fn();
+		activeTimeouts = activeTimeouts.filter((t) => t !== id);
+	}, ms);
+	activeTimeouts.push(id);
+	return id;
+}
+
+onDestroy(() => {
+	if (rafId) cancelAnimationFrame(rafId);
+	activeTimeouts.forEach((id) => {
+		clearTimeout(id);
+	});
+	if (handleNew) {
+		window.removeEventListener("guestbooknew", handleNew);
+	}
+});
+
 // 获取当前可见的卡片（最多5张）
 let visibleCards = $derived(
 	allMessages.slice(currentIndex, currentIndex + 5).map((msg, i) => ({
@@ -95,10 +116,9 @@ function getCardStyle(
 	const scale = 1 - stackIndex * 0.03;
 	const rotate = stackIndex * -1.8;
 	const opacity = Math.max(0.5, 1 - stackIndex * 0.12);
-	const brightness = `${Math.max(70, 100 - stackIndex * 8)}%`;
-	const grayscale = `${Math.min(40, stackIndex * 10)}%`;
 
-	return `transform: translate3d(${offset}px, ${offset * 5}px, -${stackIndex * 25}px) scale(${scale}) rotate(${rotate}deg); z-index: ${100 - stackIndex}; opacity: ${opacity}; filter: brightness(${brightness}) grayscale(${grayscale}); pointer-events: none;`;
+	// 移除了 filter: brightness grayscale 提高渲染性能，由卡片内叠加 .card-overlay 替代
+	return `transform: translate3d(${offset}px, ${offset * 5}px, -${stackIndex * 25}px) scale(${scale}) rotate(${rotate}deg); z-index: ${100 - stackIndex}; opacity: ${opacity}; pointer-events: none;`;
 }
 
 // 获取卡片边框颜色类名
@@ -170,9 +190,7 @@ function handlePointerDown(e: PointerEvent) {
 	currentX = 0;
 	currentY = 0;
 
-	if (cardRef) {
-		cardRef.setPointerCapture(e.pointerId);
-	}
+	(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 }
 
 // 处理触摸/鼠标移动 - 使用 requestAnimationFrame 节流
@@ -187,6 +205,21 @@ function handlePointerMove(e: PointerEvent) {
 	});
 }
 
+// 提取公共的投票处理逻辑
+async function submitVote(
+	cardId: string,
+	type: "agree" | "disagree" | "neutral",
+) {
+	votes[cardId] = type;
+	try {
+		const updated = await voteGuestbookMessage(cardId, type);
+		const idx = allMessages.findIndex((m) => m.id === updated.id);
+		if (idx !== -1) allMessages[idx] = updated;
+	} catch (err) {
+		console.error("Failed to submit vote:", err);
+	}
+}
+
 // 处理触摸/鼠标释放 — 任何拖拽释放都执行飞出动画
 function handlePointerUp() {
 	if (!isDragging) return;
@@ -197,19 +230,12 @@ function handlePointerUp() {
 		rafId = null;
 	}
 
-	if (!visibleCards[0] || !cardRef) return;
+	if (!visibleCards[0]) return;
 
 	// 记录投票
 	const currentCard = visibleCards[0];
 	if (voteType) {
-		votes[currentCard.id] = voteType;
-		// 异步更新投票到后端
-		voteGuestbookMessage(currentCard.id, voteType)
-			.then((updated) => {
-				const idx = allMessages.findIndex((m) => m.id === updated.id);
-				if (idx !== -1) allMessages[idx] = updated;
-			})
-			.catch(() => {});
+		submitVote(currentCard.id, voteType);
 	}
 
 	// 判断飞走方向
@@ -222,7 +248,7 @@ function handlePointerUp() {
 	flyOutTransform = `transform: translate3d(${flyX}px, ${flyY}px, 0) rotate(${rotate}deg) scale(0.85); transition: transform 0.45s cubic-bezier(0.22, 0.68, 0.25, 1), opacity 0.45s; opacity: 0;`;
 
 	// 动画结束后移除卡片并重置
-	setTimeout(() => {
+	safeSetTimeout(() => {
 		currentIndex++;
 		currentX = 0;
 		currentY = 0;
@@ -268,13 +294,13 @@ async function refillCards() {
 
 		// 逐张发牌
 		for (let i = 0; i < messages.length; i++) {
-			setTimeout(() => {
+			safeSetTimeout(() => {
 				const traj = entryTrajectories[i % entryTrajectories.length];
 
 				enteringCardId = messages[i].id;
 				enterTransform = `transform: translate3d(${traj.x}px, ${traj.y}px, 0) rotate(${traj.rot}deg) scale(0.6); opacity: 0;`;
 
-				allMessages = [...allMessages, messages[i]];
+				allMessages.push(messages[i]);
 
 				requestAnimationFrame(() => {
 					enteringCardId = null;
@@ -291,6 +317,11 @@ async function refillCards() {
 
 // 初始发牌动效：从 API 获取首批卡片并逐张飞入
 onMount(async () => {
+	handleNew = (e: Event) => {
+		handleNewMessage(e as CustomEvent<GuestbookMessage>);
+	};
+	window.addEventListener("guestbooknew", handleNew);
+
 	try {
 		const { messages, total } = await fetchGuestbookMessages(0, 5);
 		totalMessages = total;
@@ -310,13 +341,13 @@ onMount(async () => {
 		];
 
 		for (let i = 0; i < messages.length; i++) {
-			setTimeout(() => {
+			safeSetTimeout(() => {
 				const traj = entryTrajectories[i % entryTrajectories.length];
 
 				enteringCardId = messages[i].id;
 				enterTransform = `transform: translate3d(${traj.x}px, ${traj.y}px, 0) rotate(${traj.rot}deg) scale(0.6); opacity: 0;`;
 
-				allMessages = [...allMessages, messages[i]];
+				allMessages.push(messages[i]);
 
 				requestAnimationFrame(() => {
 					enteringCardId = null;
@@ -326,7 +357,7 @@ onMount(async () => {
 		}
 
 		// 发牌完成后标记结束
-		setTimeout(
+		safeSetTimeout(
 			() => {
 				isInitialDealing = false;
 			},
@@ -350,44 +381,41 @@ function openDetail(card: GuestbookMessage, e: Event) {
 function handleNewMessage(e: CustomEvent<GuestbookMessage>) {
 	const msg = e.detail;
 	if (!msg) return;
-	allMessages = [msg, ...allMessages];
+	// 将新留言插入到当前可见卡片的下一张位置，避免直接unshift导致currentIndex错位引发跳变
+	if (visibleCards.length > 0) {
+		allMessages.splice(currentIndex + 1, 0, msg);
+	} else {
+		allMessages.push(msg);
+	}
 	totalMessages++;
 }
 
 // 键盘支持
 function handleKeyDown(e: KeyboardEvent) {
+	const target = e.target as HTMLElement;
+	if (
+		!target ||
+		target.tagName === "INPUT" ||
+		target.tagName === "TEXTAREA" ||
+		target.isContentEditable
+	) {
+		return;
+	}
+
 	if (visibleCards.length === 0) return;
 
 	const currentCard = visibleCards[0];
 	switch (e.key) {
 		case "ArrowRight":
-			votes[currentCard.id] = "agree";
-			voteGuestbookMessage(currentCard.id, "agree")
-				.then((updated) => {
-					const idx = allMessages.findIndex((m) => m.id === updated.id);
-					if (idx !== -1) allMessages[idx] = updated;
-				})
-				.catch(() => {});
+			submitVote(currentCard.id, "agree");
 			swipeCard(300, 0);
 			break;
 		case "ArrowLeft":
-			votes[currentCard.id] = "disagree";
-			voteGuestbookMessage(currentCard.id, "disagree")
-				.then((updated) => {
-					const idx = allMessages.findIndex((m) => m.id === updated.id);
-					if (idx !== -1) allMessages[idx] = updated;
-				})
-				.catch(() => {});
+			submitVote(currentCard.id, "disagree");
 			swipeCard(-300, 0);
 			break;
 		case "ArrowUp":
-			votes[currentCard.id] = "neutral";
-			voteGuestbookMessage(currentCard.id, "neutral")
-				.then((updated) => {
-					const idx = allMessages.findIndex((m) => m.id === updated.id);
-					if (idx !== -1) allMessages[idx] = updated;
-				})
-				.catch(() => {});
+			submitVote(currentCard.id, "neutral");
 			swipeCard(0, -300);
 			break;
 	}
@@ -395,14 +423,14 @@ function handleKeyDown(e: KeyboardEvent) {
 
 // 程序化滑动卡片
 function swipeCard(x: number, y: number) {
-	if (!cardRef) return;
+	if (visibleCards.length === 0) return;
 
 	const flyX = x > 0 ? 700 : -700;
 	const flyY = y < 0 ? -600 : 600;
 	const rotate = x * 0.06;
 	flyOutTransform = `transform: translate3d(${flyX}px, ${flyY}px, 0) rotate(${rotate}deg) scale(0.85); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s; opacity: 0;`;
 
-	setTimeout(() => {
+	safeSetTimeout(() => {
 		currentIndex++;
 		flyOutTransform = null;
 		if (visibleCards.length === 0) {
@@ -412,7 +440,7 @@ function swipeCard(x: number, y: number) {
 }
 </script>
 
-<svelte:window onkeydown={handleKeyDown} onguestbooknew={handleNewMessage} />
+<svelte:window onkeydown={handleKeyDown} />
 
 <div class="guestbook-card-stack">
 	<!-- 背景装饰 -->
@@ -421,146 +449,87 @@ function swipeCard(x: number, y: number) {
 	<!-- 卡片容器 -->
 	<div class="cards-container">
 		{#each visibleCards as card (card.id)}
-			{#if card.stackIndex === 0}
-				<div
-					class="message-card top-card"
-					class:is-dragging={isDragging}
-					class:no-transition={isDragging}
-					style="{getCardStyle(card.stackIndex, isDragging, currentX, currentY, card.id)} {getCardGlow(card.stackIndex, voteType)}"
-					bind:this={cardRef}
-					onpointerdown={handlePointerDown}
-					onpointermove={handlePointerMove}
-					onpointerup={handlePointerUp}
-					onpointercancel={handlePointerUp}
-					role="button"
-					tabindex="0"
-					aria-label="留言卡片，拖拽投票"
-				>
-					<!-- 卡片内容 -->
-					<div class="card-inner {getCardBorderColor(card.stackIndex, voteType)}">
-						<!-- 角标装饰 -->
-						<div class="corner-mark top-left"></div>
-						<div class="corner-mark top-right"></div>
-						<div class="corner-mark bottom-left"></div>
-						<div class="corner-mark bottom-right"></div>
+			<div
+				class="message-card {card.stackIndex === 0 ? 'top-card' : ''}"
+				class:is-dragging={card.stackIndex === 0 && isDragging}
+				class:no-transition={card.stackIndex === 0 && isDragging}
+				style="{getCardStyle(card.stackIndex, card.stackIndex === 0 && isDragging, currentX, currentY, card.id)} {getCardGlow(card.stackIndex, voteType)}"
+				onpointerdown={card.stackIndex === 0 ? handlePointerDown : null}
+				onpointermove={card.stackIndex === 0 ? handlePointerMove : null}
+				onpointerup={card.stackIndex === 0 ? handlePointerUp : null}
+				onpointercancel={card.stackIndex === 0 ? handlePointerUp : null}
+				role="button"
+				tabindex={card.stackIndex === 0 ? 0 : -1}
+				aria-label={card.stackIndex === 0 ? "留言卡片，拖拽投票" : "留言卡片（不可交互）"}
+			>
+				<!-- 卡片内容 -->
+				<div class="card-inner {getCardBorderColor(card.stackIndex, voteType)}">
+					<!-- 角标装饰 -->
+					<div class="corner-mark top-left"></div>
+					<div class="corner-mark top-right"></div>
+					<div class="corner-mark bottom-left"></div>
+					<div class="corner-mark bottom-right"></div>
 
-						<!-- 头部 -->
-						<div class="card-header">
-							<div class="header-bg"></div>
-							<div class="header-content">
-								<div class="author-info">
-									<div class="author-avatar"></div>
-									<span class="author-name">{card.author}</span>
-								</div>
-								<span class="message-time">{card.time}</span>
+					<!-- 头部 -->
+					<div class="card-header">
+						<div class="header-bg"></div>
+						<div class="header-content">
+							<div class="author-info">
+								<div class="author-avatar"></div>
+								<span class="author-name">{card.author}</span>
 							</div>
+							<span class="message-time">{card.time}</span>
 						</div>
+					</div>
 
-						<!-- 主体内容 -->
-						<div class="card-body">
-							<div class="body-line"></div>
-							<div class="body-content">
-								<div class="source-tag">
-									<span>SOURCE :: Guestbook</span>
-								</div>
-								<h3 class="message-title">留言 #{card.id.split("_")[1]}</h3>
-								<div class="title-underline"></div>
-								<p class="message-text">{card.content}</p>
+					<!-- 主体内容 -->
+					<div class="card-body">
+						<div class="body-line"></div>
+						<div class="body-content">
+							<div class="source-tag">
+								<span>SOURCE :: Guestbook</span>
 							</div>
+							<h3 class="message-title">留言 #{card.id && card.id.includes('_') ? card.id.split("_")[1] : card.id}</h3>
+							<div class="title-underline"></div>
+							<p class="message-text">{card.content}</p>
 						</div>
+					</div>
 
-						<!-- 投票统计 -->
-						<div class="card-votes">
-							<span class="card-vote agree">&#9650; {card.votes.agree}</span>
-							<span class="card-vote neutral">&#9644; {card.votes.neutral}</span>
-							<span class="card-vote disagree">&#9660; {card.votes.disagree}</span>
+					<!-- 投票统计 -->
+					<div class="card-votes">
+						<span class="card-vote agree">&#9650; {card.votes.agree}</span>
+						<span class="card-vote neutral">&#9644; {card.votes.neutral}</span>
+						<span class="card-vote disagree">&#9660; {card.votes.disagree}</span>
+					</div>
+
+					<!-- 底部 -->
+					<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
+						<div class="footer-bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
 						</div>
+						<span class="footer-text">读取档案 >></span>
+					</div>
 
-						<!-- 底部 -->
-						<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
-							<div class="footer-bars">
-								<div class="bar"></div>
-								<div class="bar"></div>
-								<div class="bar"></div>
-								<div class="bar"></div>
-								<div class="bar"></div>
+					<!-- 投票标签 -->
+					{#if card.stackIndex === 0 && isDragging && voteType}
+						{@const label = getVoteLabel(voteType)}
+						{#if label}
+							<div class="vote-label {label.color} {label.position}">
+								{label.text}
 							</div>
-							<span class="footer-text">读取档案 >></span>
-						</div>
-
-						<!-- 投票标签 -->
-						{#if isDragging && voteType}
-							{@const label = getVoteLabel(voteType)}
-							{#if label}
-								<div class="vote-label {label.color} {label.position}">
-									{label.text}
-								</div>
-							{/if}
 						{/if}
-					</div>
+					{/if}
+
+					<!-- 底层卡片遮罩层 (替代高开销的 filter: brightness) -->
+					{#if card.stackIndex > 0}
+						<div class="card-overlay" style="opacity: {Math.min(0.6, card.stackIndex * 0.15)}"></div>
+					{/if}
 				</div>
-			{:else}
-				<div
-					class="message-card"
-					style="{getCardStyle(card.stackIndex, false, 0, 0, card.id)}"
-					role="button"
-					tabindex="-1"
-					aria-label="留言卡片（不可交互）"
-				>
-					<!-- 卡片内容 -->
-					<div class="card-inner {getCardBorderColor(card.stackIndex, null)}">
-						<!-- 角标装饰 -->
-						<div class="corner-mark top-left"></div>
-						<div class="corner-mark top-right"></div>
-						<div class="corner-mark bottom-left"></div>
-						<div class="corner-mark bottom-right"></div>
-
-						<!-- 头部 -->
-						<div class="card-header">
-							<div class="header-bg"></div>
-							<div class="header-content">
-								<div class="author-info">
-									<div class="author-avatar"></div>
-									<span class="author-name">{card.author}</span>
-								</div>
-								<span class="message-time">{card.time}</span>
-							</div>
-						</div>
-
-						<!-- 主体内容 -->
-						<div class="card-body">
-							<div class="body-line"></div>
-							<div class="body-content">
-								<div class="source-tag">
-									<span>SOURCE :: Guestbook</span>
-								</div>
-								<h3 class="message-title">留言 #{card.id.split("_")[1]}</h3>
-								<div class="title-underline"></div>
-								<p class="message-text">{card.content}</p>
-							</div>
-						</div>
-
-						<!-- 投票统计 -->
-						<div class="card-votes">
-							<span class="card-vote agree">&#9650; {card.votes.agree}</span>
-							<span class="card-vote neutral">&#9644; {card.votes.neutral}</span>
-							<span class="card-vote disagree">&#9660; {card.votes.disagree}</span>
-						</div>
-
-						<!-- 底部 -->
-						<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
-							<div class="footer-bars">
-								<div class="bar"></div>
-								<div class="bar"></div>
-								<div class="bar"></div>
-								<div class="bar"></div>
-								<div class="bar"></div>
-							</div>
-							<span class="footer-text">读取档案 >></span>
-						</div>
-					</div>
-				</div>
-			{/if}
+			</div>
 		{/each}
 
 		<!-- 空状态 -->
@@ -592,6 +561,15 @@ function swipeCard(x: number, y: number) {
 </div>
 
 <style>
+	.card-overlay {
+		position: absolute;
+		inset: 0;
+		background: #000;
+		pointer-events: none;
+		z-index: 25;
+		transition: opacity 0.5s cubic-bezier(0.22, 0.68, 0.25, 1);
+	}
+
 	.guestbook-card-stack {
 		--card-bg: #ffffff;
 		--card-border: #18181b;
