@@ -74,37 +74,7 @@ npx wrangler deploy
 
 强制使用 pnpm（`preinstall` 脚本限制）。
 
-## 架构
-
-### 内容系统
-
-博客文章存放在 `src/content/posts/`，支持 `.md`/`.mdx` 格式，通过 Astro content collections 加载（定义在 `src/content.config.ts`）。Frontmatter 字段：`title`、`published`、`draft`、`tags`、`category`、`pinned`、`comment`、`password` 等。`spec` 集合（`src/content/spec/`）用于特殊页面内容（关于、友链、留言板）。
-
-### 布局系统
-
-- `src/layouts/Layout.astro` — 基础布局：`<html>`、`<head>`、全局样式、分析代码、favicon、壁纸设置、Swup 容器
-- `src/layouts/MainGridLayout.astro` — 继承 Layout，添加侧边栏栅格系统（Navbar、SideBar、响应式布局），大多数页面使用此布局
-
-### 侧边栏组件系统
-
-通过 `src/config/sidebarConfig.ts` 配置。支持 `left`/`right`/`both` 三种位置。每个侧边栏包含有序组件列表，组件可独立开关，可配置在文章页/非文章页的显示。移动端（<768px）有独立的 `mobileBottomComponents` 列表。
-
-可用组件：`profile`、`announcement`、`music`、`categories`、`tags`、`stats`、`calendar`、`sidebarToc`、`advertisement`。
-
-### 组件目录
-
-| 目录 | 职责 |
-|------|------|
-| `src/components/layout/` | 结构性组件：Navbar、Footer、SideBar、PostCard、PostPage、CategoryBar、DropdownMenu |
-| `src/components/widget/` | 侧边栏组件：Profile、Announcement、Music、Calendar、Categories、Tags、SiteStats、Advertisement |
-| `src/components/features/` | 可选功能：Live2DWidget、SpineModel、MusicPlayer、SakuraEffect、EncryptedPost、TypewriterText |
-| `src/components/controls/` | 交互控件：Search、FloatingTOC、LightDarkSwitch、DisplaySettings、WallpaperSwitch、BackToTop |
-| `src/components/common/` | 通用组件：Pagination、CoverImage、WidgetLayout、FloatingButton、Icon、ImageWrapper |
-| `src/components/misc/` | License、RecommendedPost、SharePoster |
-| `src/components/analytics/` | GoogleAnalytics、UmamiAnalytics、MicrosoftClarity、La51Analytics |
-| `src/components/comment/` | 评论系统集成 |
-
-### 配置系统
+## 配置系统
 
 所有配置集中在 `src/config/`，通过 `@/config`（barrel 文件 `index.ts` 统一导出）导入。
 
@@ -124,12 +94,14 @@ npx wrangler deploy
 | `sakuraConfig.ts` | 樱花特效配置 |
 | `backgroundWallpaper.ts` | 壁纸配置 |
 | `adConfig.ts` | 广告栏配置 |
+| `announcementConfig.ts` | 公告栏配置 |
 | `licenseConfig.ts` | 文章许可证配置 |
 | `footerConfig.ts` | 页脚配置 |
 | `coverImageConfig.ts` | 封面图配置 |
 | `expressiveCodeConfig.ts` | 代码块渲染配置 |
 | `plantumlConfig.ts` | PlantUML 配置 |
 | `collectionsApiConfig.ts` | 收藏 API 配置 |
+| `aiSearchConfig.ts` | AI 搜索配置（模型、Embedding、向量索引） |
 
 ### Markdown 插件流水线
 
@@ -140,71 +112,6 @@ npx wrangler deploy
 **Rehype 插件**（HTML 转换阶段）：rehypeKatex → rehypeCallouts → rehypeSlug → rehypeMermaid → rehypePlantuml → rehypeFigure → rehypeExternalLinks → rehypeEmailProtection → rehypeComponents → rehypeAutolinkHeadings
 
 自定义插件位于 `src/plugins/`。
-
-### 国际化 (i18n)
-
-翻译键定义在 `src/i18n/i18nKey.ts`（const enum）。语言文件在 `src/i18n/languages/`（zh_CN、zh_TW、en、ja、ru）。使用 `i18n(key)` 函数（来自 `src/i18n/translation.ts`），读取 `siteConfig.lang` 并按 zh_CN → en 顺序回退。
-
-### 样式系统
-
-- Tailwind CSS v4 + `@tailwindcss/vite` 插件
-- 全局样式：`src/styles/main.css`，Stylus 变量：`src/styles/variables.styl`
-- PostCSS 流水线（`postcss.config.mjs`）：postcss-import → postcss-nesting
-- 主题色通过 `Layout.astro` 中从 `siteConfig.themeColor.hue` 生成的 CSS 自定义属性设置
-
-### 路径别名
-
-定义在 `tsconfig.json`：
-
-| 别名 | 映射 |
-|------|------|
-| `@components/*` | `src/components/*` |
-| `@assets/*` | `src/assets/*` |
-| `@constants/*` | `src/constants/*` |
-| `@utils/*` | `src/utils/*` |
-| `@i18n/*` | `src/i18n/*` |
-| `@layouts/*` | `src/layouts/*` |
-| `@/*` | `src/*` |
-
-## 主要功能配置
-
-### 上下班状态
-
-```typescript
-// src/config/siteConfig.ts
-workHours: {
-  start: 9,
-  end: 18,
-  workDays: [1, 2, 3, 4, 5, 6],
-},
-```
-
-侧边栏头像根据当前时间自动切换工作/休息状态，支持配置不同的上下班头像。
-
-### 页面开关
-
-```typescript
-// src/config/siteConfig.ts
-pages: {
-  friends: true,
-  sponsor: true,
-  guestbook: true,
-  bangumi: true,
-  gallery: true,
-  collections: true,
-  stats: true,
-},
-```
-
-设为 `false` 的页面返回 404，导航栏链接同步隐藏。
-
-### 评论系统
-
-支持 5 种评论系统，通过 `commentConfig.type` 切换：`waline`、`twikoo`、`giscus`、`artalk`、`disqus`。设为 `none` 则不启用。
-
-### 看板娘
-
-支持 Live2D（Cubism 2/3+）和 Spine 两种模型格式，可配置位置、尺寸、交互消息、移动端隐藏等。Live2D 模型需遵守作者版权协议。
 
 ## CI/CD 工作流
 
@@ -217,33 +124,79 @@ pages: {
 
 注意：建议在 GitHub 仓库设置中关闭邮箱订阅，避免 CI 工作流频繁触发邮件通知。
 
-## 构建注意事项
+## 部署清单
 
-- `pnpm build` 三步流程：图标生成脚本 → `astro build` → `pagefind --site dist`
-- Vite 构建移除 `console.log` 和 `debugger`（esbuild `drop` 选项）
-- 图片优化仅对 `src/` 目录下的图片生效，`public/` 目录的图片不会被 Astro 优化
-- `generateOgImages: true` 构建耗时较长，默认关闭
-- 修改 `rehypeCallouts.theme` 或 `plantumlConfig` 后需重启开发服务器
-- CI 在 push/PR 到 master 时运行 biome 检查
+粗略编写了一下部署清单，包括以下内容：
+如果有缺失的，请在 Issue 中报告。
 
-## 关键工具函数
+| 检查项 | 说明 |
+|--------|------|
+| 托管平台 | 支持任何静态托管：Cloudflare Pages、Vercel、Netlify、GitHub Pages、Nginx 等 |
+| 评论服务 | 若启用评论，需自行部署对应后端（Waline / Twikoo / Artalk 等） |
+| KV 存储 | 若启用统计，需配置 KV 存储空间 |
+| 统计服务 | 若启用统计，需配置 Umami 等分析工具 |
+| AI 搜索 | 需 Cloudflare Vectorize 索引 + Workers AI / 第三方 API（魔搭社区默认。如果没配置API会使用cf workers ai） |
+| 图床（可选）| 项目没引用图床，无需配置，但是我建议配置一个图床，用于存储文章中的图片 |
 
-| 文件 | 职责 |
-|------|------|
-| `src/utils/setting-utils.ts` | 显示设置管理（主题、壁纸、布局模式），持久化到 localStorage |
-| `src/utils/toc-utils.ts` | 目录生成 |
-| `src/utils/responsive-utils.ts` | 侧边栏栅格类、响应式断点 |
-| `src/utils/content-utils.ts` | 文章排序、过滤、分页 |
-| `src/utils/image-utils.ts` | 图片格式、质量、referrer 策略 |
-| `src/utils/url-utils.ts` | URL 处理工具 |
+### Cloudflare Pages 部署方案
 
-## Swup 页面过渡
+本项目原生支持 Cloudflare Pages 部署，并提供 Workers 脚本用于 AI 搜索功能。
 
-Swup 启用了特定容器（`#swup-container`、`#left-sidebar-dynamic`、`#right-sidebar-dynamic`、`#floating-toc-wrapper` 等）。锚点链接跳过 popstate 处理，由浏览器原生处理。`animateHistoryBrowsing: false` — 历史导航不播放动画。
+#### 1. 连接 Git 仓库自动构建
 
-## Biome 配置
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com) → Pages → 创建项目
+2. 选择「连接到 Git」，授权 GitHub/GitLab 仓库
+3. 构建设置：
+   - **构建命令**：`pnpm build`
+   - **构建输出目录**：`dist`
+4. 点击「保存并部署」，首次构建约 2-5 分钟
+5. 添加在 Pages 环境变量中：
+   - **AI_API_KEY**：Cloudflare Vectorize API 密钥，用于 AI 搜索功能。请在 Cloudflare Dashboard → Workers & Pages → Settings → Variables and Secrets 中以 **Secret** 形式添加。（目前项目默认指定使用魔搭社区，若需使用其他社区，请在 `aiSearchConfig.ts` 中修改）
+6. 配置KV存储，项目统计信息和留言数据，需要到 Cloudflare KV 中创建一个存储空间。详细步骤是：
+   - 登录 Cloudflare Dashboard → KV → 创建存储空间
+   - 使用 `wrangler kv create` 创建 KV 存储空间，指定存储空间ID和名称（建议与项目名称一致）
+   - 不用担心这个ID是否敏感，因为 Cloudflare KV 存储空间ID 是随机生成的，不会泄露任何个人信息，ID也只能你自己访问。
+   - 点击「保存并部署」，首次构建约 2-5 分钟
+7. 设置好后重启pages，等待部署成功。
+8. 构建AI搜索索引，需要在 Cloudflare Vectorize 中创建一个索引，指定索引名称（建议与项目名称一致）。使用指令加上索引名称，例如 `wrangler kv create --name blog-ai-search`。
 
-格式化使用 tab 缩进、双引号。Svelte/Astro/Vue 文件放宽 lint 规则（允许 `let`、未使用变量等）。CI 中通过 `biome ci ./src --reporter=github` 检查。`src/constants/icons.ts` 被排除在 biome 检查之外（自动生成文件）。
+### 你需要更改的配置文件
+
+- `src/config/aiSearchConfig.ts`：AI 搜索配置（模型、Embedding、向量索引）
+- `src/config/commentConfig.ts`：评论系统配置（更换地址）
+- `src/config/profileConfig.ts`：首页信息：头像、昵称、签名、社交链接
+- `src/config/siteConfig.ts`：网站配置：上下班时间、网站设置、bangumi配置、Umami配置、导航栏配置
+- `wrangler.toml`：Cloudflare KV 存储空间配置
+
+下方可选配置文件
+
+- `src/config/musicConfig.ts`：音乐播放器配置（Meting API / 本地音乐）
+- `src/config/pioConfig.ts`：Live2D / Spine 看板娘配置
+- `src/config/fontConfig.ts`：自定义字体配置
+- `src/config/collectionsApiConfig.ts`：收藏 API 配置
+- `src/config/announcementConfig.ts`：公告栏配置
+- `src/config/friendsConfig.ts`：友链配置
+
+## 文章存储位置
+
+- `src/posts/`：Markdown 文章存储目录，文章内格式必须包含
+  - 标题：`title: 文章标题`
+  - 日期：`date: 2023-01-01`
+  - 分类：`categories: [分类1, 分类2]`
+  - 标签：`tags: [标签1, 标签2]`
+  - 内容：`<!-- more -->` 之后的内容
+
+详细参考 [fuwari 文档](https://fuwari.vercel.app/docs/).
+
+## 相册存储位置
+
+- `src/assets/gallery/`：相册图片存储目录
+
+详细参考 [fuwari 文档](https://fuwari.vercel.app/docs/).
+
+## live2d 存储位置
+
+- `src/assets/live2d/`：Live2D 模型存储目录
 
 ## Live2D 版权声明
 
