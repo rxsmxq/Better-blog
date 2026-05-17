@@ -475,15 +475,15 @@ const responsiveEnabled = true; // ${siteConfig.pagination.responsive}
 
 ### 第三阶段：架构改善（1-2 周）
 
-- [ ] 重构 `layout-styles.css`，使用 `clamp()` 替代重复断点
-- [ ] 解决 `!important` 滥用问题（需重新设计 CSS 层级）
-- [ ] 抽取文章页面重复模板为共享组件
-- [ ] Live2D 资源优化（纹理压缩、懒加载）
-- [ ] 清理壁纸模式死代码
-- [ ] 完善 JSON-LD 结构化数据
-- [ ] 添加 CDN 脚本的 SRI 完整性校验
-- [ ] 配置静态资源缓存头
-- [ ] 使用 Vite `manualChunks` 拆分大型依赖包
+- [x] 重构 `layout-styles.css`，使用 `clamp()` 替代重复断点
+- [x] 解决 `!important` 滥用问题（需重新设计 CSS 层级）
+- [x] 抽取文章页面重复模板为共享组件
+- [x] Live2D 资源优化（纹理压缩、懒加载）
+- [x] 清理壁纸模式死代码
+- [x] 完善 JSON-LD 结构化数据
+- [x] 添加 CDN 脚本的 SRI 完整性校验
+- [x] 配置静态资源缓存头
+- [x] 使用 Vite `manualChunks` 拆分大型依赖包
 
 ### 第四阶段：可选增强
 

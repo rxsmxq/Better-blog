@@ -249,6 +249,11 @@ export default defineConfig({
 			},
 		},
 		build: {
+			// 静态资源缓存策略（需在部署平台配置）：
+			// /_astro/*  → Cache-Control: public, max-age=31536000, immutable（内容哈希，长期缓存）
+			// /assets/*  → Cache-Control: public, max-age=31536000, immutable（静态资源，长期缓存）
+			// /*.html    → Cache-Control: public, max-age=0, must-revalidate（HTML 文件，始终验证）
+			// Cloudflare Pages: public/_headers 文件 | Vercel: vercel.json 的 headers 配置
 			minify: "esbuild",
 			esbuildOptions: {
 				minify: true,
@@ -256,6 +261,16 @@ export default defineConfig({
 				drop: ["console", "debugger"],
 			},
 			rollupOptions: {
+				output: {
+					manualChunks(id) {
+						if (id.includes("node_modules")) {
+							if (id.includes("katex")) return "vendor-katex";
+							if (id.includes("mermaid")) return "vendor-mermaid";
+							if (id.includes("pixi") || id.includes("live2d")) return "vendor-live2d";
+							if (id.includes("gsap")) return "vendor-gsap";
+						}
+					},
+				},
 				onwarn(warning, warn) {
 					// temporarily suppress this warning
 					if (

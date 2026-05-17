@@ -89,12 +89,7 @@ export const live2dModelConfig: Live2DModelConfig = {
 	// Live2D模型配置
 	model: {
 		// Live2D模型文件路径（支持 Cubism 2 .model.json 和 Cubism 3+ .model3.json）
-		//path: "/pio/models/live2d/skd/skd.model3.json",
 		path: "/pio/models/live2d/小爱弥斯_vts/小爱弥斯.model3.json",
-		//path: "/pio/models/live2d/model_rb/兔兔-阿米娅.model3.json",
-		//path: "/pio/models/live2d/LSS/LSS.model3.json",
-		// path: "/pio/models/live2d/snow_miku/model.json",
-		// path: "/pio/models/live2d/illyasviel/illyasviel.model.json",
 	},
 
 	// 位置配置
@@ -117,7 +112,7 @@ export const live2dModelConfig: Live2DModelConfig = {
 
 	// 渲染分辨率倍率，默认自动使用 window.devicePixelRatio（上限2）
 	// 在高DPI屏幕上设为2可显著提升清晰度，值越大越耗性能
-	resolution: 10,
+	resolution: 3,
 
 	// 交互配置
 	interactive: {
