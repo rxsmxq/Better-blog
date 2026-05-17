@@ -86,7 +86,7 @@ const navLinks = navBarConfig.links.map((item) => {
 
 {/* 主内容容器 — 单列居中，无壁纸/三栏 */}
 <div class="relative w-full" id="main-grid-wrapper">
-	<div class="mx-auto max-w-4xl px-4 md:px-6" data-sidebar-position="none" id="main-grid">
+	<div class="mx-auto max-w-5xl px-4 md:px-6" data-sidebar-position="none" id="main-grid">
 		{/* Swup 占位：保留 left/right sidebar 容器以满足 swup containers 协议 */}
 		<div id="left-sidebar-dynamic" class="hidden"></div>
 		<div id="right-sidebar-dynamic" class="hidden"></div>
@@ -143,7 +143,7 @@ const navLinks = navBarConfig.links.map((item) => {
 
 <style is:global>
 	#main-grid {
-		--page-width: 56rem;
+		--page-width: 64rem;
 	}
 	/* 极简 onload 淡入 */
 	.onload-animation {
@@ -157,12 +157,17 @@ const navLinks = navBarConfig.links.map((item) => {
 	/* 文章页外部浮动目录 - 独立于主内容区域 */
 	.article-toc-wrapper {
 		position: absolute;
-		left: calc(50% + 26rem);
+		left: calc(50% + 32rem);
 		top: 0;
-		width: 17.5rem;
-		max-width: 17.5rem;
+		width: 15rem;
+		max-width: 15rem;
 		pointer-events: none;
 		z-index: 10;
+		transition: left 0.3s ease;
+	}
+
+	.article-toc-wrapper:has(.article-toc-container:hover) {
+		left: calc(50% + 31.5rem);
 	}
 
 	.article-toc-container {
@@ -174,6 +179,11 @@ const navLinks = navBarConfig.links.map((item) => {
 		flex-direction: column;
 		border-radius: 1rem;
 		overflow: hidden;
+		transition: transform 0.25s ease;
+	}
+
+	.article-toc-container:hover {
+		transform: translateX(-6px);
 	}
 
 	.article-toc-header {
