@@ -9,6 +9,8 @@
 
 <img alt="博客预览" src="./docs/images/ZS.png" />
 
+<img alt="Lighthouse 评分" src="./docs/images/CS.png" />
+
 ## 项目概述
 
 Firefly-Mod 是从 [Firefly](https://github.com/CuteLeaf/Firefly) 分支出的个性化魔改版本，已脱离原分支独立演进。基于 Astro 6.x SSG 静态站点生成，搭配 Svelte 5 组件和 Tailwind CSS 4 样式系统，构建为纯静态博客。
