@@ -45,7 +45,11 @@ if (title) {
 let ogImageUrl: string | undefined;
 if (siteConfig.generateOgImages && postSlug) {
 	ogImageUrl = new URL(`/og/${postSlug}.png`, Astro.site).toString();
+} else if (siteConfig.defaultOgImage) {
+	ogImageUrl = new URL(siteConfig.defaultOgImage, Astro.site).toString();
 }
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
 
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
@@ -60,6 +64,15 @@ const siteLang = lang.replace("_", "-");
 <html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode="none">
   <head>
     <meta charset="UTF-8" />
+    {siteConfig.analytics?.googleAnalyticsId && (
+      <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    )}
+    {siteConfig.analytics?.microsoftClarityId && (
+      <link rel="preconnect" href="https://www.clarity.ms" crossorigin />
+    )}
+    {siteConfig.analytics?.umamiAnalytics?.websiteId && siteConfig.analytics.umamiAnalytics.scriptUrl && (
+      <link rel="preconnect" href={new URL(siteConfig.analytics.umamiAnalytics.scriptUrl).origin} crossorigin />
+    )}
     {siteConfig.analytics?.googleAnalyticsId && (
       <GoogleAnalytics analyticsId={siteConfig.analytics.googleAnalyticsId} />
     )}
@@ -108,8 +121,12 @@ const siteLang = lang.replace("_", "-");
     <meta property="twitter:url" content={Astro.url} />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description || siteConfig.description || pageTitle} />
+    {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
 
-    <meta name="viewport" content="width=device-width" />
+    <meta property="og:locale" content={siteLang} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     {favicons.map((favicon) => (
       <link

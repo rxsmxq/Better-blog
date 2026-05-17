@@ -2,7 +2,7 @@
 
 /* PhotoSwipe 按钮样式 */
 .pswp__button {
-    transition: all 0.2s ease !important;
+    transition: background-color 0.2s ease, transform 0.2s ease !important;
     background-color: rgba(0, 0, 0, 0.4) !important;
     display: flex !important;
     align-items: center !important;

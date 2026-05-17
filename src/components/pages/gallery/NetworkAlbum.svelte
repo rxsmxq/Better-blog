@@ -232,7 +232,7 @@ function startCooldown() {
 	font-weight: 500;
 	cursor: pointer;
 	min-width: 100px;
-	transition: all 0.2s ease;
+	transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :root.dark .control-select {
@@ -268,7 +268,7 @@ function startCooldown() {
 	font-size: 0.875rem;
 	font-weight: 500;
 	width: 80px;
-	transition: all 0.2s ease;
+	transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :root.dark .control-input {
@@ -295,7 +295,7 @@ function startCooldown() {
 	font-size: 0.875rem;
 	font-weight: 600;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 	white-space: nowrap;
 }
 
@@ -425,7 +425,7 @@ function startCooldown() {
 	color: white;
 	opacity: 0;
 	transform: scale(0.7);
-	transition: all 0.2s ease;
+	transition: opacity 0.2s ease, transform 0.2s ease;
 	stroke-width: 2.5;
 	filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }

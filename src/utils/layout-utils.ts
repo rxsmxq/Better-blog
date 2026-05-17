@@ -62,7 +62,6 @@ export const getDefaultBackground = (): string => {
 
 // 检查是否为首页
 export const isHomePage = (pathname: string): boolean => {
-	// 获取 base URL
 	const baseUrl = import.meta.env.BASE_URL || "/";
 	const baseUrlNoSlash = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
 
@@ -71,6 +70,12 @@ export const isHomePage = (pathname: string): boolean => {
 	if (pathname === "/") return true;
 
 	return false;
+};
+
+export const isPostPage = (pathname: string): boolean => {
+	const baseUrl = import.meta.env.BASE_URL || "/";
+	const postsPath = baseUrl === "/" ? "/posts/" : `${baseUrl}/posts/`;
+	return pathname.startsWith(postsPath) || pathname.includes("/posts/");
 };
 
 // 获取横幅偏移量

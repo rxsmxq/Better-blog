@@ -211,7 +211,8 @@ const navLinks = navBarConfig.links.map((item) => {
 </style>
 
 <script>
-	import { TOCManager, isPostPage } from "@/utils/toc-utils";
+	import { TOCManager } from "@/utils/toc-utils";
+	import { isPostPage } from "@/utils/navigation-utils";
 
 	let articleTocManager: TOCManager | null = null;
 

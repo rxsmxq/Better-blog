@@ -34,14 +34,14 @@
 /* 基础侧边栏样式 */
 #dynamic-sidebar {
   width: var(--sidebar-width-desktop);
-  transition: all var(--widget-animation-duration) var(--widget-animation-timing);
+  transition: width var(--widget-animation-duration) var(--widget-animation-timing);
   position: relative;
 }
 
 /* 组件容器基础样式 */
 .widget-container {
   min-height: var(--widget-min-height);
-  transition: all var(--widget-animation-duration) var(--widget-animation-timing);
+  transition: transform var(--widget-animation-duration) var(--widget-animation-timing), box-shadow var(--widget-animation-duration) var(--widget-animation-timing);
   overflow: hidden;
 }
 
@@ -309,7 +309,7 @@
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(
@@ -319,14 +319,15 @@
     transparent
   );
   animation: shimmer 1.5s infinite;
+  will-change: transform;
 }
 
 @keyframes shimmer {
   0% {
-    left: -100%;
+    transform: translateX(-100%);
   }
   100% {
-    left: 100%;
+    transform: translateX(100%);
   }
 }
 
@@ -416,6 +417,10 @@
   
   .widget-container:hover {
     transform: none;
+  }
+
+  .widget-loading::before {
+    animation: none;
   }
 }
 

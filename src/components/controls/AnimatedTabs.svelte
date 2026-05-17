@@ -118,7 +118,7 @@ onMount(() => {
     bottom: 0.25rem;
     background: var(--primary, #3b82f6);
     border-radius: 0.5rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 3px oklch(0.5 0 0 / 0.15);
     z-index: 0;
   }
@@ -139,7 +139,7 @@ onMount(() => {
     background: transparent;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease;
     color: var(--btn-content, #666);
   }
 

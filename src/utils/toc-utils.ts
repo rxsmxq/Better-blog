@@ -22,6 +22,10 @@ export class TOCManager {
 	private contentId: string;
 	private indicatorId: string;
 	private scrollOffset: number;
+	private boundClickHandlers: Map<HTMLElement, (event: Event) => void> =
+		new Map();
+	private boundMouseMoveHandler: ((e: MouseEvent) => void) | null = null;
+	private boundMouseLeaveHandler: (() => void) | null = null;
 
 	constructor(config: TOCConfig) {
 		this.contentId = config.contentId;
@@ -319,12 +323,10 @@ export class TOCManager {
 			const EDGE_THRESHOLD = 0.28;
 
 			if (tocContent) {
-				tocContent.addEventListener("mousemove", (e: MouseEvent) => {
-					// indicator 不可见时不处理
+				this.boundMouseMoveHandler = (e: MouseEvent) => {
 					if (indicator.style.opacity === "0") return;
 
 					const rect = indicator.getBoundingClientRect();
-					// 鼠标不在 indicator 范围内时清除
 					if (
 						e.clientX < rect.left ||
 						e.clientX > rect.right ||
@@ -356,11 +358,13 @@ export class TOCManager {
 					} else {
 						indicator.dataset.hoverEdge = "right";
 					}
-				});
+				};
+				tocContent.addEventListener("mousemove", this.boundMouseMoveHandler);
 
-				tocContent.addEventListener("mouseleave", () => {
+				this.boundMouseLeaveHandler = () => {
 					delete indicator.dataset.hoverEdge;
-				});
+				};
+				tocContent.addEventListener("mouseleave", this.boundMouseLeaveHandler);
 			}
 		}
 
@@ -468,9 +472,19 @@ export class TOCManager {
 	 * 绑定点击事件
 	 */
 	public bindClickEvents(): void {
+		this.unbindClickEvents();
 		this.tocItems.forEach((item) => {
-			item.addEventListener("click", this.handleClick.bind(this));
+			const handler = this.handleClick.bind(this);
+			this.boundClickHandlers.set(item, handler);
+			item.addEventListener("click", handler);
 		});
+	}
+
+	public unbindClickEvents(): void {
+		this.boundClickHandlers.forEach((handler, item) => {
+			item.removeEventListener("click", handler);
+		});
+		this.boundClickHandlers.clear();
 	}
 
 	/**
@@ -485,6 +499,25 @@ export class TOCManager {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
+		this.unbindClickEvents();
+		const tocContent = document.getElementById(this.contentId);
+		if (tocContent) {
+			if (this.boundMouseMoveHandler) {
+				tocContent.removeEventListener("mousemove", this.boundMouseMoveHandler);
+				this.boundMouseMoveHandler = null;
+			}
+			if (this.boundMouseLeaveHandler) {
+				tocContent.removeEventListener(
+					"mouseleave",
+					this.boundMouseLeaveHandler,
+				);
+				this.boundMouseLeaveHandler = null;
+			}
+		}
+		const indicator = document.getElementById(this.indicatorId);
+		if (indicator) {
+			delete indicator.dataset.edgeBound;
+		}
 	}
 
 	/**
@@ -496,11 +529,4 @@ export class TOCManager {
 		this.setupObserver();
 		this.updateActiveState();
 	}
-}
-
-/**
- * 检查是否为文章页面
- */
-export function isPostPage(): boolean {
-	return window.location.pathname.includes("/posts/");
 }

@@ -528,7 +528,7 @@ onMount(() => {
     background: transparent;
     cursor: pointer;
     color: var(--text-50, #888);
-    transition: all 0.15s;
+    transition: background 0.15s, color 0.15s;
   }
   .ai-icon-btn:hover {
     background: oklch(0.5 0 0 / 0.1);
@@ -605,7 +605,7 @@ onMount(() => {
     flex-shrink: 0;
     margin-left: 0.5rem;
     opacity: 0;
-    transition: all 0.15s;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
   }
   .ai-session-item:hover .ai-session-delete {
     opacity: 1;
@@ -655,7 +655,7 @@ onMount(() => {
     color: var(--text-70, #555);
     font-size: 0.8rem;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
   .ai-suggestions button:hover {
     background: oklch(0.5 0 0 / 0.08);

@@ -1,4 +1,7 @@
-import { url } from "@/utils/url-utils";
+import {
+	isHomePage as isHomePageByPath,
+	isPostPage as isPostPageByPath,
+} from "@/utils/layout-utils";
 /**
  * 导航工具函数
  * 提供统一的页面导航功能，支持 Swup 无刷新跳转
@@ -148,28 +151,11 @@ export function getCurrentPath(): string {
  * 检查是否为首页
  */
 export function isHomePage(): boolean {
-	const path = getCurrentPath();
-	return path === url("/") || path === url("");
+	return isHomePageByPath(getCurrentPath());
 }
 
-/**
- * 检查是否为文章页面
- */
 export function isPostPage(): boolean {
-	const path = getCurrentPath();
-	return path.startsWith(url("/posts/"));
-}
-
-/**
- * 检查两个路径是否相等
- */
-export function pathsEqual(path1: string, path2: string): boolean {
-	// 标准化路径（移除末尾斜杠）
-	const normalize = (path: string) => {
-		return path.endsWith("/") && path.length > 1 ? path.slice(0, -1) : path;
-	};
-
-	return normalize(path1) === normalize(path2);
+	return isPostPageByPath(getCurrentPath());
 }
 
 declare global {

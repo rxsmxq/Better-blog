@@ -3,11 +3,18 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { getCategoryUrl } from "@utils/url-utils";
 
-// // Retrieve posts and sort them by publication date
-async function getRawSortedPosts() {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
+let cachedPosts: CollectionEntry<"posts">[] | null = null;
+
+async function getAllPosts(): Promise<CollectionEntry<"posts">[]> {
+	if (cachedPosts) return cachedPosts;
+	cachedPosts = await getCollection("posts", ({ data }) => {
 		return import.meta.env.PROD ? data.draft !== true : true;
 	});
+	return cachedPosts;
+}
+
+async function getRawSortedPosts() {
+	const allBlogPosts = await getAllPosts();
 
 	const sorted = allBlogPosts.sort((a, b) => {
 		// 首先按置顶状态排序，置顶文章在前
@@ -57,9 +64,7 @@ export type Tag = {
 };
 
 export async function getTagList(): Promise<Tag[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getAllPosts();
 
 	const countMap: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { tags: string[] } }) => {
@@ -84,9 +89,7 @@ export type Category = {
 };
 
 export async function getCategoryList(): Promise<Category[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getAllPosts();
 	const count: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { category: string | null } }) => {
 		if (!post.data.category) {
@@ -125,10 +128,11 @@ export async function getCategoryList(): Promise<Category[]> {
  * 使用 Intl.Segmenter 对中文分词，英文按空格分词
  * 过滤标点和空白，英文统一小写
  */
+const zhSegmenter = new Intl.Segmenter("zh", { granularity: "word" });
+
 function tokenizeTitle(title: string): Set<string> {
 	const tokens = new Set<string>();
-	const segmenter = new Intl.Segmenter("zh", { granularity: "word" });
-	for (const { segment, isWordLike } of segmenter.segment(title)) {
+	for (const { segment, isWordLike } of zhSegmenter.segment(title)) {
 		if (!isWordLike) continue;
 		tokens.add(segment.toLowerCase());
 	}
@@ -160,9 +164,7 @@ export async function getRelatedPosts(
 	currentPost: CollectionEntry<"posts">,
 	maxCount = 5,
 ): Promise<PostForList[]> {
-	const allPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allPosts = await getAllPosts();
 
 	// 排除自身和加密文章
 	const candidates = allPosts.filter(

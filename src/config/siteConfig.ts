@@ -75,7 +75,7 @@ export const siteConfig: SiteConfig = {
 		// 4. 网络图片: { type: "url", value: "https://example.com/logo.png", alt: "Logo" }
 		logo: {
 			type: "image",
-			value: "assets/images/MyLogoSvg.png",
+			value: "assets/images/MyLogoSvg.webp",
 			alt: "logo",
 		},
 		// 导航栏标题
@@ -122,6 +122,8 @@ export const siteConfig: SiteConfig = {
 
 	// OpenGraph图片功能,注意开启后要渲染很长时间，不建议本地调试的时候开启
 	generateOgImages: false,
+
+	defaultOgImage: "/assets/images/aut.png",
 
 	// bangumi配置
 	bangumi: {

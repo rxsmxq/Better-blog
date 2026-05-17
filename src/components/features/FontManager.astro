@@ -65,7 +65,14 @@ const fontFamilyStyle = generateFontFamilyStyle();
 
     if (isExternalUrl) {
       // 外部字体链接 (如 Google Fonts, CDN等)
-      return <link rel="stylesheet" href={font.src} />;
+      const urlObj = new URL(font.src, 'https://placeholder.com');
+      const origin = urlObj.origin;
+      return (
+        <>
+          <link rel="preconnect" href={origin} crossorigin />
+          <link rel="stylesheet" href={font.src} />
+        </>
+      );
     } else {
       // 本地字体文件
       return (

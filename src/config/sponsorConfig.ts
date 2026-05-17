@@ -26,7 +26,7 @@ export const sponsorConfig: SponsorConfig = {
 			name: "精神资助",
 			icon: "fa7-brands:alipay",
 			// 收款码图片路径（需要放在 public 目录下）
-			qrCode: "/assets/images/jszz.gif",
+			qrCode: "/assets/images/jszz.webp",
 			link: "",
 			description: "在 精神层面 赞助",
 			enabled: true,

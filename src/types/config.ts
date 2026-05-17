@@ -54,6 +54,7 @@ export type SiteConfig = {
 	};
 
 	generateOgImages: boolean;
+	defaultOgImage?: string;
 	favicon: Array<{
 		src: string;
 		theme?: "light" | "dark";
