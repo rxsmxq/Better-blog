@@ -108,13 +108,17 @@ const size = config.size || { width: 280, height: 250 };
 			idleTimer: 0,
 			indicatorTimer: 0,
 			resizeTimer: 0,
-			canvasElement: null,
-			widgetElement: null,
-		};
-	}
+    canvasElement: null,
+    widgetElement: null,
+    mobileToolbarVisible: false,
+  };
+}
 
 	const g = window[GLOBAL_KEY] || createGlobalState();
 	window[GLOBAL_KEY] = g;
+
+	const allMotionGroups = ["Expression", "TapShort", "TapLong", "Other"];
+	let clickMotionGroups = ["Expression", "TapShort"];
 
 	// ============================================================
 	// Live2DStateManager（单例，通过全局状态保持）
@@ -333,27 +337,27 @@ const size = config.size || { width: 280, height: 250 };
 	// ============================================================
 	// 交互设置
 	// ============================================================
-	function setupModelInteractions() {
-		if (!g.model) return;
-		g.model.on("hit", () => {
-			if (!g.wasDragging) playRandomMotion();
-			g.wasDragging = false;
-		});
-	}
+  function setupModelInteractions() {
+    if (!g.model) return;
+    g.model.on("hit", () => {
+      if (window.innerWidth <= 768) return;
+      if (!g.wasDragging) playRandomMotion();
+      g.wasDragging = false;
+    });
+  }
 
 	function setupDOMInteractions() {
 		if (g.isInteractionsSetup) return;
 		g.isInteractionsSetup = true;
 
-		const allMotionGroups = ["Expression", "TapShort", "TapLong", "Other"];
-		let clickMotionGroups = ["Expression", "TapShort"];
 		let currentGroupIndex = 0;
 
 		const canvas = document.getElementById("live2d-canvas");
-		canvas?.addEventListener("click", () => {
-			if (!g.wasDragging) playRandomMotion();
-			g.wasDragging = false;
-		});
+    canvas?.addEventListener("click", () => {
+      if (window.innerWidth <= 768) return;
+      if (!g.wasDragging) playRandomMotion();
+      g.wasDragging = false;
+    });
 
 		const switchBtn = document.getElementById("toolbar-switch");
 		const groupIndicator = document.getElementById("live2d-group-indicator");
@@ -418,29 +422,29 @@ const size = config.size || { width: 280, height: 250 };
 			});
 		}
 
-		function playRandomMotion() {
-			if (!g.model) return;
-			clearIdleTimer();
-			try {
-				const group =
-					clickMotionGroups[
-						Math.floor(Math.random() * clickMotionGroups.length)
-					];
-				g.model.motion(group, undefined, 2);
-				g.model.expression();
-			} catch {
-				// ignore
-			}
-			showMessage();
-			scheduleIdleAnimation();
-		}
-
 		setupDrag();
 	}
 
 	// ============================================================
 	// 动画与定时器
 	// ============================================================
+	function playRandomMotion() {
+		if (!g.model) return;
+		clearIdleTimer();
+		try {
+			const group =
+				clickMotionGroups[
+					Math.floor(Math.random() * clickMotionGroups.length)
+				];
+			g.model.motion(group, undefined, 2);
+			g.model.expression();
+		} catch {
+			// ignore
+		}
+		showMessage();
+		scheduleIdleAnimation();
+	}
+
 	function clearIdleTimer() {
 		if (g.idleTimer) {
 			clearTimeout(g.idleTimer);
@@ -582,13 +586,15 @@ const size = config.size || { width: 280, height: 250 };
 				widget.style.pointerEvents = "";
 				widget.style.opacity = "";
 				widget.style.transform = "";
-				widget.classList.remove(
-					"live2d-initial",
-					"live2d-ready",
-					"live2d-exiting",
-					"live2d-falling",
-				);
-				g.isWidgetVisible = true;
+        widget.classList.remove(
+          "live2d-initial",
+          "live2d-ready",
+          "live2d-exiting",
+          "live2d-falling",
+          "mobile-toolbar-visible",
+        );
+        g.mobileToolbarVisible = false;
+        g.isWidgetVisible = true;
 				g.app.ticker?.start();
 				g.app.render();
 				scheduleIdleAnimation();
@@ -614,13 +620,15 @@ const size = config.size || { width: 280, height: 250 };
 					widget.style.pointerEvents = "";
 					widget.style.opacity = "";
 					widget.style.transform = "";
-					widget.classList.remove(
-						"live2d-initial",
-						"live2d-ready",
-						"live2d-exiting",
-						"live2d-falling",
-					);
-					g.isWidgetVisible = true;
+          widget.classList.remove(
+            "live2d-initial",
+            "live2d-ready",
+            "live2d-exiting",
+            "live2d-falling",
+            "mobile-toolbar-visible",
+          );
+          g.mobileToolbarVisible = false;
+          g.isWidgetVisible = true;
 					triggerEntryAnimation();
 				} else {
 					updateTriggerVisibility(true);
@@ -656,17 +664,32 @@ const size = config.size || { width: 280, height: 250 };
 		}
 	}
 
-	function updateTriggerVisibility(show) {
-		const trigger = document.getElementById("live2d-trigger");
-		if (!trigger) return;
-		if (show) {
-			trigger.classList.add("visible");
-		} else {
-			trigger.classList.remove("visible");
-		}
-	}
+function updateTriggerVisibility(show) {
+  const trigger = document.getElementById("live2d-trigger");
+  if (!trigger) return;
+  if (show) {
+    trigger.classList.add("visible");
+  } else {
+    trigger.classList.remove("visible");
+  }
+}
 
-	function initTrigger() {
+function toggleMobileToolbar(show) {
+  const widget = document.getElementById("live2d-widget");
+  if (!widget) return;
+  if (typeof show === "boolean") {
+    g.mobileToolbarVisible = show;
+  } else {
+    g.mobileToolbarVisible = !g.mobileToolbarVisible;
+  }
+  if (g.mobileToolbarVisible) {
+    widget.classList.add("mobile-toolbar-visible");
+  } else {
+    widget.classList.remove("mobile-toolbar-visible");
+  }
+}
+
+function initTrigger() {
 		const trigger = document.getElementById("live2d-trigger");
 		if (!trigger) return;
 
@@ -794,10 +817,11 @@ const size = config.size || { width: 280, height: 250 };
 			}
 		});
 
-		container.addEventListener("touchstart", (e) => {
-			if (e.touches.length !== 1) return;
-			isDragging = true;
-			dragMoved = false;
+    container.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1) return;
+      if (e.target.closest(".live2d-toolbar")) return;
+      isDragging = true;
+      dragMoved = false;
 			const touch = e.touches[0];
 			dragStart = { x: touch.clientX, y: touch.clientY };
 			const rect = container.getBoundingClientRect();
@@ -828,7 +852,7 @@ const size = config.size || { width: 280, height: 250 };
 			e.preventDefault();
 		});
 
-		document.addEventListener("touchend", () => {
+		document.addEventListener("touchend", (e) => {
 			if (isDragging) {
 				container.style.willChange = "auto";
 				if (animFrameId) {
@@ -838,7 +862,18 @@ const size = config.size || { width: 280, height: 250 };
 				if (pendingMove) rafMove();
 				if (dragMoved) {
 					g.wasDragging = true;
+			} else if (
+				window.innerWidth <= 768 &&
+				!e.target?.closest(".live2d-toolbar")
+			) {
+				// 移动端点击看板娘（未拖拽）
+				if (!g.mobileToolbarVisible) {
+					toggleMobileToolbar(true);
+				} else {
+					g.wasDragging = false;
+					playRandomMotion();
 				}
+			}
 				// Save position after drag
 				try {
 					localStorage.setItem(
@@ -855,9 +890,17 @@ const size = config.size || { width: 280, height: 250 };
 			isDragging = false;
 		});
 
-		container.style.cursor = "grab";
+  container.style.cursor = "grab";
 
-		window.addEventListener("resize", () => {
+  // 移动端点击页面其他区域关闭工具栏
+  document.addEventListener("click", (e) => {
+    if (window.innerWidth > 768) return;
+    if (!container.contains(e.target) && g.mobileToolbarVisible) {
+      toggleMobileToolbar(false);
+    }
+  });
+
+  window.addEventListener("resize", () => {
 			winWidth = window.innerWidth;
 			winHeight = window.innerHeight;
 			containerW = container.offsetWidth;
@@ -948,13 +991,15 @@ const size = config.size || { width: 280, height: 250 };
 			widget.style.pointerEvents = "";
 			widget.style.opacity = "";
 			widget.style.transform = "";
-			widget.classList.remove(
-				"live2d-initial",
-				"live2d-entering",
-				"live2d-exiting",
-				"live2d-falling",
-			);
-			widget.classList.add("live2d-ready");
+      widget.classList.remove(
+        "live2d-initial",
+        "live2d-entering",
+        "live2d-exiting",
+        "live2d-falling",
+        "mobile-toolbar-visible",
+      );
+      g.mobileToolbarVisible = false;
+      widget.classList.add("live2d-ready");
 			trigger?.classList.remove("visible");
 
 			// 恢复 PIXI ticker
@@ -966,13 +1011,14 @@ const size = config.size || { width: 280, height: 250 };
 		} else {
 			widget.style.visibility = "hidden";
 			widget.style.pointerEvents = "none";
-			widget.classList.remove(
-				"live2d-entering",
-				"live2d-ready",
-				"live2d-exiting",
-				"live2d-falling",
-			);
-			trigger?.classList.add("visible");
+      widget.classList.remove(
+        "live2d-entering",
+        "live2d-ready",
+        "live2d-exiting",
+        "live2d-falling",
+        "mobile-toolbar-visible",
+      );
+      trigger?.classList.add("visible");
 			if (g.app?.ticker) {
 				g.app.ticker.stop();
 			}
@@ -1408,14 +1454,33 @@ const size = config.size || { width: 280, height: 250 };
 		box-shadow: 2px -4px 16px oklch(0 0 0 / 0.2);
 	}
 
-	@media (max-width: 768px) {
-		.live2d-widget {
-			transform: scale(0.85);
-			transform-origin: bottom left;
-		}
+  @media (max-width: 768px) {
+    .live2d-widget {
+      transform: scale(0.85);
+      transform-origin: bottom left;
+    }
 
-		.live2d-trigger {
-			display: none;
-		}
-	}
+    .live2d-toolbar {
+      right: auto;
+      left: 50%;
+      top: -44px;
+      flex-direction: row;
+      gap: 6px;
+      transform: translateX(-50%) translateY(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .live2d-widget:hover .live2d-toolbar,
+    .live2d-widget.mobile-toolbar-visible .live2d-toolbar {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .live2d-widget::after {
+      display: none;
+    }
+  }
 </style>
