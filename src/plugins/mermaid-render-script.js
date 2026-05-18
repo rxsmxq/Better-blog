@@ -293,7 +293,6 @@
 				"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.12.0/mermaid.min.js";
 
 			script.onload = () => {
-				console.log("Mermaid library loaded successfully");
 				resolve();
 			};
 
@@ -305,7 +304,6 @@
 					"https://unpkg.com/mermaid@11.12.0/dist/mermaid.min.js";
 
 				fallbackScript.onload = () => {
-					console.log("Mermaid library loaded from fallback CDN");
 					resolve();
 				};
 
