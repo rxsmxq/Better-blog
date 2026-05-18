@@ -539,6 +539,17 @@ onMount(() => {
     color: var(--primary);
   }
 
+  :root.dark .ai-icon-btn {
+    color: var(--text-50, #aaa);
+  }
+  :root.dark .ai-icon-btn:hover {
+    background: oklch(0.5 0 0 / 0.15);
+    color: var(--text-90, #eee);
+  }
+  :root.dark .ai-icon-btn-active {
+    background: oklch(0.5 0 0 / 0.15);
+  }
+
   .ai-session-list {
     max-height: 12rem;
     overflow-y: auto;
@@ -614,6 +625,13 @@ onMount(() => {
     background: oklch(0.5 0 0 / 0.1);
     color: var(--text-70, #555);
   }
+  :root.dark .ai-session-delete {
+    color: var(--text-30, #888);
+  }
+  :root.dark .ai-session-delete:hover {
+    background: oklch(0.5 0 0 / 0.15);
+    color: var(--text-70, #ccc);
+  }
 
   .ai-session-empty {
     text-align: center;
@@ -662,6 +680,15 @@ onMount(() => {
     border-color: var(--primary);
     color: var(--primary);
   }
+  :root.dark .ai-suggestions button {
+    border-color: oklch(0.4 0 0 / 0.4);
+    color: var(--text-70, #ccc);
+  }
+  :root.dark .ai-suggestions button:hover {
+    background: oklch(0.5 0 0 / 0.12);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
 
   .ai-msg {
     display: flex;
@@ -692,6 +719,9 @@ onMount(() => {
   .ai-msg.user .ai-msg-avatar {
     background: var(--primary);
     color: white;
+  }
+  :root.dark .ai-msg.user .ai-msg-avatar {
+    color: rgba(0, 0, 0, 0.7);
   }
 
   .ai-msg-avatar-img {
@@ -731,6 +761,9 @@ onMount(() => {
   .ai-msg.user .ai-msg-content {
     background: var(--primary);
     color: white;
+  }
+  :root.dark .ai-msg.user .ai-msg-content {
+    color: rgba(0, 0, 0, 0.7);
   }
 
   /* markdown 内容样式 */
@@ -882,6 +915,9 @@ onMount(() => {
   }
   .ai-send-btn:not(:disabled):hover {
     opacity: 0.85;
+  }
+  :root.dark .ai-send-btn {
+    color: rgba(0, 0, 0, 0.7);
   }
 
   @media (max-width: 640px) {
