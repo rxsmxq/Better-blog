@@ -79,8 +79,46 @@ const size = config.size || { width: 280, height: 250 };
 
 <script
 	is:inline
+	data-swup-ignore-script
 	define:vars={{ config, modelPathUrl: url(config.model.path) }}
 >
+	const STORAGE_KEYS = {
+		visibility: "live2d-visibility-cache",
+		position: "live2d-position-cache",
+	};
+
+	// ============================================================
+	// 全局状态持久化 —— 跨脚本执行、跨页面导航保持状态
+	// ============================================================
+	const GLOBAL_KEY = "__live2dGlobalState";
+
+	function createGlobalState() {
+		return {
+			initialized: false,
+			stateManager: null,
+			app: null,
+			model: null,
+			isResourcesReady: false,
+			isWidgetVisible: false,
+			resourceLoadPromise: null,
+			isDragSetup: false,
+			isInteractionsSetup: false,
+			isTransitioning: false,
+			wasDragging: false,
+			idleTimer: 0,
+			indicatorTimer: 0,
+			resizeTimer: 0,
+			canvasElement: null,
+			widgetElement: null,
+		};
+	}
+
+	const g = window[GLOBAL_KEY] || createGlobalState();
+	window[GLOBAL_KEY] = g;
+
+	// ============================================================
+	// Live2DStateManager（单例，通过全局状态保持）
+	// ============================================================
 	class Live2DStateManager {
 		constructor() {
 			this.state = "idle";
@@ -94,7 +132,8 @@ const size = config.size || { width: 280, height: 250 };
 		static async getInstance() {
 			if (!Live2DStateManager._instance) {
 				Live2DStateManager._instance = new Live2DStateManager();
-				Live2DStateManager._instance.visibilityCache = localStorage.getItem("live2d-visibility-cache");
+				Live2DStateManager._instance.visibilityCache =
+					localStorage.getItem(STORAGE_KEYS.visibility);
 			}
 			return Live2DStateManager._instance;
 		}
@@ -104,7 +143,6 @@ const size = config.size || { width: 280, height: 250 };
 		}
 
 		setState(newState) {
-			const oldState = this.state;
 			this.state = newState;
 			if (newState === "error" || newState === "ready") {
 				this.loadError = null;
@@ -130,14 +168,16 @@ const size = config.size || { width: 280, height: 250 };
 				return false;
 			}
 			this.setState("loading");
-			this.loadPromise = this.loadResources().then(() => {
-				this.setState("ready");
-				return true;
-			}).catch((error) => {
-				this.setState("error");
-				this.loadError = error;
-				return false;
-			});
+			this.loadPromise = this.loadResources()
+				.then(() => {
+					this.setState("ready");
+					return true;
+				})
+				.catch((error) => {
+					this.setState("error");
+					this.loadError = error;
+					return false;
+				});
 			return this.loadPromise;
 		}
 
@@ -178,42 +218,40 @@ const size = config.size || { width: 280, height: 250 };
 
 		setCachedVisibility(visible) {
 			this.visibilityCache = visible ? "visible" : "hidden";
-			localStorage.setItem("live2d-visibility-cache", this.visibilityCache);
+			localStorage.setItem(STORAGE_KEYS.visibility, this.visibilityCache);
 		}
 	}
 
-	let stateManager = null;
-	let live2dApp = null;
-	let live2dModel = null;
-	let isResourcesReady = false;
-	let isWidgetVisible = false;
-	let resourceLoadPromise = null;
-	let isDragSetup = false;
-
+	// ============================================================
+	// 资源加载
+	// ============================================================
 	async function ensureResourcesLoaded() {
-		if (isResourcesReady) {
+		if (g.isResourcesReady) {
 			return true;
 		}
-		if (resourceLoadPromise) {
-			return resourceLoadPromise;
+		if (g.resourceLoadPromise) {
+			return g.resourceLoadPromise;
 		}
-		resourceLoadPromise = (async () => {
+		g.resourceLoadPromise = (async () => {
 			try {
-				stateManager = await Live2DStateManager.getInstance();
-				const loaded = await stateManager.ensureLoaded();
+				g.stateManager = await Live2DStateManager.getInstance();
+				const loaded = await g.stateManager.ensureLoaded();
 				if (loaded && window.PIXI?.live2d?.Live2DModel) {
-					isResourcesReady = true;
+					g.isResourcesReady = true;
 					return true;
 				}
 				return false;
 			} catch {
-				resourceLoadPromise = null;
+				g.resourceLoadPromise = null;
 				return false;
 			}
 		})();
-		return resourceLoadPromise;
+		return g.resourceLoadPromise;
 	}
 
+	// ============================================================
+	// 初始化 Live2D（PIXI + Model）
+	// ============================================================
 	async function initLive2D() {
 		if (!config.model || !config.model.path) {
 			return false;
@@ -232,19 +270,22 @@ const size = config.size || { width: 280, height: 250 };
 			const resolution =
 				config.resolution || Math.min(window.devicePixelRatio || 1, 2);
 
-			if (window._live2dApp) {
+			// 清理旧的 PIXI 实例
+			if (g.app) {
 				try {
-					window._live2dApp.destroy(true, { children: true, texture: true, baseTexture: true });
+					g.app.destroy(true, {
+						children: true,
+						texture: true,
+						baseTexture: true,
+					});
 				} catch {
 					// ignore
 				}
-				window._live2dApp = null;
-				window._live2dModel = null;
+				g.app = null;
+				g.model = null;
 			}
-			live2dApp = null;
-			live2dModel = null;
 
-			live2dApp = new PIXI.Application({
+			g.app = new PIXI.Application({
 				view: canvas,
 				width: size.width,
 				height: size.height,
@@ -254,23 +295,26 @@ const size = config.size || { width: 280, height: 250 };
 				autoDensity: true,
 			});
 
-			live2dModel = await PIXI.live2d.Live2DModel.from(modelPathUrl);
-			console.log("[Live2D] Model loaded successfully:", modelPathUrl, "model width:", live2dModel.width, "model height:", live2dModel.height);
+			g.model = await PIXI.live2d.Live2DModel.from(modelPathUrl);
 
-			const scaleX = size.width / live2dModel.width;
-			const scaleY = size.height / live2dModel.height;
+			const scaleX = size.width / g.model.width;
+			const scaleY = size.height / g.model.height;
 			const fitScale = Math.min(scaleX, scaleY);
-			live2dModel.scale.set(fitScale);
-			live2dModel.anchor.set(0.5, 0.5);
-			live2dModel.x = size.width / 2;
-			live2dModel.y = size.height / 2;
+			g.model.scale.set(fitScale);
+			g.model.anchor.set(0.5, 0.5);
+			g.model.x = size.width / 2;
+			g.model.y = size.height / 2;
 
-			live2dApp.stage.addChild(live2dModel);
+			g.app.stage.addChild(g.model);
 
-			window._live2dApp = live2dApp;
-			window._live2dModel = live2dModel;
+			// 记录当前关联的 DOM 元素
+			g.canvasElement = canvas;
+			g.widgetElement = document.getElementById("live2d-widget");
 
-			setupInteractions();
+			setupModelInteractions();
+			if (!g.isInteractionsSetup) {
+				setupDOMInteractions();
+			}
 			scheduleIdleAnimation();
 			return true;
 		} catch (error) {
@@ -287,30 +331,39 @@ const size = config.size || { width: 280, height: 250 };
 		}
 	}
 
-	function setupInteractions() {
+	// ============================================================
+	// 交互设置
+	// ============================================================
+	function setupModelInteractions() {
+		if (!g.model) return;
+		g.model.on("hit", () => {
+			if (!g.wasDragging) playRandomMotion();
+			g.wasDragging = false;
+		});
+	}
+
+	function setupDOMInteractions() {
+		if (g.isInteractionsSetup) return;
+		g.isInteractionsSetup = true;
+
 		const allMotionGroups = ["Expression", "TapShort", "TapLong", "Other"];
 		let clickMotionGroups = ["Expression", "TapShort"];
 		let currentGroupIndex = 0;
 
-		live2dModel.on("hit", (_hitAreas) => {
-			if (!window._live2dWasDragging) playRandomMotion();
-			window._live2dWasDragging = false;
-		});
-
 		const canvas = document.getElementById("live2d-canvas");
 		canvas?.addEventListener("click", () => {
-			if (!window._live2dWasDragging) playRandomMotion();
-			window._live2dWasDragging = false;
+			if (!g.wasDragging) playRandomMotion();
+			g.wasDragging = false;
 		});
 
 		const switchBtn = document.getElementById("toolbar-switch");
 		const groupIndicator = document.getElementById("live2d-group-indicator");
-		let indicatorTimer = null;
 
 		if (switchBtn) {
 			switchBtn.addEventListener("click", (e) => {
 				e.stopPropagation();
-				currentGroupIndex = (currentGroupIndex + 1) % allMotionGroups.length;
+				currentGroupIndex =
+					(currentGroupIndex + 1) % allMotionGroups.length;
 				clickMotionGroups = [allMotionGroups[currentGroupIndex]];
 				if (groupIndicator) {
 					const groupNames = {
@@ -319,15 +372,20 @@ const size = config.size || { width: 280, height: 250 };
 						TapLong: "长动画",
 						Other: "其他",
 					};
-					groupIndicator.textContent = groupNames[allMotionGroups[currentGroupIndex]] || allMotionGroups[currentGroupIndex];
+					groupIndicator.textContent =
+						groupNames[allMotionGroups[currentGroupIndex]] ||
+						allMotionGroups[currentGroupIndex];
 					groupIndicator.classList.add("show");
-					clearTimeout(indicatorTimer);
-					indicatorTimer = setTimeout(() => groupIndicator.classList.remove("show"), 1500);
+					clearTimeout(g.indicatorTimer);
+					g.indicatorTimer = setTimeout(
+						() => groupIndicator.classList.remove("show"),
+						1500,
+					);
 				}
-				if (live2dModel) {
+				if (g.model) {
 					try {
-						live2dModel.motion(clickMotionGroups[0], undefined, 2);
-						live2dModel.expression();
+						g.model.motion(clickMotionGroups[0], undefined, 2);
+						g.model.expression();
 					} catch {
 						// ignore
 					}
@@ -362,12 +420,15 @@ const size = config.size || { width: 280, height: 250 };
 		}
 
 		function playRandomMotion() {
-			if (!live2dModel) return;
-			clearTimeout(window._live2dIdleTimer);
+			if (!g.model) return;
+			clearIdleTimer();
 			try {
-				const group = clickMotionGroups[Math.floor(Math.random() * clickMotionGroups.length)];
-				live2dModel.motion(group, undefined, 2);
-				live2dModel.expression();
+				const group =
+					clickMotionGroups[
+						Math.floor(Math.random() * clickMotionGroups.length)
+					];
+				g.model.motion(group, undefined, 2);
+				g.model.expression();
 			} catch {
 				// ignore
 			}
@@ -378,14 +439,24 @@ const size = config.size || { width: 280, height: 250 };
 		setupDrag();
 	}
 
+	// ============================================================
+	// 动画与定时器
+	// ============================================================
+	function clearIdleTimer() {
+		if (g.idleTimer) {
+			clearTimeout(g.idleTimer);
+			g.idleTimer = 0;
+		}
+	}
+
 	function scheduleIdleAnimation() {
-		clearTimeout(window._live2dIdleTimer);
+		clearIdleTimer();
 		const delay = 15000 + Math.random() * 15000;
-		window._live2dIdleTimer = setTimeout(() => {
-			if (live2dModel && isWidgetVisible) {
+		g.idleTimer = setTimeout(() => {
+			if (g.model && g.isWidgetVisible) {
 				try {
-					live2dModel.motion("Idle", 0, 1);
-					live2dModel.expression();
+					g.model.motion("Idle", 0, 1);
+					g.model.expression();
 				} catch {
 					// ignore
 				}
@@ -411,114 +482,179 @@ const size = config.size || { width: 280, height: 250 };
 		}, 600);
 	}
 
+	// ============================================================
+	// 显示 / 隐藏
+	// ============================================================
 	async function closeLive2DWidget() {
-		const widget = document.getElementById("live2d-widget");
-		if (!widget) return;
+		if (g.isTransitioning) return;
+		g.isTransitioning = true;
 
-		if (window.clearModelMessage) {
-			window.clearModelMessage();
+		try {
+			const widget = document.getElementById("live2d-widget");
+			if (!widget) return;
+
+			if (window.clearModelMessage) {
+				window.clearModelMessage();
+			}
+
+			const author = document.getElementById("live2d-author");
+			if (author) {
+				author.classList.remove("visible");
+			}
+
+			// Pause rendering to save resources
+			if (g.app?.ticker) {
+				g.app.ticker.stop();
+			}
+			clearIdleTimer();
+
+			// Save current position before hiding
+			const rect = widget.getBoundingClientRect();
+			const positionCache = {
+				left: widget.style.left || rect.left,
+				top: widget.style.top || rect.top,
+			};
+			try {
+				localStorage.setItem(
+					STORAGE_KEYS.position,
+					JSON.stringify(positionCache),
+				);
+			} catch {
+				// ignore storage errors
+			}
+
+			const viewportHeight = window.innerHeight;
+			const distanceToBottom = viewportHeight - rect.bottom;
+
+			widget.style.setProperty("--fall-distance", `${distanceToBottom}px`);
+			widget.classList.add("live2d-falling");
+
+			await sleep(300);
+
+			widget.classList.remove("live2d-falling");
+			widget.classList.add("live2d-exiting");
+
+			await sleep(400);
+
+			widget.style.visibility = "hidden";
+			widget.style.pointerEvents = "none";
+			widget.classList.remove("live2d-exiting");
+			g.isWidgetVisible = false;
+
+			if (g.stateManager) {
+				g.stateManager.setCachedVisibility(false);
+			}
+
+			updateTriggerVisibility(true);
+
+			window.dispatchEvent(
+				new CustomEvent("live2d-visibility-change", {
+					detail: { visible: false },
+				}),
+			);
+		} finally {
+			g.isTransitioning = false;
 		}
-
-		const author = document.getElementById("live2d-author");
-		if (author) {
-			author.classList.remove("visible");
-		}
-
-		const rect = widget.getBoundingClientRect();
-		const viewportHeight = window.innerHeight;
-		const distanceToBottom = viewportHeight - rect.bottom;
-
-		widget.style.setProperty("--fall-distance", `${distanceToBottom}px`);
-		widget.classList.add("live2d-falling");
-
-		await sleep(300);
-
-		widget.classList.remove("live2d-falling");
-		widget.classList.add("live2d-exiting");
-
-		await sleep(400);
-
-		widget.style.visibility = "hidden";
-		widget.style.pointerEvents = "none";
-		widget.classList.remove("live2d-exiting");
-		isWidgetVisible = false;
-
-		if (stateManager) {
-			stateManager.setCachedVisibility(false);
-		}
-
-		updateTriggerVisibility(true);
-
-		window.dispatchEvent(
-			new CustomEvent("live2d-visibility-change", {
-				detail: { visible: false },
-			}),
-		);
 	}
 
 	async function showLive2DWidget() {
-		const widget = document.getElementById("live2d-widget");
-		if (!widget) return;
+		if (g.isTransitioning) return;
+		g.isTransitioning = true;
 
-		updateTriggerVisibility(false);
+		try {
+			const widget = document.getElementById("live2d-widget");
+			if (!widget) return;
 
-		const resourcesReady = await ensureResourcesLoaded();
-		if (!resourcesReady) {
-			updateTriggerVisibility(true);
-			return;
-		}
+			updateTriggerVisibility(false);
 
-		const currentCanvas = document.getElementById("live2d-canvas");
-		const canvasValid = currentCanvas && window._live2dApp?.renderer?.view === currentCanvas;
-		const modelExists = window._live2dApp && window._live2dModel && canvasValid;
-
-		if (modelExists) {
-			widget.style.visibility = "";
-			widget.style.pointerEvents = "";
-			widget.style.opacity = "";
-			widget.style.transform = "";
-			widget.classList.remove("live2d-initial", "live2d-ready", "live2d-exiting", "live2d-falling");
-			isWidgetVisible = true;
-			window._live2dApp?.ticker?.start();
-			window._live2dApp?.render();
-			triggerEntryAnimation();
-		} else {
-			if (window._live2dApp) {
-				try {
-					window._live2dApp.destroy(true, { children: true, texture: true, baseTexture: true });
-				} catch {
-					// ignore
-				}
-				window._live2dApp = null;
-				window._live2dModel = null;
+			const resourcesReady = await ensureResourcesLoaded();
+			if (!resourcesReady) {
+				updateTriggerVisibility(true);
+				return;
 			}
-			live2dApp = null;
-			live2dModel = null;
 
-			const initialized = await initLive2D();
-			if (initialized) {
+			const currentCanvas = document.getElementById("live2d-canvas");
+			const canvasValid =
+				currentCanvas && g.app?.renderer?.view === currentCanvas;
+			const modelExists = g.app && g.model && canvasValid;
+
+			if (modelExists) {
 				widget.style.visibility = "";
 				widget.style.pointerEvents = "";
 				widget.style.opacity = "";
 				widget.style.transform = "";
-				widget.classList.remove("live2d-initial", "live2d-ready", "live2d-exiting", "live2d-falling");
-				isWidgetVisible = true;
+				widget.classList.remove(
+					"live2d-initial",
+					"live2d-ready",
+					"live2d-exiting",
+					"live2d-falling",
+				);
+				g.isWidgetVisible = true;
+				g.app.ticker?.start();
+				g.app.render();
+				scheduleIdleAnimation();
 				triggerEntryAnimation();
 			} else {
-				updateTriggerVisibility(true);
-				return;
+				if (g.app) {
+					try {
+						g.app.destroy(true, {
+							children: true,
+							texture: true,
+							baseTexture: true,
+						});
+					} catch {
+						// ignore
+					}
+					g.app = null;
+					g.model = null;
+				}
+
+				const initialized = await initLive2D();
+				if (initialized) {
+					widget.style.visibility = "";
+					widget.style.pointerEvents = "";
+					widget.style.opacity = "";
+					widget.style.transform = "";
+					widget.classList.remove(
+						"live2d-initial",
+						"live2d-ready",
+						"live2d-exiting",
+						"live2d-falling",
+					);
+					g.isWidgetVisible = true;
+					triggerEntryAnimation();
+				} else {
+					updateTriggerVisibility(true);
+					return;
+				}
 			}
-		}
 
-		if (stateManager) {
-			stateManager.setCachedVisibility(true);
-		}
+			if (g.stateManager) {
+				g.stateManager.setCachedVisibility(true);
+			}
 
-		window.dispatchEvent(
-			new CustomEvent("live2d-visibility-change", {
-				detail: { visible: true },
-			}),
-		);
+			// Restore cached position
+			try {
+				const cachedPosition = localStorage.getItem(
+					STORAGE_KEYS.position,
+				);
+				if (cachedPosition) {
+					const pos = JSON.parse(cachedPosition);
+					if (pos.left) widget.style.left = `${pos.left}px`;
+					if (pos.top) widget.style.top = `${pos.top}px`;
+				}
+			} catch {
+				// ignore
+			}
+
+			window.dispatchEvent(
+				new CustomEvent("live2d-visibility-change", {
+					detail: { visible: true },
+				}),
+			);
+		} finally {
+			g.isTransitioning = false;
+		}
 	}
 
 	function updateTriggerVisibility(show) {
@@ -539,7 +675,7 @@ const size = config.size || { width: 280, height: 250 };
 			showLive2DWidget();
 		});
 
-		const cachedVisibility = stateManager?.getCachedVisibility();
+		const cachedVisibility = g.stateManager?.getCachedVisibility();
 		if (cachedVisibility === "hidden") {
 			updateTriggerVisibility(true);
 			const widget = document.getElementById("live2d-widget");
@@ -548,16 +684,20 @@ const size = config.size || { width: 280, height: 250 };
 				widget.style.pointerEvents = "none";
 			}
 		} else if (cachedVisibility === "visible") {
-			isWidgetVisible = true;
+			g.isWidgetVisible = true;
 		}
 	}
 
 	window._showLive2DWidget = showLive2DWidget;
 	window._closeLive2DWidget = closeLive2DWidget;
 
+	// ============================================================
+	// 拖拽
+	// ============================================================
 	function setupDrag() {
-		if (isDragSetup) return;
-		isDragSetup = true;
+		if (g.isDragSetup) return;
+		g.isDragSetup = true;
+
 		const container = document.getElementById("live2d-widget");
 		if (!container) return;
 
@@ -577,8 +717,10 @@ const size = config.size || { width: 280, height: 250 };
 		function rafMove() {
 			if (!pendingMove) return;
 			pendingMove = false;
-			container.style.left = moveTarget.x + "px";
-			container.style.top = moveTarget.y + "px";
+			container.style.left = `${moveTarget.x}px`;
+			container.style.top = `${moveTarget.y}px`;
+			container.style.right = "auto";
+			container.style.bottom = "auto";
 		}
 
 		function scheduleMove(x, y) {
@@ -614,8 +756,14 @@ const size = config.size || { width: 280, height: 250 };
 			if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
 				dragMoved = true;
 			}
-			const clampedX = Math.max(0, Math.min(containerStart.x + dx, winWidth - containerW));
-			const clampedY = Math.max(0, Math.min(containerStart.y + dy, winHeight - containerH));
+			const clampedX = Math.max(
+				0,
+				Math.min(containerStart.x + dx, winWidth - containerW),
+			);
+			const clampedY = Math.max(
+				0,
+				Math.min(containerStart.y + dy, winHeight - containerH),
+			);
 			scheduleMove(clampedX, clampedY);
 		});
 
@@ -629,9 +777,21 @@ const size = config.size || { width: 280, height: 250 };
 				}
 				if (pendingMove) rafMove();
 				if (dragMoved) {
-					window._live2dWasDragging = true;
+					g.wasDragging = true;
 				}
 				container.style.cursor = "grab";
+				// Save position after drag
+				try {
+					localStorage.setItem(
+						STORAGE_KEYS.position,
+						JSON.stringify({
+							left: parseInt(container.style.left, 10) || 0,
+							top: parseInt(container.style.top, 10) || 0,
+						}),
+					);
+				} catch {
+					// ignore storage errors
+				}
 			}
 		});
 
@@ -657,8 +817,14 @@ const size = config.size || { width: 280, height: 250 };
 			if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
 				dragMoved = true;
 			}
-			const clampedX = Math.max(0, Math.min(containerStart.x + dx, winWidth - containerW));
-			const clampedY = Math.max(0, Math.min(containerStart.y + dy, winHeight - containerH));
+			const clampedX = Math.max(
+				0,
+				Math.min(containerStart.x + dx, winWidth - containerW),
+			);
+			const clampedY = Math.max(
+				0,
+				Math.min(containerStart.y + dy, winHeight - containerH),
+			);
 			scheduleMove(clampedX, clampedY);
 			e.preventDefault();
 		});
@@ -672,7 +838,19 @@ const size = config.size || { width: 280, height: 250 };
 				}
 				if (pendingMove) rafMove();
 				if (dragMoved) {
-					window._live2dWasDragging = true;
+					g.wasDragging = true;
+				}
+				// Save position after drag
+				try {
+					localStorage.setItem(
+						STORAGE_KEYS.position,
+						JSON.stringify({
+							left: parseInt(container.style.left, 10) || 0,
+							top: parseInt(container.style.top, 10) || 0,
+						}),
+					);
+				} catch {
+					// ignore storage errors
 				}
 			}
 			isDragging = false;
@@ -689,16 +867,19 @@ const size = config.size || { width: 280, height: 250 };
 			const maxX = winWidth - containerW;
 			const maxY = winHeight - containerH;
 			if (rect.left > maxX) {
-				container.style.left = maxX + "px";
+				container.style.left = `${maxX}px`;
 				container.style.right = "auto";
 			}
 			if (rect.top > maxY) {
-				container.style.top = maxY + "px";
+				container.style.top = `${maxY}px`;
 				container.style.bottom = "auto";
 			}
 		});
 	}
 
+	// ============================================================
+	// 消息气泡
+	// ============================================================
 	function showMessage() {
 		const messages = config.interactive?.clickMessages || [
 			"你好！",
@@ -707,7 +888,8 @@ const size = config.size || { width: 280, height: 250 };
 			"要不要一起玩游戏？",
 			"记得按时休息哦！",
 		];
-		const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+		const randomMessage =
+			messages[Math.floor(Math.random() * messages.length)];
 		if (window.showModelMessage) {
 			window.showModelMessage(randomMessage, {
 				containerId: "live2d-widget",
@@ -716,23 +898,177 @@ const size = config.size || { width: 280, height: 250 };
 		}
 	}
 
+	// ============================================================
+	// 响应式 / 页面可见性 / Swup 事件
+	// ============================================================
 	function handleResponsive() {
 		const widget = document.getElementById("live2d-widget");
 		if (!widget) return;
-		const cachedVisibility = stateManager?.getCachedVisibility();
+		const cachedVisibility = g.stateManager?.getCachedVisibility();
 		if (cachedVisibility === "hidden") return;
 		if (config.responsive?.hideOnMobile) {
 			const breakpoint = config.responsive.mobileBreakpoint || 768;
-			widget.style.visibility = window.innerWidth <= breakpoint ? "hidden" : "";
-			widget.style.pointerEvents = window.innerWidth <= breakpoint ? "none" : "";
+			if (window.innerWidth <= breakpoint) {
+				widget.style.visibility = "hidden";
+				widget.style.pointerEvents = "none";
+			} else if (g.isWidgetVisible) {
+				widget.style.visibility = "";
+				widget.style.pointerEvents = "";
+			}
 		}
 	}
 
+	function handleVisibilityChange() {
+		if (document.hidden) {
+			if (g.app?.ticker && g.isWidgetVisible) {
+				g.app.ticker.stop();
+			}
+			clearIdleTimer();
+		} else {
+			if (g.app?.ticker && g.isWidgetVisible) {
+				g.app.ticker.start();
+				g.app.render();
+				scheduleIdleAnimation();
+			}
+		}
+	}
+
+	// ============================================================
+	// 核心：跨页面状态恢复
+	// ============================================================
+	function restoreDOMState() {
+		const widget = document.getElementById("live2d-widget");
+		const trigger = document.getElementById("live2d-trigger");
+		if (!widget) return;
+
+		const cachedVisibility = g.stateManager?.getCachedVisibility();
+
+		// 恢复可见性
+		if (g.isWidgetVisible && cachedVisibility !== "hidden") {
+			widget.style.visibility = "";
+			widget.style.pointerEvents = "";
+			widget.style.opacity = "";
+			widget.style.transform = "";
+			widget.classList.remove(
+				"live2d-initial",
+				"live2d-entering",
+				"live2d-exiting",
+				"live2d-falling",
+			);
+			widget.classList.add("live2d-ready");
+			trigger?.classList.remove("visible");
+
+			// 恢复 PIXI ticker
+			if (g.app?.ticker) {
+				g.app.ticker.start();
+				g.app.render();
+			}
+			scheduleIdleAnimation();
+		} else {
+			widget.style.visibility = "hidden";
+			widget.style.pointerEvents = "none";
+			widget.classList.remove(
+				"live2d-entering",
+				"live2d-ready",
+				"live2d-exiting",
+				"live2d-falling",
+			);
+			trigger?.classList.add("visible");
+			if (g.app?.ticker) {
+				g.app.ticker.stop();
+			}
+			clearIdleTimer();
+		}
+
+		// 恢复位置
+		try {
+			const cachedPosition = localStorage.getItem(STORAGE_KEYS.position);
+			if (cachedPosition) {
+				const pos = JSON.parse(cachedPosition);
+				if (pos.left) widget.style.left = `${pos.left}px`;
+				if (pos.top) widget.style.top = `${pos.top}px`;
+			}
+		} catch {
+			// ignore
+		}
+
+		handleResponsive();
+	}
+
+	/**
+	 * 检测 DOM 是否被替换（Swup 导航时如果容器配置有误可能导致）
+	 */
+	function detectDOMReplacement() {
+		const currentCanvas = document.getElementById("live2d-canvas");
+		if (!currentCanvas) return true;
+		if (g.canvasElement && g.canvasElement !== currentCanvas) return true;
+		return false;
+	}
+
+	/**
+	 * Swup / Astro 页面加载后的状态恢复
+	 */
+	async function handlePageLoad() {
+		// 如果 DOM 被替换了，需要重新初始化 PIXI
+		if (g.initialized && detectDOMReplacement()) {
+			g.app = null;
+			g.model = null;
+			g.canvasElement = null;
+			g.widgetElement = null;
+			// 重新初始化
+			const cachedVisibility = g.stateManager?.getCachedVisibility();
+			if (cachedVisibility !== "hidden") {
+				g.isWidgetVisible = true;
+				const success = await initLive2D();
+				if (success) {
+					restoreDOMState();
+				}
+			} else {
+				restoreDOMState();
+			}
+			return;
+		}
+
+		// DOM 没有被替换，只需恢复样式状态
+		if (g.initialized) {
+			restoreDOMState();
+			return;
+		}
+
+		// 首次初始化（脚本第一次执行）
+		await initialize();
+	}
+
+	function cleanup() {
+		clearIdleTimer();
+		clearTimeout(g.indicatorTimer);
+		clearTimeout(g.resizeTimer);
+		if (g.app) {
+			try {
+				g.app.destroy(true, {
+					children: true,
+					texture: true,
+					baseTexture: true,
+				});
+			} catch {
+				// ignore
+			}
+			g.app = null;
+			g.model = null;
+		}
+		g.initialized = false;
+	}
+
+	// ============================================================
+	// 首次初始化
+	// ============================================================
 	async function initialize() {
-		stateManager = await Live2DStateManager.getInstance();
+		if (g.initialized) return;
+
+		g.stateManager = await Live2DStateManager.getInstance();
 		initTrigger();
 
-		const cachedVisibility = stateManager.getCachedVisibility();
+		const cachedVisibility = g.stateManager.getCachedVisibility();
 		if (cachedVisibility === "hidden") {
 			const widget = document.getElementById("live2d-widget");
 			if (widget) {
@@ -740,23 +1076,41 @@ const size = config.size || { width: 280, height: 250 };
 				widget.style.pointerEvents = "none";
 			}
 		} else {
-			isWidgetVisible = true;
-			await initLive2D();
-			if (live2dModel) {
+			g.isWidgetVisible = true;
+			const success = await initLive2D();
+			if (success) {
 				triggerEntryAnimation();
 			}
 		}
 
 		handleResponsive();
+		g.initialized = true;
 	}
 
+	// ============================================================
+	// 启动入口
+	// ============================================================
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initialize);
+		document.addEventListener("DOMContentLoaded", handlePageLoad);
 	} else {
-		initialize();
+		handlePageLoad();
 	}
 
-	window.addEventListener("resize", handleResponsive);
+	// 防抖 resize
+	window.addEventListener("resize", () => {
+		clearTimeout(g.resizeTimer);
+		g.resizeTimer = setTimeout(handleResponsive, 150);
+	});
+
+	// 页面可见性变化（切换浏览器标签）
+	document.addEventListener("visibilitychange", handleVisibilityChange);
+
+	// Swup SPA 导航后恢复状态（核心：跨页面状态保持）
+	document.addEventListener("astro:page-load", handlePageLoad);
+	document.addEventListener("swup:page:view", handlePageLoad);
+
+	// 页面卸载时清理
+	window.addEventListener("beforeunload", cleanup);
 
 	function sleep(ms) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
