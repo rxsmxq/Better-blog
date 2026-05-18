@@ -317,8 +317,7 @@ const size = config.size || { width: 280, height: 250 };
 			}
 			scheduleIdleAnimation();
 			return true;
-		} catch (error) {
-			console.error("[Live2D] Initialization failed:", error);
+		} catch {
 			handleLoadError();
 			return false;
 		}
