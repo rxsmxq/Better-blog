@@ -80,7 +80,6 @@ export function initIconLoader() {
 			setTimeout(() => {
 				observer.disconnect();
 				if (!checkIconLoaded()) {
-					// console.warn(`Icon load timeout: ${iconName}`);
 				}
 			}, 5000);
 		}

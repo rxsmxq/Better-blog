@@ -116,7 +116,6 @@ onMount(() => {
 	};
 
 	if (import.meta.env.DEV) {
-		console.log("Pagefind mock enabled in development mode.");
 		initializePagefind();
 	} else {
 		if (window.pagefind) {

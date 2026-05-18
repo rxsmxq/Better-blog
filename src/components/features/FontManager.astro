@@ -156,8 +156,6 @@ const fontFamilyStyle = generateFontFamilyStyle();
   if (document.fonts && typeof document.fonts.ready !== "undefined") {
     document.fonts.ready
       .then(() => {
-        console.log("All fonts have been loaded");
-
         // 触发自定义事件，通知字体加载完成
         document.dispatchEvent(new CustomEvent("fontsLoaded"));
       })
@@ -166,20 +164,4 @@ const fontFamilyStyle = generateFontFamilyStyle();
       });
   }
 
-  // 字体加载性能监控
-  if (typeof PerformanceObserver !== "undefined") {
-    const observer = new PerformanceObserver((list) => {
-      list.getEntries().forEach((entry) => {
-        if (entry.entryType === "resource") {
-          // console.log(`Font resource loaded: ${entry.name} (${entry.duration.toFixed(2)}ms)`);
-        }
-      });
-    });
-
-    try {
-      observer.observe({ entryTypes: ["resource"] });
-    } catch (e) {
-      // 浏览器不支持时静默失败
-    }
-  }
 </script>
