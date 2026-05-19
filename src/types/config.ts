@@ -88,6 +88,7 @@ export type SiteConfig = {
 		gallery: boolean; // 相册页面开关
 		collections: boolean; // 收藏API页面开关
 		stats: boolean; // 统计页面开关
+		calendar: boolean; // 日历页面开关
 	};
 
 	// 分类导航栏开关
@@ -190,6 +191,7 @@ export enum LinkPreset {
 	Gallery = 7,
 	Collections = 8,
 	Stats = 9,
+	Calendar = 10,
 }
 
 export type NavBarLink = {
@@ -846,4 +848,81 @@ export type CollectionsApiConfig = {
 	description?: string; // 页面描述，留空则使用 i18n 翻译
 	apis: CollectionApiItem[]; // API 收藏列表
 	categories?: string[]; // 自定义分类列表，留空则从 apis 中自动提取
+};
+
+// ============= 日历配置 =============
+
+// 公历或农历的"月日"对（按年重复）
+export type SolarOrLunarDate = {
+	type: "solar" | "lunar";
+	month: number; // 1-12
+	day: number; // 1-31，农历下范围根据月不同
+};
+
+// 节日项（按年重复，公历或农历）
+export type HolidayItem = {
+	name: string; // 节日名称
+	date: SolarOrLunarDate; // 公历或农历日期
+	icon?: string; // 可选图标（iconify 名）
+	note?: string; // 备注
+};
+
+// 生日 / 纪念日项（按年重复，公历或农历）
+export type BirthdayItem = {
+	name: string; // 人物名或事件名
+	date: SolarOrLunarDate;
+	icon?: string;
+	note?: string;
+};
+
+// 自定义安排项（一次性或简单重复）
+export type ScheduleItem = {
+	title: string; // 安排标题
+	note?: string; // 备注
+	icon?: string;
+	date?: string; // 一次性，"YYYY-MM-DD" 格式（与 recurring 互斥）
+	recurring?: {
+		freq: "yearly" | "monthly" | "weekly";
+		month?: number; // freq=yearly 时使用
+		day?: number; // freq=yearly | monthly 时使用
+		weekday?: 0 | 1 | 2 | 3 | 4 | 5 | 6; // freq=weekly 时使用，0=周日
+		lunar?: boolean; // 仅 yearly 支持，默认 false
+	};
+};
+
+// 日历页面配置
+export type CalendarConfig = {
+	title?: string; // 页面标题，留空使用 i18n
+	description?: string; // 页面描述，留空使用 i18n
+	showComment?: boolean; // 是否显示评论区，默认 false
+
+	// 节日 API（构建时拉取，失败回退仅用 builtinHolidays）
+	holidayApi: {
+		enable: boolean; // 是否启用 API
+		url: string; // API 基础 URL，按年拼接
+		fallbackOnError: boolean; // 拉取失败是否回退
+		years: number[]; // 编译期拉取哪些年份
+	};
+
+	// 内置补充节日（如农历节、节气、个性化节日）
+	builtinHolidays: HolidayItem[];
+
+	// 生日 / 纪念日
+	birthdays: BirthdayItem[];
+
+	// 自定义安排
+	schedules: ScheduleItem[];
+
+	// 显示开关
+	show: {
+		posts: boolean; // 是否把文章发布日上日历
+		lunarDate: boolean; // 单元格是否显示农历
+		weekNumber: boolean; // 是否显示周序号
+	};
+
+	// 顶部"未来概览"配置
+	overview: {
+		futureDays: number; // 概览跨度（天）
+		maxItems: number; // 最多卡片数
+	};
 };

@@ -152,6 +152,8 @@ export const siteConfig: SiteConfig = {
 		collections: true,
 		// 统计页面开关
 		stats: true,
+		// 日历页面开关
+		calendar: true,
 	},
 
 	// 分类导航栏开关，在首页和归档页顶部显示分类快捷导航

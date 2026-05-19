@@ -354,4 +354,25 @@ export const en: Translation = {
 	[Key.passwordError]: "Incorrect password, please try again.",
 	[Key.passwordProtectedRss]:
 		"This article is encrypted. Please visit the website to view it.",
+
+	// Calendar page
+	[Key.calendar]: "Calendar",
+	[Key.calendarDescription]:
+		"Holidays, birthdays, schedules and post updates at a glance",
+	[Key.calendarToday]: "Today",
+	[Key.calendarTomorrow]: "Tomorrow",
+	[Key.calendarDaysLater]: "In {n} days",
+	[Key.calendarBirthday]: "Birthday",
+	[Key.calendarHoliday]: "Holiday",
+	[Key.calendarSchedule]: "Schedule",
+	[Key.calendarPost]: "Post",
+	[Key.calendarLunar]: "Lunar",
+	[Key.calendarUpcoming]: "Upcoming",
+	[Key.calendarTodayEvents]: "Today",
+	[Key.calendarNoEvents]: "Nothing scheduled for this day",
+	[Key.calendarMore]: "{n} more",
+	[Key.calendarBackToToday]: "Today",
+	[Key.calendarNearestHoliday]: "Upcoming Holidays",
+	[Key.calendarNearestBirthday]: "Upcoming Birthdays",
+	[Key.calendarNearestSchedule]: "Upcoming Schedules",
 };

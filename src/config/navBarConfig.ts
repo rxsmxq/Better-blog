@@ -34,8 +34,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		url: "/my/",
 		icon: "material-symbols:person",
 		children: [
-			LinkPreset.About,
-			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+			...(siteConfig.pages.calendar ? [LinkPreset.Calendar] : []),
 			...(siteConfig.pages.gallery ? [LinkPreset.Gallery] : []),
 			...(siteConfig.pages.bangumi
 				? [
@@ -46,6 +45,8 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 						},
 					]
 				: []),
+			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+			LinkPreset.About,
 		],
 	});
 

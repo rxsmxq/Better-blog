@@ -355,4 +355,25 @@ export const ru: Translation = {
 	[Key.passwordError]: "Неверный пароль, попробуйте снова.",
 	[Key.passwordProtectedRss]:
 		"Эта статья зашифрована. Пожалуйста, посетите сайт для просмотра.",
+
+	// Календарь
+	[Key.calendar]: "Календарь",
+	[Key.calendarDescription]:
+		"Праздники, дни рождения, события и публикации в одном месте",
+	[Key.calendarToday]: "Сегодня",
+	[Key.calendarTomorrow]: "Завтра",
+	[Key.calendarDaysLater]: "Через {n} дн.",
+	[Key.calendarBirthday]: "День рождения",
+	[Key.calendarHoliday]: "Праздник",
+	[Key.calendarSchedule]: "События",
+	[Key.calendarPost]: "Пост",
+	[Key.calendarLunar]: "Лунный",
+	[Key.calendarUpcoming]: "Скоро",
+	[Key.calendarTodayEvents]: "Сегодня",
+	[Key.calendarNoEvents]: "На этот день нет событий",
+	[Key.calendarMore]: "ещё {n}",
+	[Key.calendarBackToToday]: "К сегодня",
+	[Key.calendarNearestHoliday]: "Ближайшие праздники",
+	[Key.calendarNearestBirthday]: "Ближайшие дни рождения",
+	[Key.calendarNearestSchedule]: "Ближайшие события",
 };

@@ -337,6 +337,26 @@ enum I18nKey {
 	passwordSubmit = "passwordSubmit",
 	passwordError = "passwordError",
 	passwordProtectedRss = "passwordProtectedRss",
+
+	// 日历页面
+	calendar = "calendar",
+	calendarDescription = "calendarDescription",
+	calendarToday = "calendarToday",
+	calendarTomorrow = "calendarTomorrow",
+	calendarDaysLater = "calendarDaysLater",
+	calendarBirthday = "calendarBirthday",
+	calendarHoliday = "calendarHoliday",
+	calendarSchedule = "calendarSchedule",
+	calendarPost = "calendarPost",
+	calendarLunar = "calendarLunar",
+	calendarUpcoming = "calendarUpcoming",
+	calendarTodayEvents = "calendarTodayEvents",
+	calendarNoEvents = "calendarNoEvents",
+	calendarMore = "calendarMore",
+	calendarBackToToday = "calendarBackToToday",
+	calendarNearestHoliday = "calendarNearestHoliday",
+	calendarNearestBirthday = "calendarNearestBirthday",
+	calendarNearestSchedule = "calendarNearestSchedule",
 }
 
 export default I18nKey;

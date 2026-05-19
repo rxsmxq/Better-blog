@@ -1,0 +1,94 @@
+---
+import Breadcrumb from "@components/common/Breadcrumb.astro";
+import Icon from "@components/common/Icon.astro";
+import CalendarGrid from "@components/pages/calendar/CalendarGrid.svelte";
+import EventDetailPanel from "@components/pages/calendar/EventDetailPanel.svelte";
+import EventOverview from "@components/pages/calendar/EventOverview.svelte";
+import { calendarConfig, siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+if (!siteConfig.pages.calendar) {
+	return Astro.redirect("/404/");
+}
+
+const title = calendarConfig.title || i18n(I18nKey.calendar);
+const description =
+	calendarConfig.description || i18n(I18nKey.calendarDescription);
+
+const breadcrumbItems = [
+	{ label: i18n(I18nKey.home), href: "/" },
+	{ label: title },
+];
+
+const { show, overview, birthdays, schedules } = calendarConfig;
+const { posts: showPosts, lunarDate: showLunar } = show;
+const { futureDays, maxItems } = overview;
+
+// 计算涉及年份：当前年 ± 1（确保概览和网格覆盖）
+const now = new Date();
+const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+
+// SSR 拉取节日数据 & 文章数据
+const [holidaysRes, postsRes] = await Promise.all([
+	fetch(new URL("/api/holidays.json", Astro.url)),
+	fetch(new URL("/api/allPostMeta.json", Astro.url)),
+]);
+
+const holidays = holidaysRes.ok ? await holidaysRes.json() : [];
+const posts = postsRes.ok ? await postsRes.json() : [];
+
+const overviewProps = {
+	holidays,
+	posts,
+	birthdays,
+	schedules,
+	years,
+	futureDays,
+	maxItems,
+	showPosts,
+};
+const gridProps = {
+	holidays,
+	posts,
+	birthdays,
+	schedules,
+	years,
+	showPosts,
+	showLunar,
+};
+const detailProps = { holidays, posts, birthdays, schedules, years, showPosts };
+---
+
+<MainGridLayout title={title} description={description}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-4 sm:px-6 lg:px-9 py-6 relative w-full">
+			<!-- 面包屑 -->
+			<Breadcrumb items={breadcrumbItems} class="mb-4" />
+
+			<!-- 页面标题 -->
+			<div class="flex items-center gap-3 mb-6">
+				<div class="h-8 w-8 rounded-lg bg-black dark:bg-white flex items-center justify-center">
+					<Icon name="material-symbols:calendar-today" class="text-[1.5rem] text-white dark:text-black" />
+				</div>
+				<h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h1>
+			</div>
+
+			<!-- 最近事件概览 -->
+			<div class="mb-6">
+				<EventOverview client:load {...overviewProps} />
+			</div>
+
+			<!-- 日历网格 -->
+			<div class="mb-6">
+				<CalendarGrid client:load {...gridProps} />
+			</div>
+
+			<!-- 日期详情面板 -->
+			<div class="mb-4">
+				<EventDetailPanel client:load {...detailProps} />
+			</div>
+		</div>
+	</div>
+</MainGridLayout>

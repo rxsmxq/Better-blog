@@ -353,4 +353,24 @@ export const ja: Translation = {
 	[Key.passwordError]: "パスワードが間違っています。もう一度お試しください。",
 	[Key.passwordProtectedRss]:
 		"この記事は暗号化されています。ウェブサイトにアクセスしてご覧ください。",
+
+	// カレンダーページ
+	[Key.calendar]: "カレンダー",
+	[Key.calendarDescription]: "祝日・誕生日・予定・記事更新の総合カレンダー",
+	[Key.calendarToday]: "今日",
+	[Key.calendarTomorrow]: "明日",
+	[Key.calendarDaysLater]: "{n} 日後",
+	[Key.calendarBirthday]: "誕生日",
+	[Key.calendarHoliday]: "祝日",
+	[Key.calendarSchedule]: "予定",
+	[Key.calendarPost]: "記事",
+	[Key.calendarLunar]: "旧暦",
+	[Key.calendarUpcoming]: "近日の予定",
+	[Key.calendarTodayEvents]: "本日のイベント",
+	[Key.calendarNoEvents]: "この日には予定がありません",
+	[Key.calendarMore]: "他 {n} 件",
+	[Key.calendarBackToToday]: "今日に戻る",
+	[Key.calendarNearestHoliday]: "直近の祝日",
+	[Key.calendarNearestBirthday]: "直近の誕生日",
+	[Key.calendarNearestSchedule]: "直近のスケジュール",
 };

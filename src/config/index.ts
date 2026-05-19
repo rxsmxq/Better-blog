@@ -5,6 +5,8 @@
 export type {
 	AnnouncementConfig,
 	BackgroundWallpaperConfig,
+	BirthdayItem,
+	CalendarConfig,
 	CollectionApiItem,
 	CollectionsApiConfig,
 	CommentConfig,
@@ -15,14 +17,17 @@ export type {
 	FriendSiteInfo,
 	GalleryAlbum,
 	GalleryConfig,
+	HolidayItem,
 	LicenseConfig,
 	MusicPlayerConfig,
 	NavBarConfig,
 	PlantUMLConfig,
 	ProfileConfig,
 	SakuraConfig,
+	ScheduleItem,
 	SidebarLayoutConfig,
 	SiteConfig,
+	SolarOrLunarDate,
 	SponsorConfig,
 	SponsorItem,
 	SponsorMethod,
@@ -35,6 +40,7 @@ export { aiSearchConfig } from "./aiSearchConfig"; // AI 搜索配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 // 样式配置
 export { backgroundWallpaper } from "./backgroundWallpaper"; // 背景壁纸配置
+export { calendarConfig } from "./calendarConfig"; // 日历配置
 export { collectionsApiConfig } from "./collectionsApiConfig"; // 收藏API配置
 // 功能配置
 export { commentConfig } from "./commentConfig"; // 评论系统配置
@@ -47,7 +53,7 @@ export { galleryConfig } from "./galleryConfig"; // 相册配置
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
 // 组件配置
 export { musicPlayerConfig } from "./musicConfig"; // 音乐播放器配置
-export { navBarConfig, navBarSearchConfig } from "./navBarConfig"; // 导航栏配置与搜索配置
+export { navBarConfig, navBarSearchConfig } from "./navbarConfig"; // 导航栏配置与搜索配置
 export { live2dModelConfig, spineModelConfig } from "./pioConfig"; // 看板娘配置
 export { plantumlConfig } from "./plantumlConfig"; // PlantUML 图表配置
 export { profileConfig } from "./profileConfig"; // 用户资料配置
