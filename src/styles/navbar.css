@@ -29,22 +29,28 @@
  * 过渡工具类
  * ============================================ */
 @utility navbar-surface-transition {
+  will-change: width, max-width, border-radius, padding;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transition:
-    width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    max-width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-    backdrop-filter 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-    margin 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+    backdrop-filter 0.2s ease 0.25s,
+    margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================
  * navbar-wrapper：滚动后背景变透明，让 pill 浮起来
  * ============================================ */
 #navbar-wrapper {
-    transition: background-color 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: background-color;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
 }
 
 #navbar.scrolled ~ #navbar-wrapper,
@@ -103,20 +109,23 @@
  * ============================================ */
 @media (max-width: 1023px) {
     #navbar > div {
-        will-change: width, max-width, border-radius, background-color, box-shadow;
-        contain: layout style paint;
+        will-change: width, max-width, border-radius, padding;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
 
     #navbar.scrolled > div {
-        will-change: width, max-width, border-radius, background-color, box-shadow;
+        will-change: width, max-width, border-radius, padding;
         transition:
-            width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-            max-width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-            border-radius 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-            background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
-            border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
-            box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
-            backdrop-filter 0.25s ease 0.2s !important;
+            width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+            border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+            box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+            backdrop-filter 0.15s ease 0.25s !important;
     }
 }
 

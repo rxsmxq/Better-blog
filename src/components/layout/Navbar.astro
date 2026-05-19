@@ -44,7 +44,7 @@ if (isLocalSrcLogo) {
 
 <div id="navbar" class="z-50">
     <div class:list={[className, "navbar-pill relative"]}>
-        <div class="navbar-glass-layer absolute inset-0 z-0 opacity-0 transition-opacity duration-500 pointer-events-none">
+        <div class="navbar-glass-layer absolute inset-0 z-0 opacity-0 pointer-events-none">
             <GlassSurface
                 client:load
                 width="100%"
@@ -109,16 +109,21 @@ if (isLocalSrcLogo) {
     /* ── pill 容器内边距 ── */
     .navbar-pill {
         padding: 0.5rem 0.75rem;
+        will-change: width, max-width, border-radius, padding;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
         /* 统一管理所有过渡，scoped style 优先级高于外部 CSS，确保不被覆盖 */
         transition:
-            width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-            max-width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-            border-radius 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-            padding 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-            background-color 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-            border-color 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-            box-shadow 0.36s cubic-bezier(0.22, 1, 0.36, 1),
-            backdrop-filter 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+            width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+            border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+            box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+            backdrop-filter 0.2s ease 0.25s;
     }
 
     /* 滚动后内边距收紧 */
@@ -130,19 +135,19 @@ if (isLocalSrcLogo) {
     @media (max-width: 1023px) {
         .navbar-pill {
             transition:
-                width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                max-width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                border-radius 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                padding 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
-                border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
-                box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
-                backdrop-filter 0.25s ease 0.2s;
-            will-change: width, max-width, border-radius, padding, background-color, box-shadow;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
+                width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+                backdrop-filter 0.15s ease 0.25s;
+            will-change: width, max-width, border-radius, padding;
+        }
+
+        .navbar-glass-layer {
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
         }
     }
 
@@ -201,24 +206,25 @@ if (isLocalSrcLogo) {
         white-space: nowrap;
         opacity: 1;
         transform: translateX(0);
+        will-change: opacity, transform;
         transition:
-            max-width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-            opacity 0.3s ease,
-            transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-            margin 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+            opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            margin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     :global(#navbar.scrolled) .navbar-logo-text {
         max-width: 0;
         opacity: 0;
-        transform: translateX(-6px);
+        transform: translateX(-8px);
         margin-left: 0 !important;
     }
 
     /* 移动端：logo 文字使用 GPU 友好的 transform，避免 max-width 布局抖动 */
     @media (max-width: 1023px) {
         .navbar-logo-text {
-            transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: transform, opacity;
         }
 
@@ -240,7 +246,8 @@ if (isLocalSrcLogo) {
         align-items: center;
         gap: 0.25rem;
         white-space: nowrap;
-        transition: gap 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: gap;
+        transition: gap 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     @media (min-width: 1024px) {
@@ -261,7 +268,8 @@ if (isLocalSrcLogo) {
         display: flex;
         align-items: center;
         gap: 0.25rem;
-        transition: gap 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: gap;
+        transition: gap 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .navbar-right :global(.btn-plain) {
         background-color: transparent !important;

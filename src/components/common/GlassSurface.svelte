@@ -65,13 +65,6 @@ function supportsSVGFilters(): boolean {
 	if (typeof window === "undefined" || typeof document === "undefined") {
 		return false;
 	}
-	const isWebkit =
-		/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-	const isFirefox = /Firefox/.test(navigator.userAgent);
-
-	if (isWebkit || isFirefox) {
-		return false;
-	}
 
 	const div = document.createElement("div");
 	div.style.backdropFilter = `url(#${filterId})`;
@@ -107,10 +100,21 @@ function generateDisplacementMap(): string {
 	return `data:image/svg+xml,${encodeURIComponent(svgContent)}`;
 }
 
+let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+
 function updateDisplacementMap() {
 	if (feImageRef) {
 		feImageRef.setAttribute("href", generateDisplacementMap());
 	}
+}
+
+function debouncedUpdateDisplacementMap() {
+	if (resizeTimeout) {
+		clearTimeout(resizeTimeout);
+	}
+	resizeTimeout = setTimeout(() => {
+		updateDisplacementMap();
+	}, 100);
 }
 
 function updateFilters() {
@@ -142,12 +146,15 @@ onMount(() => {
 
 		if (!containerRef) return;
 		const resizeObserver = new ResizeObserver(() => {
-			setTimeout(updateDisplacementMap, 0);
+			debouncedUpdateDisplacementMap();
 		});
 		resizeObserver.observe(containerRef);
 
 		return () => {
 			resizeObserver.disconnect();
+			if (resizeTimeout) {
+				clearTimeout(resizeTimeout);
+			}
 		};
 	});
 });
