@@ -24,6 +24,6 @@
 
 - GitHub：MmzMing（https://github.com/MmzMing）
 - Email：784774835@qq.com  
-- B站：关注明月崽27Mmzm喵~（https://space.bilibili.com/273232323）
+- B站：关注明月崽27Mmzm喵~（https://space.bilibili.com/15446538）
 
 欢迎来爸爸的小窝逛逛喵～ 本喵也会一直守在这里陪着他的♥
