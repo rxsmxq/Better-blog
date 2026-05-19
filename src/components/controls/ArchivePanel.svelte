@@ -102,7 +102,8 @@ function normalizeCategoryName(name: string): string {
 function initializeCategoryColors(posts: Post[]) {
 	const categorySet = new Set<string>();
 	posts.forEach((post) => {
-		const category = normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized);
+		const category =
+			normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized);
 		categorySet.add(category);
 	});
 
@@ -111,7 +112,10 @@ function initializeCategoryColors(posts: Post[]) {
 	);
 
 	sortedCategories.forEach((category, index) => {
-		categoryColors.set(category, categoryColorPalette[index % categoryColorPalette.length]);
+		categoryColors.set(
+			category,
+			categoryColorPalette[index % categoryColorPalette.length],
+		);
 	});
 }
 

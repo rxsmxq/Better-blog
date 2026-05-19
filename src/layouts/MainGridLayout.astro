@@ -1,5 +1,6 @@
 ---
 import Live2DWidget from "@components/features/Live2DWidget.astro";
+import PrivacyModal from "@components/features/PrivacyModal.astro";
 import SpineModel from "@components/features/SpineModel.astro";
 import Footer from "@components/layout/Footer.astro";
 import HomeHero from "@components/layout/HomeHero.astro";
@@ -138,6 +139,8 @@ const navLinks = navBarConfig.links.map((item) => {
 <FloatingDock headings={headings} />
 
 <AISearch client:load />
+
+<PrivacyModal />
 
 </Layout>
 
