@@ -75,9 +75,9 @@ export const friendsConfig: FriendLink[] = [
 		enabled: true,
 	},
 	{
-		title: "Fqzlr",
-		imgurl: "https://q1.qlogo.cn/g?b=qq&nk=379446167&s=640",
-		desc: "番茄煮理人大佬的博客，一位主打「人间凑数」「快乐摸鱼」的生活体验家，解锁了各种有趣的「非专业」技能，热衷于在生活里挖掘快乐，在摆烂中寻找平衡。",
+		title: "番茄主理人",
+		imgurl: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
+		desc: "坐而言不如起而行.",
 		siteurl: "https://fqzlr.com/",
 		tags: ["Blog"],
 		weight: 5,
