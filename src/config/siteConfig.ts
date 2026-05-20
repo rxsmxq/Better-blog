@@ -256,4 +256,7 @@ export const siteConfig: SiteConfig = {
 
 	// 站点语言，在本配置文件顶部SITE_LANG定义
 	lang: SITE_LANG,
+
+	// 备案号配置，留空则不显示
+	beian: "",
 };

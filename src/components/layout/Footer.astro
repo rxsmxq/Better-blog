@@ -1,7 +1,5 @@
 ---
-import fs from "node:fs";
-import path from "node:path";
-import { footerConfig, profileConfig, siteConfig } from "@/config";
+import { profileConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { getSortedPosts } from "@/utils/content-utils";
@@ -9,26 +7,9 @@ import { url } from "@/utils/url-utils";
 
 const currentYear = new Date().getFullYear();
 
-// 读取FooterConfig.html文件内容
-let customFooterHtml = "";
-if (footerConfig.enable) {
-	try {
-		const footerConfigPath = path.join(
-			process.cwd(),
-			"src",
-			"config",
-			"FooterConfig.html",
-		);
-		customFooterHtml = fs.readFileSync(footerConfigPath, "utf-8");
-		// 移除HTML注释
-		customFooterHtml = customFooterHtml.replace(/<!--[\s\S]*?-->/g, "").trim();
-	} catch (error) {
-		console.warn("FooterConfig.html文件读取失败:", error.message);
-	}
-}
-
 // 从配置中获取站点开始日期
 const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
+const beian = siteConfig.beian || "";
 
 // 获取最新文章日期（用于计算最后活动时间）
 const posts = await getSortedPosts();
@@ -47,106 +28,119 @@ const todayText = i18n(I18nKey.today);
 ---
 
 <div
-  class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"
+	class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6"
 >
-</div>
+	<div class="transition text-50 text-sm text-center wrap flex flex-col gap-1">
+		{/* 第一层：RSS | 隐私政策 */}
+		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-xs">
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+				target="_blank"
+				href={url("rss.xml")}
+			>
+				<span class="iconify text-sm" data-icon="material-symbols:rss-feed-rounded"></span>
+				<span>RSS</span>
+			</a>
+			<span class="text-neutral-300 dark:text-neutral-600">|</span>
+			<button
+				class="transition text-(--primary) font-bold bg-transparent border-none cursor-pointer p-0 hover:scale-105 inline-flex items-center gap-1"
+				onclick="window.openPrivacyModal && window.openPrivacyModal()"
+				type="button"
+			>
+				<span class="iconify text-sm" data-icon="material-symbols:shield-outline"></span>
+				<span>隐私政策</span>
+			</button>
+		</div>
 
-<div
-  class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6"
->
-  <div class="transition text-50 text-sm text-center wrap">
-    <div class="mb-2">
-      {customFooterHtml && <div set:html={customFooterHtml} />}
-    </div>
-    {/* 站点运行信息 */}
-    <div class="m-0.5 flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs">
-      <span class="flex items-center gap-1">
-        <span class="iconify text-sm" data-icon="material-symbols:calendar-clock-outline"></span>
-        <span id="footer-running-days" data-template={runningDaysText}>--</span>
-      </span>
-      <span class="text-neutral-300 dark:text-neutral-600">|</span>
-      <span class="flex items-center gap-1">
-        <span class="iconify text-sm" data-icon="mingcute:heartbeat-line"></span>
-        <span id="footer-last-update" data-template={lastUpdateText} data-today={todayText}>--</span>
-      </span>
-    </div>
-    <div class="m-0.5">
-      &copy; <span id="copyright-year">{currentYear}</span>
-      {profileConfig.name}. All Rights Reserved. /
-      <a
-        class="transition link text-(--primary) font-medium"
-        target="_blank"
-        href={url("rss.xml")}>RSS</a
-      > /
-      <a
-        class="transition link text-(--primary) font-medium"
-        target="_blank"
-        href={url("sitemap-index.xml")}>Sitemap</a
-      >
-    </div>
-    <div class="m-0.5">
-      Powered by
-      <a
-        class="transition link text-(--primary) font-medium"
-        target="_blank"
-        href="https://astro.build">Astro</a
-      > &
-      <a
-        class="transition link text-(--primary) font-medium"
-        target="_blank"
-        href="https://github.com/CuteLeaf/Firefly">Firefly</a
-      > /
-      <button
-        class="transition link text-(--primary) font-medium bg-transparent border-none cursor-pointer p-0"
-        onclick="window.openPrivacyModal && window.openPrivacyModal()"
-        type="button">隐私政策</button
-      >
-    </div>
-    <!-- 
-      注意：请勿随意修改或删除 "Powered by Astro & Firefly" 部分，这是对开源项目的尊重和支持。
-      如果您需要在底部增加内容，请在src/config/footerConfig.ts中修改enable属性为true，然后编辑src/config/FooterConfig.html文件。
-      您可以随意在src/config/FooterConfig.html中随意添加自定义内容，不需要修改Footer.astro文件。
-    -->
-  </div>
+		{/* 第二层：站点运行信息 */}
+		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs">
+			<span class="flex items-center gap-1">
+				<span class="iconify text-sm" data-icon="material-symbols:calendar-clock-outline"></span>
+				<span id="footer-running-days" data-template={runningDaysText}>--</span>
+			</span>
+			<span class="text-neutral-300 dark:text-neutral-600">|</span>
+			<span class="flex items-center gap-1">
+				<span class="iconify text-sm" data-icon="mingcute:heartbeat-line"></span>
+				<span id="footer-last-update" data-template={lastUpdateText} data-today={todayText}>--</span>
+			</span>
+		</div>
+
+		{/* 第三层：版权 | 备案 */}
+		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-xs flex-wrap">
+			<span>&copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}</span>
+			{beian && (
+				<>
+					<span class="text-neutral-300 dark:text-neutral-600">|</span>
+					<a
+						class="transition text-(--primary) font-bold hover:scale-105"
+						target="_blank"
+						href="https://beian.miit.gov.cn/#/Integrated/index"
+					>
+						{beian}
+					</a>
+				</>
+			)}
+		</div>
+
+		{/* 第四层：Powered by */}
+		<div class="flex items-center justify-center gap-1 text-neutral-500 dark:text-neutral-400 text-xs">
+			<span>Powered by</span>
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105"
+				target="_blank"
+				href="https://astro.build"
+			>
+				Astro
+			</a>
+			<span>&</span>
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105"
+				target="_blank"
+				href="https://github.com/CuteLeaf/Firefly"
+			>
+				Firefly
+			</a>
+		</div>
+	</div>
 </div>
 
 <script is:inline define:vars={{ siteStartDate, lastPostDate }}>
-  function updateFooterStats() {
-    const today = new Date();
+	function updateFooterStats() {
+		const today = new Date();
 
-    // 更新运行天数
-    const startDate = new Date(siteStartDate);
-    const diffTime = Math.abs(today.getTime() - startDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		// 更新运行天数
+		const startDate = new Date(siteStartDate);
+		const diffTime = Math.abs(today.getTime() - startDate.getTime());
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const runningDaysEl = document.getElementById('footer-running-days');
-    if (runningDaysEl) {
-      const template = runningDaysEl.dataset.template || '已运行 {days} 天';
-      runningDaysEl.textContent = template.replace('{days}', diffDays.toString());
-    }
+		const runningDaysEl = document.getElementById('footer-running-days');
+		if (runningDaysEl) {
+			const template = runningDaysEl.dataset.template || '已运行 {days} 天';
+			runningDaysEl.textContent = template.replace('{days}', diffDays.toString());
+		}
 
-    // 更新最后活动时间
-    const lastUpdateEl = document.getElementById('footer-last-update');
-    if (lastUpdateEl && lastPostDate) {
-      const lastPost = new Date(lastPostDate);
-      const timeSinceLastPost = Math.abs(today.getTime() - lastPost.getTime());
-      const daysSinceLastUpdate = Math.floor(timeSinceLastPost / (1000 * 60 * 60 * 24));
-      const template = lastUpdateEl.dataset.template || '最后更新于 {days} 天前';
-      const todayText = lastUpdateEl.dataset.today || '今天';
+		// 更新最后活动时间
+		const lastUpdateEl = document.getElementById('footer-last-update');
+		if (lastUpdateEl && lastPostDate) {
+			const lastPost = new Date(lastPostDate);
+			const timeSinceLastPost = Math.abs(today.getTime() - lastPost.getTime());
+			const daysSinceLastUpdate = Math.floor(timeSinceLastPost / (1000 * 60 * 60 * 24));
+			const template = lastUpdateEl.dataset.template || '最后更新于 {days} 天前';
+			const todayText = lastUpdateEl.dataset.today || '今天';
 
-      if (daysSinceLastUpdate === 0) {
-        lastUpdateEl.textContent = todayText;
-      } else {
-        lastUpdateEl.textContent = template.replace('{days}', daysSinceLastUpdate.toString());
-      }
-    }
-  }
+			if (daysSinceLastUpdate === 0) {
+				lastUpdateEl.textContent = todayText;
+			} else {
+				lastUpdateEl.textContent = template.replace('{days}', daysSinceLastUpdate.toString());
+			}
+		}
+	}
 
-  // 页面加载时更新
-  updateFooterStats();
+	// 页面加载时更新
+	updateFooterStats();
 
-  // 页面切换时重新更新
-  document.addEventListener("astro:page-load", () => {
-    setTimeout(updateFooterStats, 100);
-  });
+	// 页面切换时重新更新
+	document.addEventListener("astro:page-load", () => {
+		setTimeout(updateFooterStats, 100);
+	});
 </script>

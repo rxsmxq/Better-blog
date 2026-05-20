@@ -150,6 +150,9 @@ export type SiteConfig = {
 		workDays?: number[];
 	};
 
+	// 备案号配置（留空则不显示）
+	beian?: string;
+
 	// 图片优化配置
 	imageOptimization?: {
 		/**
