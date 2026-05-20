@@ -56,6 +56,24 @@ html.is-animating .transition-swup-fade {
 }
 
 /* --------------------------------------------------------------------------
+   1b. Pixel Transition Override
+   当像素过渡覆盖层激活时，Swup 默认 CSS 过渡设为极短(1ms)，
+   让内容切换在覆盖层遮罩下快速完成（视觉过渡由覆盖层负责）
+   -------------------------------------------------------------------------- */
+html.is-pixel-transitioning .transition-swup-main,
+html.is-pixel-transitioning .transition-swup-leaving,
+html.is-pixel-transitioning .transition-swup-fade {
+    transition: opacity 1ms linear, transform 1ms linear !important;
+}
+
+html.is-pixel-transitioning.is-animating .transition-swup-main,
+html.is-pixel-transitioning.is-animating.is-leaving .transition-swup-leaving,
+html.is-pixel-transitioning.is-animating .transition-swup-fade {
+    opacity: 0;
+    transform: none;
+}
+
+/* --------------------------------------------------------------------------
    2. Keyframes
    -------------------------------------------------------------------------- */
 
@@ -166,4 +184,11 @@ html.is-animating .transition-swup-fade {
     #progress-bar.done {
         transition: none;
     }
+}
+
+/* --------------------------------------------------------------------------
+   6. Pixel Transition Overlay - Progress Bar Hidden
+   -------------------------------------------------------------------------- */
+html.is-pixel-transitioning #progress-bar {
+    opacity: 0 !important;
 }
