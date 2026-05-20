@@ -1,4 +1,5 @@
 ---
+import Icon from "@components/common/Icon.astro";
 import { profileConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -31,14 +32,52 @@ const todayText = i18n(I18nKey.today);
 	class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6"
 >
 	<div class="transition text-50 text-sm text-center wrap flex flex-col gap-1">
-		{/* 第一层：RSS | 隐私政策 */}
+		{/* 第一层：社交链接 */}
+		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs flex-wrap">
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+				target="_blank"
+				href="https://github.com/MmzMing"
+			>
+				<Icon name="fa7-brands:github" is:inline class="text-sm" />
+				<span>GitHub</span>
+			</a>
+			<span class="text-neutral-300 dark:text-neutral-600">|</span>
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+				target="_blank"
+				href="https://qm.qq.com/q/2R07cjGTZ0"
+			>
+				<Icon name="fa7-brands:qq" is:inline class="text-sm" />
+				<span>QQ</span>
+			</a>
+			<span class="text-neutral-300 dark:text-neutral-600">|</span>
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+				target="_blank"
+				href="https://space.bilibili.com/15446538"
+			>
+				<Icon name="fa7-brands:bilibili" is:inline class="text-sm" />
+				<span>B站</span>
+			</a>
+			<span class="text-neutral-300 dark:text-neutral-600">|</span>
+			<a
+				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+				href="mailto:784774835@qq.com"
+			>
+				<Icon name="material-symbols:mail" is:inline class="text-sm" />
+				<span>邮箱</span>
+			</a>
+		</div>
+
+		{/* 第二层：RSS | 隐私政策 */}
 		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-xs">
 			<a
 				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
 				target="_blank"
 				href={url("rss.xml")}
 			>
-				<span class="iconify text-sm" data-icon="material-symbols:rss-feed-rounded"></span>
+				<Icon name="material-symbols:rss-feed-rounded" is:inline class="text-sm" />
 				<span>RSS</span>
 			</a>
 			<span class="text-neutral-300 dark:text-neutral-600">|</span>
@@ -47,12 +86,12 @@ const todayText = i18n(I18nKey.today);
 				onclick="window.openPrivacyModal && window.openPrivacyModal()"
 				type="button"
 			>
-				<span class="iconify text-sm" data-icon="material-symbols:shield-outline"></span>
+				<Icon name="material-symbols:shield-outline" is:inline class="text-sm" />
 				<span>隐私政策</span>
 			</button>
 		</div>
 
-		{/* 第二层：站点运行信息 */}
+		{/* 第三层：站点运行信息 */}
 		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs">
 			<span class="flex items-center gap-1">
 				<span class="iconify text-sm" data-icon="material-symbols:calendar-clock-outline"></span>

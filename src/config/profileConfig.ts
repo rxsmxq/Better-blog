@@ -39,7 +39,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "qq",
 			icon: "fa7-brands:qq",
-			url: "https://qm.qq.com/q/2rnmQ1SoB2",
+			url: "https://qm.qq.com/q/2R07cjGTZ0",
 			showName: false,
 		},
 		{
@@ -57,7 +57,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "Email",
 			icon: "fa7-solid:envelope",
-			url: "mailto:771220492@qq.com",
+			url: "mailto:784774835@qq.com",
 			showName: false,
 		},
 		{

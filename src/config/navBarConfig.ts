@@ -16,39 +16,20 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 		// 归档
 		LinkPreset.Archive,
-	];
 
-	// 根据配置决定是否添加友链，在siteConfig关闭pages.friends时导航栏不显示友链
-	if (siteConfig.pages.friends) {
-		links.push(LinkPreset.Friends);
-	}
+		// 日历
+		...(siteConfig.pages.calendar ? [LinkPreset.Calendar] : []),
+	];
 
 	// 根据配置决定是否添加留言板，在siteConfig关闭pages.guestbook时导航栏不显示留言板
 	if (siteConfig.pages.guestbook) {
 		links.push(LinkPreset.Guestbook);
 	}
 
-	// 我的及其子菜单
-	links.push({
-		name: "我的",
-		url: "/my/",
-		icon: "material-symbols:person",
-		children: [
-			...(siteConfig.pages.calendar ? [LinkPreset.Calendar] : []),
-			...(siteConfig.pages.gallery ? [LinkPreset.Gallery] : []),
-			...(siteConfig.pages.bangumi
-				? [
-						{
-							name: "追番",
-							url: "/bangumi/",
-							icon: "material-symbols:play-circle",
-						},
-					]
-				: []),
-			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
-			LinkPreset.About,
-		],
-	});
+	// 根据配置决定是否添加友链，在siteConfig关闭pages.friends时导航栏不显示友链
+	if (siteConfig.pages.friends) {
+		links.push(LinkPreset.Friends);
+	}
 
 	// 工具及其子菜单
 	links.push({
@@ -72,32 +53,24 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
-	// 自定义导航栏链接,并且支持多级菜单
+	// 我的及其子菜单
 	links.push({
-		name: "联系",
-		url: "/links/",
-		icon: "material-symbols:contact-page",
-
-		// 子菜单
+		name: "我的",
+		url: "/my/",
+		icon: "material-symbols:person",
 		children: [
-			{
-				name: "GitHub",
-				url: "https://github.com/MmzMing",
-				external: true,
-				icon: "fa7-brands:github",
-			},
-			{
-				name: "哈基墩QQ",
-				url: "tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=771220492",
-				external: true,
-				icon: "fa7-brands:qq",
-			},
-			{
-				name: "B站",
-				url: "https://space.bilibili.com/15446538",
-				external: true,
-				icon: "fa7-brands:bilibili",
-			},
+			...(siteConfig.pages.gallery ? [LinkPreset.Gallery] : []),
+			...(siteConfig.pages.bangumi
+				? [
+						{
+							name: "追番",
+							url: "/bangumi/",
+							icon: "material-symbols:play-circle",
+						},
+					]
+				: []),
+			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+			LinkPreset.About,
 		],
 	});
 
