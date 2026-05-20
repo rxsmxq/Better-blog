@@ -376,16 +376,6 @@ const siteLang = lang.replace("_", "-");
       }, 300);
     });
 
-    // 导航失败时取消像素过渡
-    window.swup.hooks.on("visit:error", () => {
-      if (isPixelActive) {
-        pixelTransitionModule.cancelTransition();
-      }
-      isPixelActive = false;
-      document.documentElement.classList.remove("is-pixel-transitioning");
-      document.documentElement.classList.remove("is-page-transitioning");
-    });
-
     window.swup.hooks.on("visit:end", () => {
       const progressBar = document.getElementById("progress-bar");
       if (progressBar) {
