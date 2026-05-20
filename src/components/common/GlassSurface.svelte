@@ -114,7 +114,7 @@ function debouncedUpdateDisplacementMap() {
 	}
 	resizeTimeout = setTimeout(() => {
 		updateDisplacementMap();
-	}, 100);
+	}, 400); // 增加延迟至 400ms，避开导航栏收缩过渡时间(400ms)，避免过渡期间重新生成 SVG 滤镜导致掉帧
 }
 
 function updateFilters() {
