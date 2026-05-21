@@ -5,6 +5,9 @@
  * 动画流程：入侵(1s) → 加载遮罩(随页面加载) → 退场揭示
  *
  * 使用 GSAP 驱动，与 Swup 页面切换生命周期集成
+ *
+ * 时序门控：maskReadyPromise 在入侵+遮罩完成后 resolve，
+ * Swup 通过 animation:out:await 等待此 Promise，确保遮罩完全覆盖后再替换内容。
  */
 
 import gsap from "gsap";
@@ -27,23 +30,24 @@ interface Block {
 const BLOCK_COUNT = 30;
 const REVEAL_DURATION = 0.8;
 const LOADING_TEXT_CHARS = ["<", "(", "º", "O", "º", ")", ">"];
+const MASK_READY_TIMEOUT = 3000;
 
 let overlay: HTMLDivElement | null = null;
 let blocks: Block[] = [];
 let currentPhase: Phase = "idle";
 let maskEl: HTMLDivElement | null = null;
 let activeTimeline: gsap.core.Timeline | null = null;
+let maskReadyResolve: (() => void) | null = null;
+let maskReadyPromise: Promise<void> | null = null;
 
-/**
- * 检测当前主题
- */
+function prefersReducedMotion(): boolean {
+	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function detectTheme(): boolean {
 	return document.documentElement.classList.contains("dark");
 }
 
-/**
- * 获取主题相关的颜色
- */
 function getThemeColors() {
 	const isDark = detectTheme();
 	return {
@@ -57,9 +61,6 @@ function getThemeColors() {
 	};
 }
 
-/**
- * 生成像素方块数据
- */
 function generateBlocks(): Block[] {
 	const colors = getThemeColors();
 	const arr: Block[] = [];
@@ -105,9 +106,6 @@ function generateBlocks(): Block[] {
 	return arr.sort((a, b) => b.dist - a.dist);
 }
 
-/**
- * 杀死所有活跃的 GSAP 动画
- */
 function killActiveAnimations() {
 	if (activeTimeline) {
 		activeTimeline.kill();
@@ -124,11 +122,7 @@ function killActiveAnimations() {
 	}
 }
 
-/**
- * 创建覆盖层 DOM 结构
- */
 function createOverlay(): HTMLDivElement {
-	// 如果已有覆盖层，先清理
 	if (overlay) {
 		killActiveAnimations();
 		overlay.remove();
@@ -150,7 +144,6 @@ function createOverlay(): HTMLDivElement {
 		opacity: 0;
 	`;
 
-	// 创建像素方块
 	const newBlocks = generateBlocks();
 	blocks = newBlocks.map((b) => {
 		const el = document.createElement("div");
@@ -175,7 +168,6 @@ function createOverlay(): HTMLDivElement {
 		return b;
 	});
 
-	// 创建白色/深色遮罩层
 	const mask = document.createElement("div");
 	mask.className = "pixel-mask";
 	mask.style.cssText = `
@@ -189,7 +181,6 @@ function createOverlay(): HTMLDivElement {
 		background-color: ${colors.maskBg};
 	`;
 
-	// 加载文字容器
 	const textContainer = document.createElement("div");
 	textContainer.className = "pixel-loading-text";
 	textContainer.style.cssText = `
@@ -226,9 +217,7 @@ function createOverlay(): HTMLDivElement {
 	container.appendChild(mask);
 	maskEl = mask;
 
-	// 确保插入到 body 最末尾，保证层叠顺序最高
 	document.body.appendChild(container);
-	// 强制将 overlay 移到 body 最末尾（防止其他动态插入的元素覆盖）
 	if (container !== document.body.lastElementChild) {
 		document.body.appendChild(container);
 	}
@@ -237,9 +226,6 @@ function createOverlay(): HTMLDivElement {
 	return container;
 }
 
-/**
- * 阶段1: 入侵动画 - 像素方块从屏幕边缘飞入 (~1s)
- */
 function animateInvasion(): Promise<void> {
 	return new Promise((resolve) => {
 		if (!overlay) {
@@ -249,7 +235,6 @@ function animateInvasion(): Promise<void> {
 
 		currentPhase = "invasion";
 
-		// 覆盖层整体淡入
 		gsap.set(overlay, { opacity: 1 });
 
 		const tl = gsap.timeline({
@@ -260,7 +245,6 @@ function animateInvasion(): Promise<void> {
 		});
 		activeTimeline = tl;
 
-		// 像素方块逐个飞入，stagger 间隔
 		blocks.forEach((b, i) => {
 			tl.to(
 				b.el,
@@ -276,7 +260,6 @@ function animateInvasion(): Promise<void> {
 			);
 		});
 
-		// 在入侵动画末尾提前启动遮罩淡入，消除停滞感
 		if (maskEl) {
 			tl.to(
 				maskEl,
@@ -291,10 +274,6 @@ function animateInvasion(): Promise<void> {
 	});
 }
 
-/**
- * 阶段2: 加载遮罩 - 显示遮罩 + 弹跳文字
- * 此函数不返回 Promise，loading 阶段由外部调用 triggerReveal 结束
- */
 function animateLoading(): void {
 	currentPhase = "loading";
 	if (!maskEl) return;
@@ -302,14 +281,12 @@ function animateLoading(): void {
 	const tl = gsap.timeline();
 	activeTimeline = tl;
 
-	// 遮罩确保完全显示（入侵末尾已提前启动淡入，此处补齐到 opacity:1）
 	tl.to(maskEl, {
 		opacity: 1,
 		duration: 0.2,
 		ease: "power2.out",
 	});
 
-	// 文字逐个弹入
 	const spans = maskEl.querySelectorAll("span");
 	spans.forEach((span, _i) => {
 		tl.to(
@@ -327,7 +304,6 @@ function animateLoading(): void {
 		);
 	});
 
-	// 文字弹入后添加微妙的呼吸/晃动效果
 	tl.add(() => {
 		if (!maskEl || currentPhase !== "loading") return;
 		const spans = maskEl.querySelectorAll("span");
@@ -343,9 +319,6 @@ function animateLoading(): void {
 	});
 }
 
-/**
- * 阶段3: 揭示动画 - 像素方块退场，新内容展示
- */
 function animateReveal(): Promise<void> {
 	return new Promise((resolve) => {
 		currentPhase = "reveal";
@@ -356,11 +329,16 @@ function animateReveal(): Promise<void> {
 			return;
 		}
 
-		// 停止 loading 阶段的呼吸动画
 		const spans = maskEl.querySelectorAll("span");
 		spans.forEach((span) => {
 			gsap.killTweensOf(span);
 		});
+
+		const swupContainer = document.getElementById("swup-container");
+
+		if (swupContainer) {
+			gsap.set(swupContainer, { opacity: 0, y: "0.5rem" });
+		}
 
 		const tl = gsap.timeline({
 			onComplete: () => {
@@ -372,7 +350,6 @@ function animateReveal(): Promise<void> {
 		});
 		activeTimeline = tl;
 
-		// 遮罩退出：模糊 + 放大 + 淡出
 		tl.to(maskEl, {
 			opacity: 0,
 			scale: 1.05,
@@ -381,7 +358,6 @@ function animateReveal(): Promise<void> {
 			ease: "power2.in",
 		});
 
-		// 像素方块退场：反向飞出（离中心近的先退）
 		blocks.forEach((b, i) => {
 			tl.to(
 				b.el,
@@ -397,7 +373,19 @@ function animateReveal(): Promise<void> {
 			);
 		});
 
-		// 整体淡出
+		if (swupContainer) {
+			tl.to(
+				swupContainer,
+				{
+					opacity: 1,
+					y: "0",
+					duration: 0.4,
+					ease: "power2.out",
+				},
+				"-=0.5",
+			);
+		}
+
 		tl.to(
 			overlay,
 			{
@@ -410,9 +398,6 @@ function animateReveal(): Promise<void> {
 	});
 }
 
-/**
- * 清理覆盖层
- */
 function cleanup() {
 	killActiveAnimations();
 	if (overlay) {
@@ -422,14 +407,18 @@ function cleanup() {
 	blocks = [];
 	maskEl = null;
 	currentPhase = "idle";
+	maskReadyPromise = null;
+	maskReadyResolve = null;
 }
 
-/**
- * 启动入侵动画（点击链接时调用）
- */
 export async function startInvasion(): Promise<void> {
-	// 如果正在动画中，强制清理重新开始
+	if (prefersReducedMotion()) {
+		maskReadyPromise = Promise.resolve();
+		return;
+	}
+
 	if (currentPhase !== "idle") {
+		maskReadyResolve?.();
 		killActiveAnimations();
 		if (overlay) overlay.remove();
 		overlay = null;
@@ -438,18 +427,30 @@ export async function startInvasion(): Promise<void> {
 		currentPhase = "idle";
 	}
 
+	maskReadyPromise = new Promise<void>((resolve) => {
+		maskReadyResolve = resolve;
+	});
+
 	createOverlay();
 	await animateInvasion();
 	animateLoading();
+
+	maskReadyResolve?.();
+	maskReadyResolve = null;
 }
 
-/**
- * 触发揭示动画（页面内容替换后调用）
- */
+export function getMaskReadyPromise(): Promise<void> {
+	if (!maskReadyPromise) return Promise.resolve();
+	return Promise.race([
+		maskReadyPromise,
+		new Promise<void>((resolve) => setTimeout(resolve, MASK_READY_TIMEOUT)),
+	]);
+}
+
 export async function triggerReveal(): Promise<void> {
+	if (prefersReducedMotion()) return;
 	if (currentPhase === "idle" || currentPhase === "done") return;
 
-	// 如果还在入侵阶段，等待完成
 	if (currentPhase === "invasion") {
 		await new Promise<void>((resolve) => {
 			const check = () => {
@@ -466,10 +467,10 @@ export async function triggerReveal(): Promise<void> {
 	await animateReveal();
 }
 
-/**
- * 取消动画（异常/快速导航等情况）
- */
 export function cancelTransition() {
+	maskReadyResolve?.();
+	maskReadyResolve = null;
+	maskReadyPromise = null;
 	killActiveAnimations();
 	cleanup();
 }

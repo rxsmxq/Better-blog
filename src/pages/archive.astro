@@ -1,13 +1,31 @@
 ---
+import Icon from "@components/common/Icon.astro";
 import ArchivePanel from "@components/controls/ArchivePanel.svelte";
+import ArchiveHeatmap from "@components/widget/ArchiveHeatmap.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPostsList } from "@/utils/content-utils";
 
 const sortedPostsList = await getSortedPostsList();
+const title = i18n(I18nKey.archive);
 ---
 
-<MainGridLayout title={i18n(I18nKey.archive)}>
-  <ArchivePanel sortedPosts={sortedPostsList} client:only="svelte" />
+<MainGridLayout title={title}>
+  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+    <div class="card-base z-10 px-9 py-6 relative w-full">
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+            <Icon name="material-symbols:archive" class="text-[1.5rem]" />
+          </div>
+          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+            {title}
+          </div>
+        </div>
+      </div>
+      <ArchiveHeatmap posts={sortedPostsList} />
+      <ArchivePanel sortedPosts={sortedPostsList} client:load />
+    </div>
+  </div>
 </MainGridLayout>

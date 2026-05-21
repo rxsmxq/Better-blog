@@ -338,6 +338,9 @@ enum I18nKey {
 	passwordError = "passwordError",
 	passwordProtectedRss = "passwordProtectedRss",
 
+	// 热力图
+	postHeatmap = "postHeatmap",
+
 	// 日历页面
 	calendar = "calendar",
 	calendarDescription = "calendarDescription",

@@ -293,11 +293,11 @@ const siteLang = lang.replace("_", "-");
       }
     });
 
-    // 像素过渡期间，跳过 Swup 的 CSS 动画等待
-    // 让 Swup 在覆盖层下快速完成内容切换
-    window.swup.hooks.on("animation:out:await", (visit, args, defaultHandler) => {
+    // 像素过渡期间，等待遮罩完全覆盖后再让 Swup 替换内容
+    // 确保用户看不到内容切换过程
+    window.swup.hooks.on("animation:out:await", async (visit, args, defaultHandler) => {
       if (isPixelActive) {
-        // 不等待 CSS 动画，立即继续
+        await pixelTransitionModule.getMaskReadyPromise();
         return;
       }
       return defaultHandler?.();

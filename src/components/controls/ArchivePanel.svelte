@@ -1,19 +1,10 @@
 <script lang="ts">
-import { onMount } from "svelte";
-
+import { onMount, tick } from "svelte";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { getPostUrlBySlug } from "@/utils/url-utils";
 
-export let tags: string[] = [];
-export let categories: string[] = [];
-export let sortedPosts: Post[] = [];
-
-const params = new URLSearchParams(window.location.search);
-tags = params.has("tag") ? params.getAll("tag") : [];
-categories = params.has("category") ? params.getAll("category") : [];
-const uncategorized = params.get("uncategorized");
-
+// ===== 类型定义 =====
 interface Post {
 	id: string;
 	data: {
@@ -23,24 +14,55 @@ interface Post {
 		published: Date;
 	};
 }
-
-interface Group {
-	year: number;
+interface MonthGroup {
+	month: number;
 	posts: Post[];
 }
-
+interface YearGroup {
+	year: number;
+	months: MonthGroup[];
+	totalCount: number;
+}
 interface ActiveFilter {
 	labelKey: I18nKey;
 	values: string[];
 }
 
-let groups: Group[] = [];
+// ===== Props =====
+export let tags: string[] = [];
+export let categories: string[] = [];
+export let sortedPosts: Post[] = [];
+
+// ===== 状态 =====
+let yearGroups: YearGroup[] = [];
 let activeFilters: ActiveFilter[] = [];
 let primaryFilter: ActiveFilter | null = null;
 let secondaryFilters: ActiveFilter[] = [];
 let filteredPostCount = 0;
 let categoryColors: Map<string, string> = new Map();
+let hoveredPostId: string | null = null;
+let highlightedYear: number | null = null;
+let highlightedMonth: string | null = null;
 
+// ===== 高亮覆盖层状态 =====
+// 每条高亮线段：{ x, top, height } 相对于 .archive-panel
+interface HighlightSeg {
+	x: number;
+	top: number;
+	height: number;
+}
+let highlightSegs: HighlightSeg[] = [];
+
+// DOM 引用
+let panelEl: HTMLElement;
+// yearBlock refs: yearGroup.year -> HTMLElement
+let yearBlockRefs: Map<number, HTMLElement> = new Map();
+// monthBlock refs: `${year}-${month}` -> HTMLElement
+let monthBlockRefs: Map<string, HTMLElement> = new Map();
+// postRow refs: postId -> HTMLElement
+let postRowRefs: Map<string, HTMLElement> = new Map();
+
+// ===== 分类颜色调色板 =====
 const categoryColorPalette = [
 	"text-amber-400",
 	"text-rose-400",
@@ -62,141 +84,279 @@ const categoryColorPalette = [
 	"text-emerald-500",
 ];
 
-function formatDate(date: Date) {
-	const month = (date.getMonth() + 1).toString().padStart(2, "0");
-	const day = date.getDate().toString().padStart(2, "0");
-	return `${month}-${day}`;
+// ===== 工具函数 =====
+function formatDate(date: Date): string {
+	const m = (date.getMonth() + 1).toString().padStart(2, "0");
+	const d = date.getDate().toString().padStart(2, "0");
+	return `${m}-${d}`;
 }
-
-function formatTag(tagList: string[]) {
-	return tagList.map((t) => `#${t}`).join(" ");
+function formatMonth(month: number): string {
+	return `${month}${i18n(I18nKey.month)}`;
 }
-
-function formatFilterValues(filter: ActiveFilter) {
-	const prefix = filter.labelKey === I18nKey.tags ? "#" : "";
-	return filter.values.map((value) => `${prefix}${value}`).join(" / ");
+function getCategoryColor(name: string): string {
+	return categoryColors.get(name) || "text-[var(--meta-divider)]";
 }
-
-function resolvePrimaryFilter(filters: ActiveFilter[]) {
-	return (
-		filters.find((filter) => filter.labelKey === I18nKey.tags) ??
-		filters[0] ??
-		null
-	);
-}
-
-function formatFilterSummary(filters: ActiveFilter[]) {
-	return filters
-		.map((filter) => `${i18n(filter.labelKey)}: ${formatFilterValues(filter)}`)
-		.join("  ·  ");
-}
-
-function getCategoryColor(categoryName: string): string {
-	return categoryColors.get(categoryName) || "text-gray-400";
-}
-
-function normalizeCategoryName(name: string): string {
+function normalizeCategoryName(name: string | null | undefined): string {
 	return (name || "").trim();
 }
 
-function initializeCategoryColors(posts: Post[]) {
-	const categorySet = new Set<string>();
-	posts.forEach((post) => {
-		const category =
-			normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized);
-		categorySet.add(category);
-	});
-
-	const sortedCategories = Array.from(categorySet).sort((a, b) =>
-		a.localeCompare(b, "zh-CN"),
-	);
-
-	sortedCategories.forEach((category, index) => {
-		categoryColors.set(
-			category,
-			categoryColorPalette[index % categoryColorPalette.length],
+function initializeCategoryColors(posts: Post[]): void {
+	const set = new Set<string>();
+	for (const p of posts)
+		set.add(
+			normalizeCategoryName(p.data.category) || i18n(I18nKey.uncategorized),
 		);
-	});
+	const sorted = Array.from(set).sort((a, b) => a.localeCompare(b, "zh-CN"));
+	for (let i = 0; i < sorted.length; i++) {
+		categoryColors.set(
+			sorted[i],
+			categoryColorPalette[i % categoryColorPalette.length],
+		);
+	}
 }
 
-onMount(async () => {
-	let filteredPosts: Post[] = sortedPosts;
-	const currentFilters: ActiveFilter[] = [];
+function groupByYearMonth(posts: Post[]): YearGroup[] {
+	const yearMap = new Map<number, Map<number, Post[]>>();
+	for (const post of posts) {
+		const y = post.data.published.getFullYear();
+		const mo = post.data.published.getMonth() + 1;
+		if (!yearMap.has(y)) yearMap.set(y, new Map());
+		const mm = yearMap.get(y)!;
+		if (!mm.has(mo)) mm.set(mo, []);
+		mm.get(mo)!.push(post);
+	}
+	return Array.from(yearMap.keys())
+		.sort((a, b) => b - a)
+		.map((year) => {
+			const mm = yearMap.get(year)!;
+			const months = Array.from(mm.keys())
+				.sort((a, b) => b - a)
+				.map((month) => ({ month, posts: mm.get(month)! }));
+			return {
+				year,
+				months,
+				totalCount: months.reduce((s, m) => s + m.posts.length, 0),
+			};
+		});
+}
 
-	if (categories.length > 0) {
-		currentFilters.push({ labelKey: I18nKey.categories, values: categories });
+function formatFilterValues(f: ActiveFilter): string {
+	const prefix = f.labelKey === I18nKey.tags ? "#" : "";
+	return f.values.map((v) => `${prefix}${v}`).join(" / ");
+}
+function resolvePrimaryFilter(filters: ActiveFilter[]): ActiveFilter | null {
+	return filters.find((f) => f.labelKey === I18nKey.tags) ?? filters[0] ?? null;
+}
+function formatFilterSummary(filters: ActiveFilter[]): string {
+	return filters
+		.map((f) => `${i18n(f.labelKey)}: ${formatFilterValues(f)}`)
+		.join("  ·  ");
+}
+
+// ===== 高亮线段计算 =====
+/**
+ * 计算从年节点中心到悬停文章节点中心的高亮线段集合。
+ * 线段分三段：
+ *   1. 年竖线：从年节点中心 → 月节点中心（同 X = 年竖线 X）
+ *   2. 月竖线：从月节点中心 → 文章节点中心（同 X = 月竖线 X）
+ *   3. 横线：月竖线 X → 文章节点 X（同 Y = 文章节点中心）
+ *      以及月横线：年竖线 X → 月节点 X（同 Y = 月节点中心）
+ * 实际上用 DOM getBoundingClientRect 精确计算每段的位置和长度。
+ */
+async function computeHighlight(postId: string) {
+	await tick();
+	if (!panelEl) {
+		highlightSegs = [];
+		return;
 	}
 
-	if (uncategorized) {
+	// 找到悬停文章所在的年/月
+	let targetYear: number | null = null;
+	let targetMonth: number | null = null;
+	for (const yg of yearGroups) {
+		for (const mg of yg.months) {
+			if (mg.posts.some((p) => p.id === postId)) {
+				targetYear = yg.year;
+				targetMonth = mg.month;
+				break;
+			}
+		}
+		if (targetYear !== null) break;
+	}
+	if (targetYear === null || targetMonth === null) {
+		highlightSegs = [];
+		highlightedYear = null;
+		highlightedMonth = null;
+		return;
+	}
+
+	highlightedYear = targetYear;
+	highlightedMonth = `${targetYear}-${targetMonth}`;
+
+	const panelRect = panelEl.getBoundingClientRect();
+	const tw =
+		Number.parseFloat(getComputedStyle(panelEl).getPropertyValue("--tw")) * 16; // rem→px
+
+	// 年块
+	const yearBlock = yearBlockRefs.get(targetYear);
+	// 月块
+	const monthBlock = monthBlockRefs.get(`${targetYear}-${targetMonth}`);
+	// 文章行
+	const postRow = postRowRefs.get(postId);
+
+	if (!yearBlock || !monthBlock || !postRow) {
+		highlightSegs = [];
+		return;
+	}
+
+	const yearBlockRect = yearBlock.getBoundingClientRect();
+	const monthBlockRect = monthBlock.getBoundingClientRect();
+	const postRowRect = postRow.getBoundingClientRect();
+
+	// 各竖线的 X（相对于 panel 左边）
+	// 年竖线 X = yearBlock.left - panel.left + tw/2
+	const yearLineX = yearBlockRect.left - panelRect.left + tw / 2;
+	// 月竖线 X = monthBlock.left - panel.left + tw/2
+	const monthLineX = monthBlockRect.left - panelRect.left + tw / 2;
+	// 文章竖线 X = postRow.left - panel.left + tw/2
+	const postLineX = postRowRect.left - panelRect.left + tw / 2;
+
+	// 各节点中心 Y（相对于 panel 顶部）
+	const yearNodeCY = yearBlockRect.top - panelRect.top + tw / 2;
+	const monthNodeCY = monthBlockRect.top - panelRect.top + tw / 2;
+	const postNodeCY = postRowRect.top - panelRect.top + postRowRect.height / 2;
+
+	const segs: HighlightSeg[] = [];
+
+	// 段1：年竖线，从年节点中心 → 月节点中心
+	segs.push({
+		x: yearLineX,
+		top: yearNodeCY,
+		height: monthNodeCY - yearNodeCY,
+	});
+
+	// 段2：月横线，从年竖线 → 月节点中心（水平）
+	// 用一个水平线段：top = monthNodeCY, left = yearLineX, width = monthLineX - yearLineX
+	// 这里用 height=0 的横线，通过 width 表示（在模板里特殊处理）
+	// 为了统一，横线也用 HighlightSeg，但 height 表示线宽，x 表示起点，用 width 字段
+	// 改用扩展接口处理横线
+
+	// 段3：月竖线，从月节点中心 → 文章节点中心
+	segs.push({
+		x: monthLineX,
+		top: monthNodeCY,
+		height: postNodeCY - monthNodeCY,
+	});
+
+	// 段4：文章横线，从月竖线 → 文章节点中心（水平）
+	// 同样特殊处理
+
+	highlightSegs = segs;
+	highlightHLines = [
+		{ x: yearLineX, y: monthNodeCY, width: monthLineX - yearLineX },
+		{ x: monthLineX, y: postNodeCY, width: postLineX - monthLineX },
+	];
+}
+
+interface HighlightHLine {
+	x: number;
+	y: number;
+	width: number;
+}
+let highlightHLines: HighlightHLine[] = [];
+
+async function onPostEnter(postId: string) {
+	hoveredPostId = postId;
+	await computeHighlight(postId);
+}
+
+function onPostLeave() {
+	hoveredPostId = null;
+	highlightedYear = null;
+	highlightedMonth = null;
+	highlightSegs = [];
+	highlightHLines = [];
+}
+
+// ===== Svelte use: 指令（注册 DOM 引用） =====
+function registerYearBlock(node: HTMLElement, year: number) {
+	yearBlockRefs.set(year, node);
+	return {
+		destroy() {
+			yearBlockRefs.delete(year);
+		},
+	};
+}
+function registerMonthBlock(
+	node: HTMLElement,
+	{ year, month }: { year: number; month: number },
+) {
+	monthBlockRefs.set(`${year}-${month}`, node);
+	return {
+		destroy() {
+			monthBlockRefs.delete(`${year}-${month}`);
+		},
+	};
+}
+function registerPostRow(node: HTMLElement, postId: string) {
+	postRowRefs.set(postId, node);
+	return {
+		destroy() {
+			postRowRefs.delete(postId);
+		},
+	};
+}
+
+// ===== 生命周期 =====
+onMount(() => {
+	const params = new URLSearchParams(window.location.search);
+	tags = params.has("tag") ? params.getAll("tag") : [];
+	categories = params.has("category") ? params.getAll("category") : [];
+	const uncategorized = params.get("uncategorized");
+
+	let filtered: Post[] = sortedPosts;
+	const currentFilters: ActiveFilter[] = [];
+	if (categories.length > 0)
+		currentFilters.push({ labelKey: I18nKey.categories, values: categories });
+	if (uncategorized)
 		currentFilters.push({
 			labelKey: I18nKey.categories,
 			values: [i18n(I18nKey.uncategorized)],
 		});
-	}
-
-	if (tags.length > 0) {
+	if (tags.length > 0)
 		currentFilters.push({ labelKey: I18nKey.tags, values: tags });
-	}
 
 	activeFilters = currentFilters;
 	primaryFilter = resolvePrimaryFilter(activeFilters);
 	secondaryFilters = primaryFilter
-		? activeFilters.filter((filter) => filter !== primaryFilter)
+		? activeFilters.filter((f) => f !== primaryFilter)
 		: [];
 
-	if (tags.length > 0) {
-		filteredPosts = filteredPosts.filter(
-			(post) =>
-				Array.isArray(post.data.tags) &&
-				post.data.tags.some((tag) => tags.includes(tag)),
+	if (tags.length > 0)
+		filtered = filtered.filter(
+			(p) =>
+				Array.isArray(p.data.tags) && p.data.tags.some((t) => tags.includes(t)),
 		);
-	}
-
-	if (categories.length > 0) {
-		filteredPosts = filteredPosts.filter(
-			(post) => post.data.category && categories.includes(post.data.category),
+	if (categories.length > 0)
+		filtered = filtered.filter(
+			(p) => p.data.category && categories.includes(p.data.category),
 		);
-	}
+	if (uncategorized) filtered = filtered.filter((p) => !p.data.category);
 
-	if (uncategorized) {
-		filteredPosts = filteredPosts.filter((post) => !post.data.category);
-	}
-
-	// 按发布时间倒序排序，确保不受置顶影响
-	filteredPosts = filteredPosts
+	filtered = filtered
 		.slice()
 		.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
-
-	filteredPostCount = filteredPosts.length;
-
-	initializeCategoryColors(filteredPosts);
-
-	const grouped = filteredPosts.reduce(
-		(acc, post) => {
-			const year = post.data.published.getFullYear();
-			if (!acc[year]) {
-				acc[year] = [];
-			}
-			acc[year].push(post);
-			return acc;
-		},
-		{} as Record<number, Post[]>,
-	);
-
-	const groupedPostsArray = Object.keys(grouped).map((yearStr) => ({
-		year: Number.parseInt(yearStr, 10),
-		posts: grouped[Number.parseInt(yearStr, 10)],
-	}));
-
-	groupedPostsArray.sort((a, b) => b.year - a.year);
-
-	groups = groupedPostsArray;
+	filteredPostCount = filtered.length;
+	initializeCategoryColors(filtered);
+	yearGroups = groupByYearMonth(filtered);
 });
 </script>
 
-<div class="card-base px-8 py-6">
+<div class="archive-panel card-base px-6 py-6 md:px-10 md:py-8" bind:this={panelEl}>
+
+	<!-- 筛选器摘要 -->
 	{#if primaryFilter}
-		<div class="mb-5">
+		<div class="mb-6">
 			<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
 				<div class="min-w-0 text-sm text-75">
 					<span class="text-50">{i18n(primaryFilter.labelKey)}</span>
@@ -209,79 +369,324 @@ onMount(async () => {
 				<div class="shrink-0 text-xs text-50">
 					{filteredPostCount} {i18n(filteredPostCount === 1 ? I18nKey.postCount : I18nKey.postsCount)}
 					<span class="mx-1.5 text-30">·</span>
-					{groups.length} {i18n(I18nKey.year)}
+					{yearGroups.length} {i18n(I18nKey.year)}
 				</div>
 			</div>
 		</div>
 	{/if}
 
-	{#each groups as group}
-		<div>
-			<div class="flex flex-row w-full items-center h-15">
-				<div class="w-[15%] md:w-[10%] transition text-2xl font-bold text-right text-75">
-					{group.year}
-				</div>
-				<div class="w-[15%] md:w-[10%]">
+	<!-- 年份列表 -->
+	{#each yearGroups as yearGroup (yearGroup.year)}
+		<div
+			class="ap-year-block"
+			bind:this={yearBlockRefs[yearGroup.year]}
+			use:registerYearBlock={yearGroup.year}
+		>
+			<!-- 年份标题行 -->
+			<div class="ap-year-header">
+				<div class="ap-col">
 					<div
-							class="h-3 w-3 bg-none rounded-full outline outline-(--primary) mx-auto
-                  -outline-offset-2 z-50 outline-3"
+						class="ap-node ap-year-node"
+						class:highlighted={highlightedYear === yearGroup.year}
 					></div>
 				</div>
-				<div class="w-[70%] md:w-[80%] transition text-left text-50">
-					{group.posts.length} {i18n(group.posts.length === 1 ? I18nKey.postCount : I18nKey.postsCount)}
+				<div class="ap-year-label">
+					<h2 class="ap-h1">{yearGroup.year}{i18n(I18nKey.year)}</h2>
+					<span class="ap-count">
+						共 {yearGroup.totalCount} {i18n(yearGroup.totalCount === 1 ? I18nKey.postCount : I18nKey.postsCount)}
+					</span>
 				</div>
 			</div>
 
-			{#each group.posts as post}
-				<a
-						href={getPostUrlBySlug(post.id)}
-						aria-label={post.data.title}
-						class="group btn-plain block! h-10 w-full rounded-lg hover:text-[initial]"
-				>
-					<div class="flex flex-row justify-start items-center h-full">
-						<!-- date -->
-						<div class="w-[15%] md:w-[10%] transition text-sm text-right text-50">
-							{formatDate(post.data.published)}
-						</div>
-
-						<!-- dot and line -->
-						<div class="w-[15%] md:w-[10%] relative dash-line h-full flex items-center">
-							<div
-									class="transition-all mx-auto w-1 h-1 rounded group-hover:h-5
-                       bg-[oklch(0.5_0.05_var(--hue))] group-hover:bg-(--primary)
-                       outline outline-4 z-50
-                       outline-(--card-bg)
-                       group-hover:outline-(--btn-plain-bg-hover)
-                       group-active:outline-(--btn-plain-bg-active)"
-							></div>
-						</div>
-
-						<!-- post title with category -->
-						<div
-								class="w-[70%] md:max-w-[65%] md:w-[65%] text-left font-bold
-                     group-hover:translate-x-1 transition-all group-hover:text-(--primary)
-                     text-75 pr-8 flex items-center gap-3"
-						>
-							{#if post.data.category || (!post.data.category && categoryColors.has(i18n(I18nKey.uncategorized)))}
-								<span
-										class="shrink-0 text-xs font-bold scale-125 {getCategoryColor(normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized))}"
-								>
-									{normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized)}
+			<!-- 月份区域 -->
+			<div class="ap-months-area">
+				{#each yearGroup.months as monthGroup (monthGroup.month)}
+					<div
+						class="ap-month-block"
+						use:registerMonthBlock={{ year: yearGroup.year, month: monthGroup.month }}
+					>
+						<!-- 月份标题行 -->
+						<div class="ap-month-header">
+							<div class="ap-col">
+								<div class="ap-hline ap-month-hline"></div>
+								<div
+									class="ap-node ap-month-node"
+									class:highlighted={highlightedMonth === `${yearGroup.year}-${monthGroup.month}`}
+								></div>
+							</div>
+							<div class="ap-month-label">
+								<h3 class="ap-h2">{formatMonth(monthGroup.month)}</h3>
+								<span class="ap-count">
+									{monthGroup.posts.length} {i18n(monthGroup.posts.length === 1 ? I18nKey.postCount : I18nKey.postsCount)}
 								</span>
-							{/if}
-							<span class="flex-1">{post.data.title}</span>
+							</div>
 						</div>
 
-						<!-- tag list -->
-						<div
-								class="hidden md:block md:w-[15%] text-left text-sm transition
-                     whitespace-nowrap text-ellipsis overflow-hidden text-30"
-						>
-							{formatTag(post.data.tags)}
+						<!-- 文章区域 -->
+						<div class="ap-posts-area">
+							<ul class="ap-post-list">
+								{#each monthGroup.posts as post, postIdx (post.id)}
+									<li
+										class="ap-post-row"
+										class:last={postIdx === monthGroup.posts.length - 1}
+										use:registerPostRow={post.id}
+									>
+										<div class="ap-col">
+											<div class="ap-hline ap-post-hline"></div>
+											<div
+												class="ap-node ap-post-node"
+												class:hovered={hoveredPostId === post.id}
+											></div>
+										</div>
+										<a
+											href={getPostUrlBySlug(post.id)}
+											aria-label={post.data.title}
+											class="ap-post-link group btn-plain"
+											on:mouseenter={() => onPostEnter(post.id)}
+											on:mouseleave={onPostLeave}
+										>
+											<span class="ap-date">{formatDate(post.data.published)}</span>
+											<span class="ap-category {getCategoryColor(normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized))}">
+												{normalizeCategoryName(post.data.category) || i18n(I18nKey.uncategorized)}
+											</span>
+											<span class="ap-title group-hover:text-(--primary)">
+												{post.data.title}
+											</span>
+										</a>
+									</li>
+								{/each}
+							</ul>
 						</div>
 					</div>
-				</a>
-			{/each}
+				{/each}
+			</div>
 		</div>
 	{/each}
+
+	<!-- 高亮覆盖层：绝对定位在 panel 内，pointer-events:none -->
+	{#if highlightSegs.length > 0 || highlightHLines.length > 0}
+		<div class="ap-highlight-layer" aria-hidden="true">
+			<!-- 竖线段 -->
+			{#each highlightSegs as seg}
+				<div
+					class="ap-hl-vline"
+					style="left:{seg.x}px; top:{seg.top}px; height:{seg.height}px;"
+				></div>
+			{/each}
+			<!-- 横线段 -->
+			{#each highlightHLines as hl}
+				<div
+					class="ap-hl-hline"
+					style="left:{hl.x}px; top:{hl.y}px; width:{hl.width}px;"
+				></div>
+			{/each}
+		</div>
+	{/if}
+
 </div>
+
+<style>
+.archive-panel {
+	--tw: 2rem;
+	--lc: var(--line-color, oklch(0.82 0 0));
+	--lh: oklch(0.15 0 0);
+	--nc: var(--line-color, oklch(0.82 0 0));
+	--nh: oklch(0.15 0 0);
+	--lw: 2.5px;
+	position: relative; /* 高亮覆盖层的定位基准 */
+}
+
+/* ── 年份块 ── */
+.ap-year-block {
+	position: relative;
+	margin-bottom: 2.5rem;
+}
+
+/* 年竖线：贯穿整个年块 */
+.ap-year-block::before {
+	content: "";
+	position: absolute;
+	left: calc(var(--tw) / 2);
+	top: calc(var(--tw) / 2);
+	bottom: 1rem;
+	width: 0;
+	border-left: var(--lw) dashed var(--lc);
+	z-index: 0;
+}
+
+.ap-months-area { padding-left: var(--tw); }
+
+/* ── 月份块 ── */
+.ap-month-block {
+	position: relative;
+	margin-bottom: 0.5rem;
+}
+
+/* 月竖线：贯穿整个月块 */
+.ap-month-block::before {
+	content: "";
+	position: absolute;
+	left: calc(var(--tw) / 2);
+	top: calc(var(--tw) / 2);
+	bottom: 1rem;
+	width: 0;
+	border-left: var(--lw) dashed var(--lc);
+	z-index: 0;
+}
+
+.ap-posts-area { padding-left: var(--tw); }
+.ap-post-list  { list-style: none; margin: 0; padding: 0; }
+
+/* ── 文章行 ── */
+.ap-post-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	min-height: 2.25rem;
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ap-post-row:hover {
+	transform: translateX(0.375rem);
+}
+
+/* 文章间竖线（已移除，避免与横线重叠形成虚线） */
+.ap-post-row::before {
+	content: none;
+}
+
+/* ── 节点列 ── */
+.ap-col {
+	position: relative;
+	width: var(--tw);
+	flex-shrink: 0;
+	align-self: stretch;
+}
+
+/* ── 节点通用 ── */
+.ap-node {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	border-radius: 50%;
+	z-index: 2;
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.ap-year-node {
+	top: calc(50% - 0.375rem);
+	width: 0.75rem; height: 0.75rem;
+	border: 2px solid var(--nc);
+	background: var(--page-bg, white);
+}
+.ap-year-node.highlighted {
+	background: var(--nh);
+	border-color: var(--nh);
+}
+
+.ap-month-node {
+	top: calc(50% - 0.25rem);
+	width: 0.5rem; height: 0.5rem;
+	background: var(--nc);
+}
+.ap-month-node.highlighted {
+	background: var(--nh);
+}
+
+.ap-post-node {
+	top: calc(50% - 0.2rem);
+	width: 0.4rem; height: 0.4rem;
+	background: var(--nc);
+}
+.ap-post-node.hovered {
+	background: var(--nh);
+	transform: translateX(-50%) scale(1.6);
+}
+
+/* ── 横线（静态虚线） ── */
+.ap-hline {
+	position: absolute;
+	height: 0;
+	border-top: var(--lw) dashed var(--lc);
+	z-index: 1;
+}
+.ap-month-hline {
+	top: 50%;
+	left: calc(-1 * var(--tw) / 2);
+	width: var(--tw);
+}
+.ap-post-hline {
+	top: 50%;
+	left: calc(-1 * var(--tw) / 2);
+	width: var(--tw);
+}
+
+/* ══════════════════════════════════════════════════
+   高亮覆盖层
+   绝对定位在 .archive-panel 内，pointer-events:none
+   竖线和横线都是精确计算位置的实线覆盖在虚线上方
+══════════════════════════════════════════════════ */
+.ap-highlight-layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 10;
+}
+
+.ap-hl-vline {
+	position: absolute;
+	width: 0;
+	border-left: 3px solid var(--lh);
+	transform: translateX(-50%);
+}
+
+.ap-hl-hline {
+	position: absolute;
+	height: 0;
+	border-top: 3px solid var(--lh);
+}
+
+/* ── 标题行 ── */
+.ap-year-header, .ap-month-header {
+	display: flex; align-items: center; min-height: var(--tw);
+}
+.ap-year-label, .ap-month-label {
+	display: flex; align-items: baseline; gap: 0.6rem; padding-left: 0.5rem; flex: 1;
+}
+.ap-h1 { font-size: 1.375rem; font-weight: 700; color: var(--deep-text); margin: 0; }
+.ap-h2 { font-size: 1.05rem;  font-weight: 600; color: var(--deep-text); margin: 0; }
+.ap-count { font-size: 0.75rem; color: var(--content-meta); }
+
+/* ── 文章链接 ── */
+.ap-post-link {
+	display: flex; align-items: center; gap: 0.6rem;
+	flex: 1; min-height: 2.25rem; padding: 0.2rem 0.5rem 0.2rem 0;
+	margin-left: calc(var(--tw) / -2);
+	border-radius: 0.5rem; text-decoration: none; overflow: hidden;
+}
+.ap-date {
+	font-size: 0.875rem; color: var(--content-meta);
+	font-variant-numeric: tabular-nums; white-space: nowrap;
+	flex-shrink: 0; width: 2.8rem; text-align: right;
+}
+.ap-category {
+	font-size: 0.8rem; font-weight: 700;
+	white-space: nowrap; flex-shrink: 0; min-width: 3rem;
+}
+.ap-title {
+	font-size: 0.9rem; font-weight: 500; color: var(--deep-text);
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	flex: 1; transition: color 0.15s ease; display: inline-block;
+}
+
+:global(.dark) .archive-panel {
+	--lh: oklch(0.9 0 0);
+	--nh: oklch(0.9 0 0);
+}
+
+@media (max-width: 640px) {
+	.archive-panel { --tw: 1.5rem; }
+	.ap-date     { width: 2.4rem; font-size: 0.8rem; }
+	.ap-category { min-width: 2.5rem; font-size: 0.75rem; }
+	.ap-title    { font-size: 0.82rem; }
+}
+</style>
