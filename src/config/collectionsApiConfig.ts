@@ -344,7 +344,6 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("youdao.com"),
 			enabled: true,
 		},
-
 	],
 
 	// API 分类（可选，留空则自动生成）
