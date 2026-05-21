@@ -29,7 +29,7 @@ export const friendsPageConfig: FriendsPageConfig = {
 		name: "MmzMing的知识库",
 		desc: "哈基米，南北绿豆",
 		url: "https://tblog.mmzhiku.xyz",
-		avatar: "https://i.stardots.io/784774835/StarDots-2026051117505284739.webp",
+		avatar: "https://i.stardots.io/784774835/StarDots-2026052116374135506.jpg",
 		email: "784774835@qq.com",
 	},
 
@@ -67,7 +67,7 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "原博客(已迁移)",
-		imgurl: "https://i.stardots.io/784774835/StarDots-2026042803043780900.png",
+		imgurl: "https://i.stardots.io/784774835/StarDots-2026052116445539713.jpg",
 		desc: "目前只展示前端，带企业级的后台视频博客。支持视频上传和播放，文档上传和下载，后台还带链路监控、日志监控等功能等等。因为使劲堆后台，实在太大，中间件一开启就用掉了6G的内存，还是一个微服务架构的博客。",
 		siteurl: "https://dev.mmzmingzsk.dpdns.org/",
 		tags: ["Blog"],
