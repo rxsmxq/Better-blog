@@ -35,7 +35,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	links.push({
 		name: "工具",
 		url: "/other/",
-		icon: "material-symbols:apps",
+		icon: "material-symbols:inventory-2",
 		children: [
 			...(siteConfig.pages.collections ? [LinkPreset.Collections] : []),
 			{
