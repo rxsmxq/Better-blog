@@ -56,12 +56,56 @@ export const siteConfig: SiteConfig = {
 	// Favicon 配置
 	favicon: [
 		{
-			// 图标文件路径
 			src: "/favicon/favicon.ico",
-			// 可选，指定主题 'light' | 'dark'
-			// theme: "light",
-			// 可选，图标大小
 			sizes: "32x32",
+		},
+		{
+			src: "/favicon/favicon-16x16.png",
+			sizes: "16x16",
+		},
+		{
+			src: "/favicon/favicon-32x32.png",
+			sizes: "32x32",
+		},
+		{
+			src: "/favicon/favicon-48x48.png",
+			sizes: "48x48",
+		},
+		{
+			src: "/favicon/favicon-64x64.png",
+			sizes: "64x64",
+		},
+		{
+			src: "/favicon/favicon-128x128.png",
+			sizes: "128x128",
+		},
+		{
+			src: "/favicon/favicon-180x180.png",
+			sizes: "180x180",
+		},
+		{
+			src: "/favicon/favicon-192x192.png",
+			sizes: "192x192",
+		},
+		{
+			src: "/favicon/favicon-256x256.png",
+			sizes: "256x256",
+		},
+		{
+			src: "/favicon/favicon-512x512.png",
+			sizes: "512x512",
+		},
+		{
+			src: "/favicon/apple-touch-icon.png",
+			sizes: "180x180",
+		},
+		{
+			src: "/favicon/android-chrome-192x192.png",
+			sizes: "192x192",
+		},
+		{
+			src: "/favicon/android-chrome-512x512.png",
+			sizes: "512x512",
 		},
 	],
 
@@ -75,11 +119,11 @@ export const siteConfig: SiteConfig = {
 		// 4. 网络图片: { type: "url", value: "https://example.com/logo.png", alt: "Logo" }
 		logo: {
 			type: "image",
-			value: "assets/images/MyLogoSvg.webp",
+			value: "assets/images/MyLogoSvg.png",
 			alt: "logo",
 		},
 		// 导航栏标题
-		title: "MmzMing",
+		title: "MmzMing的博客",
 		// 全宽导航栏，导航栏是否占满屏幕宽度
 		widthFull: false,
 		// 导航菜单对齐方式，left：左对齐，center：居中
