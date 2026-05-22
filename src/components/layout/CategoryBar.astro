@@ -1,6 +1,7 @@
 ---
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
+import { getCategoryList } from "@utils/content-utils";
 import { getIconSvg } from "@/constants/icons";
 import { isHomePage } from "@/utils/layout-utils";
 import { url } from "@/utils/url-utils";
@@ -19,23 +20,27 @@ const searchParams = Astro.url.searchParams;
 const homeUrl = url("/");
 const archiveUrl = url("/archive/");
 const isHome = isHomePage(pathname);
+const isArchivePage = pathname === archiveUrl.replace(/\/$/, "");
+const isPostPage = !!postSlug;
+
+const currentCategory = searchParams.get("category") || "";
+
+const categories = isArchivePage || isPostPage ? await getCategoryList() : [];
 
 interface BreadcrumbItem {
 	label: string;
 	href: string;
 	icon: string;
 	isCurrent: boolean;
+	isDropdown?: boolean;
 }
 
 let items: BreadcrumbItem[] = [];
 
 if (isHome) {
 	items = [];
-} else if (postSlug) {
-	const category = postCategory || "";
-	const categoryHref = category
-		? `${archiveUrl}?category=${encodeURIComponent(category)}`
-		: archiveUrl;
+} else if (isPostPage) {
+	const categoryLabel = postCategory || i18n(I18nKey.uncategorized);
 	items = [
 		{
 			label: i18n(I18nKey.home),
@@ -43,16 +48,13 @@ if (isHome) {
 			icon: "material-symbols:home-rounded",
 			isCurrent: false,
 		},
-		...(category
-			? [
-					{
-						label: category,
-						href: categoryHref,
-						icon: "material-symbols:folder-open-rounded",
-						isCurrent: false,
-					},
-				]
-			: []),
+		{
+			label: categoryLabel,
+			href: "",
+			icon: "material-symbols:folder-open-rounded",
+			isCurrent: false,
+			isDropdown: true,
+		},
 		{
 			label: title || "",
 			href: "",
@@ -60,39 +62,24 @@ if (isHome) {
 			isCurrent: true,
 		},
 	];
-} else if (pathname === archiveUrl.replace(/\/$/, "")) {
-	const categoryParam = searchParams.get("category") || "";
-	if (categoryParam) {
-		items = [
-			{
-				label: i18n(I18nKey.home),
-				href: homeUrl,
-				icon: "material-symbols:home-rounded",
-				isCurrent: false,
-			},
-			{
-				label: categoryParam,
-				href: `${archiveUrl}?category=${encodeURIComponent(categoryParam)}`,
-				icon: "material-symbols:folder-open-rounded",
-				isCurrent: true,
-			},
-		];
-	} else {
-		items = [
-			{
-				label: i18n(I18nKey.home),
-				href: homeUrl,
-				icon: "material-symbols:home-rounded",
-				isCurrent: false,
-			},
-			{
-				label: i18n(I18nKey.archive),
-				href: archiveUrl,
-				icon: "material-symbols:folder-rounded",
-				isCurrent: true,
-			},
-		];
-	}
+} else if (isArchivePage) {
+	items = [
+		{
+			label: i18n(I18nKey.home),
+			href: homeUrl,
+			icon: "material-symbols:home-rounded",
+			isCurrent: false,
+		},
+		{
+			label: currentCategory || i18n(I18nKey.archive),
+			href: "",
+			icon: currentCategory
+				? "material-symbols:folder-open-rounded"
+				: "material-symbols:folder-rounded",
+			isCurrent: true,
+			isDropdown: true,
+		},
+	];
 } else if (pathname === "/about") {
 	items = [
 		{
@@ -238,36 +225,47 @@ if (isHome) {
 		},
 	];
 }
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
-}
-
-let breadcrumbHtml = "";
-if (items.length > 0) {
-	const liHtml = items
-		.map((item, idx) => {
-			const separator =
-				idx > 0
-					? `<span class="breadcrumb-separator text-(--content-meta) mx-1 select-none" aria-hidden="true">›</span>`
-					: "";
-			const iconSvg = `<span class="inline-flex shrink-0">${getIconSvg(item.icon)}</span>`;
-			if (item.isCurrent) {
-				return `${separator}<span class="breadcrumb-current flex items-center gap-1 text-(--deep-text) font-medium">${iconSvg}<span>${escapeHtml(item.label)}</span></span>`;
-			}
-			return `${separator}<a href="${escapeHtml(item.href)}" class="breadcrumb-link flex items-center gap-1 text-(--content-meta) hover:text-(--primary) transition-colors duration-150 rounded px-1 -mx-1">${iconSvg}<span>${escapeHtml(item.label)}</span></a>`;
-		})
-		.join("");
-	breadcrumbHtml = `<ol class="breadcrumb-list flex items-center flex-wrap gap-1 text-sm"><li class="breadcrumb-item flex items-center gap-1">${liHtml}</li></ol>`;
-}
 ---
 
 {items.length > 0 && (
-<nav class="card-base breadcrumb-nav p-3 onload-animation" id="breadcrumb-nav" aria-label="Breadcrumb" set:html={breadcrumbHtml}>
+<nav class="card-base breadcrumb-nav p-3 onload-animation" id="breadcrumb-nav" aria-label="Breadcrumb">
+	<ol class="breadcrumb-list flex items-center flex-wrap gap-1 text-sm">
+		<li class="breadcrumb-item flex items-center gap-1">
+			{items.map((item, idx) => (
+				<>
+					{idx > 0 && <span class="breadcrumb-separator text-(--content-meta) mx-1 select-none" aria-hidden="true">›</span>}
+					{item.isDropdown ? (
+						<span class="breadcrumb-dropdown-outer">
+							<select
+								class="breadcrumb-dropdown"
+								data-has-dropdown="true"
+							>
+								<option value="">{i18n(I18nKey.archive)} · {i18n(I18nKey.all)}</option>
+								{categories.map((c) => {
+									const val = c.name === i18n(I18nKey.uncategorized) ? "__uncategorized__" : c.name;
+									return (
+										<option value={val}>
+											{c.name.trim()} ({c.count})
+										</option>
+									);
+								})}
+							</select>
+						</span>
+					) : item.isCurrent ? (
+						<span class="breadcrumb-current flex items-center gap-1 text-(--deep-text) font-medium">
+							<span class="inline-flex shrink-0" set:html={getIconSvg(item.icon)} />
+							<span>{item.label}</span>
+						</span>
+					) : (
+						<a href={item.href} class="breadcrumb-link flex items-center gap-1 text-(--content-meta) hover:text-(--primary) transition-colors duration-150 rounded px-1 -mx-1">
+							<span class="inline-flex shrink-0" set:html={getIconSvg(item.icon)} />
+							<span>{item.label}</span>
+						</a>
+					)}
+				</>
+			))}
+		</li>
+	</ol>
 </nav>
 )}
 
@@ -287,4 +285,98 @@ if (items.length > 0) {
 		line-height: 1;
 		font-weight: 500;
 	}
+
+	.breadcrumb-dropdown-outer {
+		position: relative;
+		display: inline-block;
+	}
+
+	:global(.breadcrumb-dropdown) {
+		appearance: none;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center / 0.875rem;
+		padding: 0 1.75rem 0 0.5rem;
+		height: 2rem;
+		border: 1px solid transparent;
+		border-radius: 0.5rem;
+		color: var(--deep-text);
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: border-color 150ms, background-color 150ms;
+		outline: none;
+		max-width: 16rem;
+	}
+
+	:global(.breadcrumb-dropdown:hover) {
+		border-color: rgba(0, 0, 0, 0.15);
+		background-color: rgba(0, 0, 0, 0.04);
+	}
+
+	:root.dark :global(.breadcrumb-dropdown:hover) {
+		border-color: rgba(255, 255, 255, 0.15);
+		background-color: rgba(255, 255, 255, 0.06);
+	}
+
+	:global(.breadcrumb-dropdown option) {
+		font-size: 0.875rem;
+		font-weight: 400;
+		color: var(--deep-text);
+		background: var(--card-bg);
+	}
 </style>
+
+<script>
+	(function() {
+		let installed = false;
+
+		function getCategoryNavigateUrl(value: string): string {
+			const archiveUrl = "/archive/";
+			if (value === "") return archiveUrl;
+			if (value === "__uncategorized__") return `${archiveUrl}?uncategorized=true`;
+			return `${archiveUrl}?category=${encodeURIComponent(value)}`;
+		}
+
+		function navigate(url: string) {
+			if (typeof window !== "undefined" && window.navigateToPage) {
+				window.navigateToPage(url);
+			} else {
+				window.location.href = url;
+			}
+		}
+
+		function syncSelectValue() {
+			const params = new URLSearchParams(window.location.search);
+			let targetValue = "";
+			if (params.has("uncategorized")) {
+				targetValue = "__uncategorized__";
+			} else if (params.has("category")) {
+				targetValue = params.get("category")!;
+			} else if (window.location.pathname.startsWith("/posts/")) {
+				const main = document.querySelector<HTMLElement>("main[data-current-post-category]");
+				targetValue = main?.dataset.currentPostCategory || "__uncategorized__";
+			}
+			document.querySelectorAll<HTMLSelectElement>("select[data-has-dropdown]").forEach((select) => {
+				select.value = targetValue;
+			});
+		}
+
+		syncSelectValue();
+		document.addEventListener("astro:page-load", () => setTimeout(syncSelectValue, 50));
+		document.addEventListener("swup:contentReplaced", () => setTimeout(syncSelectValue, 50));
+
+		function install() {
+			if (installed) return;
+			installed = true;
+			document.addEventListener("change", (e) => {
+				const target = e.target;
+				if (target instanceof HTMLSelectElement && target.dataset.hasDropdown === "true") {
+					navigate(getCategoryNavigateUrl(target.value));
+				}
+			});
+		}
+
+		install();
+	})();
+</script>

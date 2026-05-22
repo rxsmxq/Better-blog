@@ -120,18 +120,24 @@ function groupByYearMonth(posts: Post[]): YearGroup[] {
 	for (const post of posts) {
 		const y = post.data.published.getFullYear();
 		const mo = post.data.published.getMonth() + 1;
-		if (!yearMap.has(y)) yearMap.set(y, new Map());
-		const mm = yearMap.get(y)!;
+		if (!yearMap.has(y)) yearMap.set(y, new Map<number, Post[]>());
+		const mm = yearMap.get(y);
+		if (!mm) continue;
 		if (!mm.has(mo)) mm.set(mo, []);
-		mm.get(mo)!.push(post);
+		const postsList = mm.get(mo);
+		if (postsList) postsList.push(post);
 	}
 	return Array.from(yearMap.keys())
 		.sort((a, b) => b - a)
 		.map((year) => {
-			const mm = yearMap.get(year)!;
+			const mm = yearMap.get(year);
+			if (!mm) return { year, months: [], totalCount: 0 };
 			const months = Array.from(mm.keys())
 				.sort((a, b) => b - a)
-				.map((month) => ({ month, posts: mm.get(month)! }));
+				.map((month) => {
+					const postsForMonth = mm.get(month) ?? [];
+					return { month, posts: postsForMonth };
+				});
 			return {
 				year,
 				months,

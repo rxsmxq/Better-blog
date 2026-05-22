@@ -13,7 +13,7 @@ async function getAllPosts(): Promise<CollectionEntry<"posts">[]> {
 	return cachedPosts;
 }
 
-async function getRawSortedPosts() {
+async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 	const allBlogPosts = await getAllPosts();
 
 	const sorted = allBlogPosts.sort((a, b) => {
@@ -29,7 +29,7 @@ async function getRawSortedPosts() {
 	return sorted;
 }
 
-export async function getSortedPosts() {
+export async function getSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 	const sorted = await getRawSortedPosts();
 
 	for (let i = 1; i < sorted.length; i++) {
@@ -43,10 +43,12 @@ export async function getSortedPosts() {
 
 	return sorted;
 }
+
 export type PostForList = {
 	id: string;
 	data: CollectionEntry<"posts">["data"];
 };
+
 export async function getSortedPostsList(): Promise<PostForList[]> {
 	const sortedFullPosts = await getRawSortedPosts();
 
@@ -58,6 +60,7 @@ export async function getSortedPostsList(): Promise<PostForList[]> {
 
 	return sortedPostsList;
 }
+
 export type Tag = {
 	name: string;
 	count: number;
@@ -67,8 +70,8 @@ export async function getTagList(): Promise<Tag[]> {
 	const allBlogPosts = await getAllPosts();
 
 	const countMap: { [key: string]: number } = {};
-	allBlogPosts.forEach((post: { data: { tags: string[] } }) => {
-		post.data.tags.forEach((tag: string) => {
+	allBlogPosts.forEach((post) => {
+		post.data.tags.forEach((tag) => {
 			if (!countMap[tag]) countMap[tag] = 0;
 			countMap[tag]++;
 		});
@@ -91,7 +94,7 @@ export type Category = {
 export async function getCategoryList(): Promise<Category[]> {
 	const allBlogPosts = await getAllPosts();
 	const count: { [key: string]: number } = {};
-	allBlogPosts.forEach((post: { data: { category: string | null } }) => {
+	allBlogPosts.forEach((post) => {
 		if (!post.data.category) {
 			const ucKey = i18n(I18nKey.uncategorized);
 			count[ucKey] = count[ucKey] ? count[ucKey] + 1 : 1;

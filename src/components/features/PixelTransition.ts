@@ -467,7 +467,7 @@ export async function triggerReveal(): Promise<void> {
 	await animateReveal();
 }
 
-export function cancelTransition() {
+export function cancelTransition(): void {
 	maskReadyResolve?.();
 	maskReadyResolve = null;
 	maskReadyPromise = null;

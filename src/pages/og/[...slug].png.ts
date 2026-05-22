@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import type { APIContext, GetStaticPaths } from "astro";
 import satori from "satori";
 import sharp from "sharp";
+import type { PostData } from "@/types/post";
 import { removeFileExtension } from "@/utils/url-utils";
 
 import { profileConfig } from "../../config/profileConfig";
@@ -27,7 +28,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	}
 
 	const allPosts = await getCollection("posts");
-	const publishedPosts = allPosts.filter((post) => !post.data.draft);
+	const publishedPosts = allPosts.filter(
+		(post) => !(post.data as PostData).draft,
+	);
 
 	return publishedPosts.map((post) => {
 		// 将 id 转换为 slug（移除扩展名）以匹配路由参数
@@ -64,8 +67,9 @@ function loadLocalNotoSansSCFonts() {
 
 export async function GET({
 	props,
-}: APIContext<{ post: CollectionEntry<"posts"> }>) {
+}: APIContext<{ post: CollectionEntry<"posts"> }>): Promise<Response> {
 	const { post } = props;
+	const data = post.data as PostData;
 
 	// Load local Noto Sans SC fonts
 	const { regular: fontRegular, bold: fontBold } = loadLocalNotoSansSCFonts();
@@ -100,13 +104,13 @@ export async function GET({
 	const subtleTextColor = `hsl(${hue}, 10%, 75%)`;
 	const backgroundColor = `hsl(${hue}, 15%, 12%)`;
 
-	const pubDate = post.data.published.toLocaleDateString("en-US", {
+	const pubDate = data.published.toLocaleDateString("en-US", {
 		year: "numeric",
 		month: "short",
 		day: "numeric",
 	});
 
-	const description = post.data.description;
+	const description = data.description;
 
 	const template = {
 		type: "div",
@@ -203,7 +207,7 @@ export async function GET({
 													WebkitLineClamp: 3,
 													WebkitBoxOrient: "vertical",
 												},
-												children: post.data.title,
+												children: data.title,
 											},
 										},
 									],

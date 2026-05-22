@@ -5,7 +5,7 @@ export const fontConfig = {
 	// 是否预加载字体文件
 	preload: true,
 	// 当前选择的字体，支持多个字体组合
-	selected: ["zen-maru-gothic"],
+	selected: ["zen-maru-gothic"] as string[],
 
 	// 字体列表
 	// 推荐使用可靠的 CDN 服务商提供的字体链接，它天然做了按需分片加载，且性能较好
@@ -79,5 +79,5 @@ export const fontConfig = {
 		"Segoe UI",
 		"Roboto",
 		"sans-serif",
-	],
+	] as string[],
 };

@@ -85,7 +85,7 @@ function expandBuiltinForYear(year: number): HolidayEntry[] {
 	return out;
 }
 
-export async function GET() {
+export async function GET(): Promise<Response> {
 	const { holidayApi, builtinHolidays } = calendarConfig;
 	const years = holidayApi.years;
 

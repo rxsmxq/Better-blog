@@ -6,7 +6,7 @@ export function portal(node: HTMLElement) {
 	document.body.appendChild(node);
 
 	return {
-		destroy() {
+		destroy(): void {
 			if (node.parentNode) {
 				node.parentNode.removeChild(node);
 			}
