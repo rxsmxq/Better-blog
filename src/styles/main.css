@@ -121,7 +121,9 @@ html {
     .is-theme-transitioning:not(.use-view-transition) .widget,
     .is-theme-transitioning:not(.use-view-transition) .widget *,
     .is-theme-transitioning:not(.use-view-transition) .dropdown-content,
-    .is-theme-transitioning:not(.use-view-transition) .dropdown-content * {
+    .is-theme-transitioning:not(.use-view-transition) .dropdown-content *,
+    .is-theme-transitioning:not(.use-view-transition) .dropdown-content-wrapper,
+    .is-theme-transitioning:not(.use-view-transition) .dropdown-content-wrapper * {
         transition: none !important;
         animation: none !important;
     }
@@ -158,6 +160,7 @@ html {
     
     /* 导航栏相关浮动面板的过渡禁用 */
     .is-theme-transitioning .dropdown-content,
+    .is-theme-transitioning .dropdown-content-wrapper,
     .is-theme-transitioning .float-panel,
     .is-theme-transitioning #display-setting,
     .is-theme-transitioning #nav-menu-panel,
@@ -393,8 +396,9 @@ html {
         @apply rotate-180;
     }
 
-    .dropdown-content {
-        @apply border border-(--line-divider) py-2 min-w-48;
+    .dropdown-content,
+    .dropdown-content-wrapper {
+        @apply border border-(--line-divider) py-2 min-w-48 rounded-xl;
         background: color-mix(in oklch, var(--float-panel-bg) 85%, transparent);
         backdrop-filter: blur(16px) saturate(180%);
         -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -402,14 +406,15 @@ html {
         transition: border-style 0.15s ease;
     }
 
-    .dropdown-content:hover {
+    .dropdown-content:hover,
+    .dropdown-content-wrapper:hover {
         border-style: dashed;
     }
 
     .dropdown-item {
         @apply flex items-center justify-between px-4 py-2.5 text-black/75 dark:text-white/75 hover:text-(--primary) transition-colors duration-150 font-medium;
         border: 1.5px solid transparent;
-        border-radius: 0.5rem;
+        border-radius: 0.75rem;
         background-color: transparent !important;
     }
 
@@ -420,14 +425,6 @@ html {
 
     :root.dark .dropdown-item:hover {
         border-color: oklch(0.75 0 0);
-    }
-
-    .dropdown-item:first-child {
-        @apply rounded-t-[calc(var(--radius-large)-0.5rem)];
-    }
-
-    .dropdown-item:last-child {
-        @apply rounded-b-[calc(var(--radius-large)-0.5rem)];
     }
 
     /* 移动端菜单样式 */

@@ -295,35 +295,44 @@ if (isHome) {
 		appearance: none;
 		-webkit-appearance: none;
 		-moz-appearance: none;
-		background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center / 0.875rem;
+		background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center / 0.875rem;
 		padding: 0 1.75rem 0 0.5rem;
 		height: 2rem;
-		border: 1px solid transparent;
+		border: 1px solid black;
 		border-radius: 0.5rem;
-		color: var(--deep-text);
+		color: black;
 		font-size: 0.875rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: border-color 150ms, background-color 150ms;
+		transition: opacity 150ms;
 		outline: none;
 		max-width: 16rem;
 	}
 
 	:global(.breadcrumb-dropdown:hover) {
-		border-color: rgba(0, 0, 0, 0.15);
-		background-color: rgba(0, 0, 0, 0.04);
+		opacity: 0.85;
+	}
+
+	:root.dark :global(.breadcrumb-dropdown) {
+		background: black url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center / 0.875rem;
+		border-color: white;
+		color: white;
 	}
 
 	:root.dark :global(.breadcrumb-dropdown:hover) {
-		border-color: rgba(255, 255, 255, 0.15);
-		background-color: rgba(255, 255, 255, 0.06);
+		opacity: 0.85;
 	}
 
 	:global(.breadcrumb-dropdown option) {
 		font-size: 0.875rem;
 		font-weight: 400;
-		color: var(--deep-text);
-		background: var(--card-bg);
+		color: black;
+		background: white;
+	}
+
+	:root.dark :global(.breadcrumb-dropdown option) {
+		color: white;
+		background: black;
 	}
 </style>
 

@@ -259,16 +259,18 @@ body:has(#wallpaper-wrapper) #navbar[data-enable-blur="false"].scrolled > div {
 /* ============================================
  * 壁纸模式下浮动面板背景
  * ============================================ */
-:is(#wallpaper-wrapper ~ *, body:has(#wallpaper-wrapper), body.wallpaper-transparent) :is(.dropdown-content, .float-panel) {
+:is(#wallpaper-wrapper ~ *, body:has(#wallpaper-wrapper), body.wallpaper-transparent) :is(.dropdown-content, .dropdown-content-wrapper, .float-panel) {
     background: rgba(255, 255, 255, 0.95) !important;
     box-shadow: var(--shadow-md) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 0.75rem !important;
 }
 
-:root.dark :is(#wallpaper-wrapper ~ *, body:has(#wallpaper-wrapper), body.wallpaper-transparent) :is(.dropdown-content, .float-panel) {
+:root.dark :is(#wallpaper-wrapper ~ *, body:has(#wallpaper-wrapper), body.wallpaper-transparent) :is(.dropdown-content, .dropdown-content-wrapper, .float-panel) {
     background: rgba(23, 23, 23, 0.95) !important;
     box-shadow: var(--shadow-md) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0.75rem !important;
 }
 
 /* ============================================
