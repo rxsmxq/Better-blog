@@ -158,7 +158,8 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "Sigrika-善良耙耙柑🍊",
-		imgurl: "https://weavatar.com/avatar/bc0dba25ea5949e8290d012e081ceec669aa7784c7ad765173473c80cbaee404",
+		imgurl:
+			"https://weavatar.com/avatar/bc0dba25ea5949e8290d012e081ceec669aa7784c7ad765173473c80cbaee404",
 		desc: " 记录我的二次元之旅",
 		siteurl: "https://qwq.sigrika.cc/",
 		tags: ["Blog"],
