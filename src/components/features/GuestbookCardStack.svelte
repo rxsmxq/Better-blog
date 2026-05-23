@@ -500,7 +500,17 @@ function swipeCard(x: number, y: number) {
 						<span class="card-vote disagree"><Icon icon="material-symbols:thumb-down" size="sm" /> {card.votes.disagree}</span>
 					</div>
 
-
+					<!-- 底部 -->
+					<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
+						<div class="footer-bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+						<span class="footer-text">读取档案 >></span>
+					</div>
 
 					<!-- 投票标签 -->
 					{#if card.stackIndex === 0 && isDragging && voteType}
