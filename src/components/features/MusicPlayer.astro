@@ -111,6 +111,11 @@ const widgetId =
         <Icon name="material-symbols:shuffle-rounded" class="icon-shuffle text-xl hidden" aria-hidden="true" />
     </button>
 
+    <!-- Bilibili Open Button (hidden by default, shown when mode=bilibili and bvid exists) -->
+    <button class="btn-bilibili text-neutral-400 hover:text-(--primary) transition-colors p-2 active:scale-95 hidden" title="在B站打开" aria-label="在B站打开">
+        <Icon name="fa7-brands:bilibili" class="text-lg" aria-hidden="true" />
+    </button>
+
     <!-- Prev -->
     <button class="btn-prev text-neutral-600 dark:text-neutral-300 hover:text-(--primary) transition-colors p-2 active:scale-95" title={i18n(I18nKey.musicPrev)} aria-label={i18n(I18nKey.musicPrev)}>
         <Icon name="material-symbols:skip-previous-rounded" class="text-3xl" aria-hidden="true" />
@@ -230,6 +235,7 @@ const widgetId =
         btnDrawer: widget.querySelector('.btn-drawer-toggle'),
         playlistDrawer: widget.querySelector('.playlist-drawer'),
         playlistContainer: widget.querySelector('.playlist-container'),
+        btnBilibili: widget.querySelector('.btn-bilibili'),
         itemTemplate: document.getElementById('playlist-item-template-' + widgetId)
     };
 
@@ -324,6 +330,17 @@ const widgetId =
             ui.cover.src = '';
             ui.cover.classList.add('opacity-0');
             ui.cover.alt = cfg.i18n.noCover;
+        }
+
+        // Bilibili open button: show only when track has bvid
+        if (ui.btnBilibili) {
+            if (track.bvid) {
+                ui.btnBilibili.classList.remove('hidden');
+                ui.btnBilibili.dataset.bvid = track.bvid;
+            } else {
+                ui.btnBilibili.classList.add('hidden');
+                delete ui.btnBilibili.dataset.bvid;
+            }
         }
 
         // Reset cover rotation
@@ -557,6 +574,16 @@ const widgetId =
     ui.btnPrev.addEventListener('click', function () { mgr.playPrev(); });
     ui.btnRepeat.addEventListener('click', function () { mgr.cyclePlayMode(); });
     ui.btnMute.addEventListener('click', function () { mgr.toggleMute(); });
+
+    // Bilibili open button: navigate to video page
+    if (ui.btnBilibili) {
+        ui.btnBilibili.addEventListener('click', function () {
+            var bvid = ui.btnBilibili.dataset.bvid;
+            if (bvid) {
+                window.open('https://www.bilibili.com/video/' + bvid, '_blank');
+            }
+        });
+    }
 
     ui.volContainer.addEventListener('click', function (e) {
         var rect = ui.volContainer.getBoundingClientRect();

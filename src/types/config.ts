@@ -728,8 +728,8 @@ export type FriendsPageConfig = {
 
 // 音乐播放器配置
 export type MusicPlayerConfig = {
-	// 使用方式：'meting' 或 'local'
-	mode?: "meting" | "local"; // "meting" 使用 Meting API，"local" 使用本地音乐列表
+	// 使用方式：'meting' 或 'local' 或 'bilibili'
+	mode?: "meting" | "local" | "bilibili"; // "meting" 使用 Meting API，"local" 使用本地音乐列表，"bilibili" 使用 B站收藏夹
 
 	// 默认音量 (0-1)
 	volume?: number;
@@ -773,6 +773,18 @@ export type MusicPlayerConfig = {
 			cover?: string; // 封面图片路径（相对于 public 目录）
 			lrc?: string; // 歌词内容，支持 LRC 格式
 		}>;
+	};
+
+	// B站收藏夹配置（当 mode 为 'bilibili' 时使用）
+	bilibili?: {
+		// B站 UID
+		uid: string;
+		// 收藏夹 ID (mlid)
+		mediaId: string;
+		// 构建生成的播放列表 JSON 路径
+		playlistJsonPath?: string;
+		// Cloudflare Function 代理地址
+		proxyBase?: string;
 	};
 };
 

@@ -28,10 +28,22 @@ const localPlaylist =
 			})
 		: [];
 
+const bilibiliConfig =
+	config.mode === "bilibili" && config.bilibili
+		? {
+				playlistJsonPath:
+					config.bilibili.playlistJsonPath ||
+					"/assets/music/bilibili-playlist.json",
+				proxyBase: config.bilibili.proxyBase || "/api/bilibili-proxy",
+				uid: config.bilibili.uid,
+			}
+		: null;
+
 const managerConfigStr = JSON.stringify({
 	mode: config.mode,
 	meting: config.meting,
 	localPlaylist: localPlaylist,
+	bilibili: bilibiliConfig,
 	volume: config.volume ?? 0.7,
 	playMode: config.playMode ?? "list",
 	showLyrics: config.showLyrics ?? true,
@@ -166,6 +178,32 @@ const managerConfigStr = JSON.stringify({
             }
         }
         throw new Error('All Meting APIs failed');
+    }
+
+    // ── Bilibili fetch ────────────────────────────────────────
+    async function fetchBilibiliData() {
+        var bili = config.bilibili;
+        if (!bili || !bili.playlistJsonPath) return;
+        try {
+            var res = await fetch(bili.playlistJsonPath);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            var data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                state.playlist = data.map(function (item) {
+                    return {
+                        name: item.name || 'Unknown',
+                        artist: item.artist || 'Unknown',
+                        url: item.url,
+                        pic: item.pic || '',
+                        bvid: item.bvid || ''
+                    };
+                });
+                return;
+            }
+        } catch (e) {
+            console.warn('Bilibili playlist load failed:', e);
+        }
+        throw new Error('Bilibili playlist is empty');
     }
 
     // ── Lyrics ───────────────────────────────────────────────
@@ -355,6 +393,8 @@ const managerConfigStr = JSON.stringify({
                 await fetchMetingData();
             } else if (config.mode === 'local') {
                 state.playlist = config.localPlaylist || [];
+            } else if (config.mode === 'bilibili') {
+                await fetchBilibiliData();
             }
 
             if (state.playlist.length > 0) {
