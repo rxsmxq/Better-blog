@@ -1,5 +1,6 @@
 <script lang="ts">
 import { onDestroy, onMount } from "svelte";
+import Icon from "@/components/common/Icon.svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
 import {
 	fetchGuestbookMessages,
@@ -486,9 +487,6 @@ function swipeCard(x: number, y: number) {
 					<div class="card-body">
 						<div class="body-line"></div>
 						<div class="body-content">
-							<div class="source-tag">
-								<span>SOURCE :: Guestbook</span>
-							</div>
 							<h3 class="message-title">留言 #{card.id && card.id.includes('_') ? card.id.split("_")[1] : card.id}</h3>
 							<div class="title-underline"></div>
 							<p class="message-text">{card.content}</p>
@@ -497,22 +495,12 @@ function swipeCard(x: number, y: number) {
 
 					<!-- 投票统计 -->
 					<div class="card-votes">
-						<span class="card-vote agree">&#9650; {card.votes.agree}</span>
-						<span class="card-vote neutral">&#9644; {card.votes.neutral}</span>
-						<span class="card-vote disagree">&#9660; {card.votes.disagree}</span>
+						<span class="card-vote agree"><Icon icon="material-symbols:thumb-up" size="sm" /> {card.votes.agree}</span>
+						<span class="card-vote neutral"><Icon icon="material-symbols:remove" size="sm" /> {card.votes.neutral}</span>
+						<span class="card-vote disagree"><Icon icon="material-symbols:thumb-down" size="sm" /> {card.votes.disagree}</span>
 					</div>
 
-					<!-- 底部 -->
-					<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
-						<div class="footer-bars">
-							<div class="bar"></div>
-							<div class="bar"></div>
-							<div class="bar"></div>
-							<div class="bar"></div>
-							<div class="bar"></div>
-						</div>
-						<span class="footer-text">读取档案 >></span>
-					</div>
+
 
 					<!-- 投票标签 -->
 					{#if card.stackIndex === 0 && isDragging && voteType}
@@ -535,26 +523,17 @@ function swipeCard(x: number, y: number) {
 		<!-- 空状态 -->
 		{#if visibleCards.length === 0}
 			<div class="empty-state">
-				<div class="empty-icon">📭</div>
+				<div class="empty-icon"><Icon icon="material-symbols:mail-outline" size="xl" /></div>
 				<div class="empty-text">暂无更多留言</div>
-				<div class="empty-subtext">成为第一个留言的人吧</div>
 			</div>
 		{/if}
 	</div>
 
-	<!-- 投票提示 -->
+	<!-- 操作提示 -->
 	<div class="swipe-hint">
 		<div class="hint-item">
-			<span class="hint-key">←</span>
-			<span class="hint-text">反对</span>
-		</div>
-		<div class="hint-item">
-			<span class="hint-key">↑</span>
-			<span class="hint-text">中立</span>
-		</div>
-		<div class="hint-item">
-			<span class="hint-key">→</span>
-			<span class="hint-text">赞同</span>
+			<Icon icon="material-symbols:pan-tool" size="sm" />
+			<span class="hint-text">拖拽翻看</span>
 		</div>
 	</div>
 
