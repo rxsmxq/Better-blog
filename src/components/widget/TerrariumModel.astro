@@ -1,0 +1,340 @@
+---
+// TerrariumModel — Three.js GLB 模型展示组件
+// 用于展示 terrarium 风格的 3D 模型，支持鼠标拖拽旋转/缩放交互
+---
+
+<div
+  class="terrarium-container"
+  id="terrarium-canvas-container"
+  data-loaded="false"
+>
+  <canvas id="terrarium-canvas"></canvas>
+  <div class="terrarium-loading" id="terrarium-loading">
+    <span class="terrarium-spinner"></span>
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+  // Track the active instance so we can dispose it before creating a new one
+  let currentDispose: (() => void) | null = null;
+
+  function initTerrarium() {
+    const container = document.getElementById(
+      "terrarium-canvas-container",
+    ) as HTMLElement | null;
+    const canvas = document.getElementById(
+      "terrarium-canvas",
+    ) as HTMLCanvasElement | null;
+    const loadingEl = document.getElementById(
+      "terrarium-loading",
+    ) as HTMLElement | null;
+
+    // If this page doesn't contain the widget, just dispose any stale instance
+    if (!container || !canvas || !loadingEl) {
+      if (currentDispose) {
+        currentDispose();
+        currentDispose = null;
+      }
+      return;
+    }
+
+    // Dispose previous instance before re-initializing
+    if (currentDispose) {
+      currentDispose();
+      currentDispose = null;
+    }
+
+    // Reset loading state
+    loadingEl.style.opacity = "1";
+    loadingEl.style.display = "flex";
+    loadingEl.innerHTML = '<span class="terrarium-spinner"></span>';
+    container.setAttribute("data-loaded", "false");
+
+    // ── Scene setup ──────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+    camera.position.set(0, 0.6, 5);
+    camera.lookAt(0, -0.1, 0);
+
+    // ── OrbitControls ────────────────────────────────
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.autoRotate = false;
+    controls.maxPolarAngle = Math.PI * 0.75;
+    controls.minPolarAngle = Math.PI * 0.15;
+    controls.target.set(0, -0.1, 0);
+    controls.update();
+
+    // ── Lighting ─────────────────────────────────────
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    keyLight.position.set(2, 3, 3);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x8899cc, 1.2);
+    fillLight.position.set(-1.5, 1, -1);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffccaa, 1.5);
+    rimLight.position.set(0, -0.5, -2);
+    scene.add(rimLight);
+
+    // ── Resize ───────────────────────────────────────
+    const c = container;
+    function resize() {
+      const rect = c.getBoundingClientRect();
+      const w = rect.width;
+      const h = Math.min(w * 0.75, 420);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      c.style.height = `${h}px`;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    // ── State ────────────────────────────────────────
+    let audio: HTMLAudioElement | null = null;
+    let modelGroup: THREE.Group | null = null;
+    let mixer: THREE.AnimationMixer | null = null;
+    let animationActions: THREE.AnimationAction[] | null = null;
+    let isPlaying = false;
+    let lastTime = 0;
+    let animationId = 0;
+    let disposed = false;
+
+    // ── Click tracking (separate drag from tap) ──────
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
+    });
+
+    canvas.addEventListener("pointerup", (e) => {
+      const dx = e.clientX - pointerStartX;
+      const dy = e.clientY - pointerStartY;
+      if (Math.sqrt(dx * dx + dy * dy) < 5) {
+        togglePlay();
+      }
+    });
+
+    // ── Animation loop ──────────────────────────────
+    function animate() {
+      if (disposed) return;
+      animationId = requestAnimationFrame(animate);
+
+      const now = performance.now();
+      const delta = lastTime ? (now - lastTime) / 1000 : 0;
+      lastTime = now;
+      mixer?.update(delta);
+      controls.update();
+
+      renderer.render(scene, camera);
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+
+      if (isPlaying) {
+        if (mixer && animationActions) {
+          mixer.stopAllAction();
+          for (const action of animationActions) {
+            action.reset();
+            action.play();
+          }
+        }
+
+        if (!audio) {
+          audio = new Audio("/assets/music/《远航星的告别》翻唱 希望你能轻松快乐地活着.m4a");
+          audio.loop = true;
+        }
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } else {
+        mixer?.stopAllAction();
+        audio?.pause();
+      }
+    }
+
+    // ── Load model ───────────────────────────────────
+    const loader = new GLTFLoader();
+    const modelUrl = "/models/smol_ame_terrarium.glb";
+
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        if (disposed) return;
+
+        modelGroup = gltf.scene;
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(modelGroup);
+          animationActions = gltf.animations.map((clip) => {
+            const action = mixer!.clipAction(clip);
+            action.setLoop(THREE.LoopRepeat, Infinity);
+            return action;
+          });
+        }
+
+        // Auto-center and scale
+        const box = new THREE.Box3().setFromObject(modelGroup);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2.5 / maxDim;
+
+        modelGroup.scale.setScalar(scale);
+        modelGroup.position.set(
+          -center.x * scale,
+          -center.y * scale + 0.05,
+          -center.z * scale,
+        );
+
+        scene.add(modelGroup);
+
+        // Hide loading
+        loadingEl.style.opacity = "0";
+        setTimeout(() => {
+          loadingEl.style.display = "none";
+        }, 400);
+        container.setAttribute("data-loaded", "true");
+
+        animate();
+      },
+      undefined,
+      (err) => {
+        console.warn("[Terrarium] Failed to load model:", err);
+        loadingEl.innerHTML =
+          "<span class='terrarium-error'>模型加载失败</span>";
+        loadingEl.style.opacity = "1";
+      },
+    );
+
+    // ── Cleanup ──────────────────────────────────────
+    function dispose() {
+      disposed = true;
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", resize);
+      mixer?.stopAllAction();
+      audio?.pause();
+      controls.dispose();
+      renderer.dispose();
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry?.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m) => m.dispose());
+          } else {
+            obj.material?.dispose();
+          }
+        }
+      });
+    }
+
+    currentDispose = dispose;
+  }
+
+  // Initial load
+  initTerrarium();
+
+  // Re-init on every Swup / Astro navigation
+  document.addEventListener("astro:page-load", initTerrarium);
+  document.addEventListener("swup:contentReplaced", initTerrarium);
+</script>
+
+<style>
+  .terrarium-container {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: var(--radius-medium, 0.75rem);
+    overflow: hidden;
+    margin-top: 0.5rem;
+    border: none;
+    box-shadow: none;
+    cursor: grab;
+  }
+
+  .terrarium-container:active {
+    cursor: grabbing;
+  }
+
+  :global(.dark) .terrarium-container {
+    background: oklch(0.22 0 0);
+    border: none;
+    box-shadow: none;
+  }
+
+  :global(.dark) .terrarium-container canvas {
+    filter: brightness(0.95);
+  }
+
+  .terrarium-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .terrarium-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    background: #ffffff;
+  }
+
+  :global(.dark) .terrarium-loading {
+    background: oklch(0.22 0 0);
+  }
+
+  .terrarium-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid oklch(0.88 0 0);
+    border-top-color: var(--primary, oklch(0.55 0.15 250));
+    border-radius: 50%;
+    animation: terrarium-spin 0.8s linear infinite;
+  }
+
+  @keyframes terrarium-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .terrarium-error {
+    font-size: 0.85rem;
+    color: var(--content-meta);
+    opacity: 0.7;
+  }
+</style>

@@ -2,6 +2,7 @@
 import Icon from "@components/common/Icon.astro";
 import ArchivePanel from "@components/controls/ArchivePanel.svelte";
 import ArchiveHeatmap from "@components/widget/ArchiveHeatmap.astro";
+import TerrariumModel from "@components/widget/TerrariumModel.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -25,6 +26,7 @@ const title = i18n(I18nKey.archive);
         </div>
       </div>
       <ArchiveHeatmap posts={sortedPostsList} />
+      <TerrariumModel client:visible />
       <ArchivePanel sortedPosts={sortedPostsList} client:load />
     </div>
   </div>
