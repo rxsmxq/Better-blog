@@ -61,11 +61,13 @@
       alpha: true,
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0); // Ensure transparent background (defensive)
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
 
     const scene = new THREE.Scene();
+    scene.background = null; // Explicitly null background for transparency
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
     camera.position.set(0, 0.6, 5);
@@ -273,7 +275,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ffffff;
+    background: transparent;
     border-radius: var(--radius-medium, 0.75rem);
     overflow: hidden;
     margin-top: 0.5rem;
@@ -287,7 +289,7 @@
   }
 
   :global(.dark) .terrarium-container {
-    background: oklch(0.22 0 0);
+    background: transparent;
     border: none;
     box-shadow: none;
   }
@@ -310,11 +312,9 @@
     justify-content: center;
     transition: opacity 0.4s ease;
     pointer-events: none;
-    background: #ffffff;
-  }
-
-  :global(.dark) .terrarium-loading {
-    background: oklch(0.22 0 0);
+    background: transparent;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .terrarium-spinner {
