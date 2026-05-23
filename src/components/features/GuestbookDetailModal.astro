@@ -34,21 +34,11 @@
 
 		<!-- 投票统计 -->
 		<div class="detail-stats">
-			<div class="stat-item agree">
-				<svg class="stat-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M18 21V9h-2V7h2V5h-2V3h2v2h2v2h-2v2h2v12zM9.05 21H4V9h.95l.45-2.025q.1-.45.5-.712T6.75 6h.5q.45 0 .85.263t.5.712L9.05 9h.95v12z"/></svg>
-				<span class="stat-label">赞同</span>
-				<span class="stat-count" id="detail-agree">0</span>
-			</div>
-			<div class="stat-item neutral">
-				<svg class="stat-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M6 13v-2h12v2z"/></svg>
-				<span class="stat-label">中立</span>
-				<span class="stat-count" id="detail-neutral">0</span>
-			</div>
-			<div class="stat-item disagree">
-				<svg class="stat-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M18 3v12h-2v2h2v2h-2v2h2v-2h2v-2h-2V3zM9.05 3H4v12h.95l.45 2.025q.1.45.5.713t.85.262h.5q.45 0 .85-.262t.5-.713L9.05 15h.95V3z"/></svg>
-				<span class="stat-label">反对</span>
-				<span class="stat-count" id="detail-disagree">0</span>
-			</div>
+			<span class="stat-text agree">赞同 <span id="detail-agree">0</span></span>
+			<span class="stat-divider">|</span>
+			<span class="stat-text neutral">中立 <span id="detail-neutral">0</span></span>
+			<span class="stat-divider">|</span>
+			<span class="stat-text disagree">反对 <span id="detail-disagree">0</span></span>
 		</div>
 
 		<!-- 底部 -->
@@ -391,6 +381,11 @@
 	/* 投票统计 */
 	.detail-stats {
 		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		padding: 0.5rem 0;
+		font-size: 0.75rem;
 		border-top: 1px solid #d4d4d8;
 		border-bottom: 1px solid #d4d4d8;
 	}
@@ -398,51 +393,19 @@
 		border-color: #27272a;
 	}
 
-	.stat-item {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.25rem;
-		padding: 0.75rem 0;
-		transition: background 0.2s;
+	.stat-text {
+		font-weight: 500;
 	}
-	.stat-item:not(:last-child) {
-		border-right: 1px solid #d4d4d8;
-	}
-	:root.dark .stat-item:not(:last-child) {
-		border-color: #27272a;
-	}
-	.stat-item:hover {
-		background: rgba(255, 255, 255, 0.03);
-	}
+	.stat-text.agree { color: #34d399; }
+	.stat-text.neutral { color: #eab308; }
+	.stat-text.disagree { color: #fb7185; }
 
-	.stat-icon-svg {
-		width: 0.875rem;
-		height: 0.875rem;
-	}
-	.stat-item.agree .stat-icon-svg { color: #34d399; }
-	.stat-item.neutral .stat-icon-svg { color: #eab308; }
-	.stat-item.disagree .stat-icon-svg { color: #fb7185; }
-
-	.stat-label {
-		font-size: 0.6rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: #52525b;
-	}
-	:root.dark .stat-label {
+	.stat-divider {
 		color: #a1a1aa;
+		font-weight: 300;
 	}
-
-	.stat-count {
-		font-size: 1.5rem;
-		font-weight: 700;
-		font-family: ui-monospace, monospace;
-		color: #18181b;
-	}
-	:root.dark .stat-count {
-		color: #fafafa;
+	:root.dark .stat-divider {
+		color: #52525b;
 	}
 
 	/* 底部 */
