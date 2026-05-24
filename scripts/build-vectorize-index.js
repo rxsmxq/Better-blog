@@ -108,7 +108,11 @@ async function loadPosts() {
 
 		if (frontmatter.draft) continue;
 
-		const slug = file.replace(/\\/g, "/").replace("src/content/posts/", "").replace(/\.(md|mdx)$/, "");
+		const normalized = path.normalize(file).replace(/\\/g, "/");
+		const slug = normalized
+			.replace(/^\.\//, "")
+			.replace(/^src\/content\/posts\//, "")
+			.replace(/\.(md|mdx)$/i, "");
 
 		posts.push({
 			title: frontmatter.title || "无标题",
@@ -172,7 +176,7 @@ function buildChunksForPost(post) {
 			text: chunkText,
 			metadata: {
 				articleTitle: post.title,
-				articlePath: `/posts/${post.slug}`,
+				articlePath: `/posts/${post.slug}/`,
 				published: post.published,
 				category: post.category,
 				tags: post.tags.join(", "),
