@@ -241,7 +241,13 @@ async function deleteVectorsByIds(ids) {
 			headers: { Authorization: `Bearer ${API_TOKEN}`, "Content-Type": "application/json" },
 			body: JSON.stringify({ ids: batch }),
 		});
-		if (!res.ok) throw new Error(`Vectorize delete ${res.status}: ${await res.text()}`);
+		if (!res.ok) {
+			if (res.status === 404) {
+				console.warn(`⚠️ Vectorize 索引不存在或已删除，跳过删除操作`);
+				return;
+			}
+			throw new Error(`Vectorize delete ${res.status}: ${await res.text()}`);
+		}
 	}
 }
 
@@ -270,11 +276,18 @@ async function createIndex() {
 
 async function syncChunks(chunks) {
 	let processed = 0;
+	const total = chunks.length;
+	
 	for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
 		const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
+		const batchStart = i + 1;
+		const batchEnd = Math.min(i + EMBED_BATCH_SIZE, total);
 
 		try {
+			console.log(`\n📝 正在生成嵌入 [${batchStart}-${batchEnd}/${total}]...`);
 			const embeddings = await generateEmbeddings(batch.map((c) => c.text));
+			console.log(`✅ 嵌入生成完成`);
+
 			const vectors = batch.map((chunk, idx) => ({
 				id: chunk.id,
 				values: embeddings[idx],
@@ -282,13 +295,22 @@ async function syncChunks(chunks) {
 			}));
 
 			for (let j = 0; j < vectors.length; j += BATCH_SIZE) {
-				await insertVectors(vectors.slice(j, j + BATCH_SIZE));
-				processed += Math.min(j + BATCH_SIZE, vectors.length) - j;
+				const subBatch = vectors.slice(j, j + BATCH_SIZE);
+				const subStart = processed + 1;
+				const subEnd = Math.min(processed + BATCH_SIZE, total);
+				
+				console.log(`📤 正在上传向量 [${subStart}-${subEnd}/${total}]...`);
+				await insertVectors(subBatch);
+				processed += subBatch.length;
+				console.log(`✅ 上传完成，累计 ${processed}/${total}`);
 			}
 
-			if (i + EMBED_BATCH_SIZE < chunks.length) await new Promise((r) => setTimeout(r, 500));
+			if (i + EMBED_BATCH_SIZE < chunks.length) {
+				console.log(`⏳ 等待 500ms...`);
+				await new Promise((r) => setTimeout(r, 500));
+			}
 		} catch (err) {
-			console.error(`批次 ${i} 处理失败:`, err.message);
+			console.error(`❌ 批次 ${batchStart}-${batchEnd} 处理失败:`, err.message);
 		}
 	}
 	return processed;
