@@ -15,16 +15,24 @@ export const galleryConfig: GalleryConfig = {
 		// 每添加一个数组项就相当于添加了一个相册，记得在 public/gallery/ 目录下创建对应的子目录并放入图片
 		{
 			id: "ai-2026",
-			name: "生图AI",
-			description: "神人生图，收录各种逆天的AI生图，欢迎投稿！",
-			location: "AI生图",
+			name: "祖国人",
+			description: "神人生图，收录各种逆天的AI生图",
+			location: "沃特公司",
 			date: "2026-05-06",
 			tags: ["AI", "祖国人"],
 		},
 		{
+			id: "gpt-img2-2026",
+			name: "GPT生图",
+			description: "GPT生成的图片",
+			location: "gpt",
+			date: "2026-05-24",
+			tags: ["AI", "GPT生图"],
+		},
+		{
 			id: "mc-2026",
 			name: "鸣潮",
-			description: "鸣潮相册，欢迎投稿！",
+			description: "鸣潮相册",
 			location: "鸣潮",
 			date: "2026-05-11",
 			tags: ["鸣潮"],
@@ -32,7 +40,7 @@ export const galleryConfig: GalleryConfig = {
 		{
 			id: "other-2026",
 			name: "其他",
-			description: "其他相册，欢迎投稿！",
+			description: "其他相册",
 			location: "all around the world",
 			date: "2026-05-06",
 			tags: ["大杂烩"],
