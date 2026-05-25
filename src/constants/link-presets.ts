@@ -16,7 +16,7 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 	[LinkPreset.Archive]: {
 		name: i18n(I18nKey.archive),
 		url: "/archive/",
-		icon: "material-symbols:calendar-month",
+		icon: "material-symbols:schedule-outline-rounded",
 	},
 	[LinkPreset.Friends]: {
 		name: i18n(I18nKey.friends),

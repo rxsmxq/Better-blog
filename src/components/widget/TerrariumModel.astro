@@ -17,6 +17,7 @@
 <script>
   import * as THREE from "three";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+  import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
   import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
   // Track the active instance so we can dispose it before creating a new one
@@ -184,6 +185,9 @@
 
     // ── Load model ───────────────────────────────────
     const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+    loader.setDRACOLoader(dracoLoader);
     const modelUrl = "/models/smol_ame_terrarium.glb";
 
     loader.load(
@@ -245,6 +249,7 @@
       audio?.pause();
       controls.dispose();
       renderer.dispose();
+      dracoLoader.dispose();
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry?.dispose();

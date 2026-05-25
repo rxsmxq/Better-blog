@@ -42,26 +42,18 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	});
 };
 
-let fontCache: { regular: Buffer | null; bold: Buffer | null } | null = null;
+let fontCache: Buffer | null = null;
 
-function loadLocalNotoSansSCFonts() {
+function loadLocalAaZongYiYuanFont() {
 	if (fontCache) return fontCache;
 	try {
-		const regularPath =
-			"./public/fonts/noto-sans-sc/static/NotoSansSC-Regular.ttf";
-		const boldPath = "./public/fonts/noto-sans-sc/static/NotoSansSC-Bold.ttf";
-
-		const regular = fs.existsSync(regularPath)
-			? fs.readFileSync(regularPath)
-			: null;
-		const bold = fs.existsSync(boldPath) ? fs.readFileSync(boldPath) : null;
-
-		fontCache = { regular, bold };
+		const fontPath = "./public/fonts/AaZongYiYuan/AaZongYiYuan-2.ttf";
+		fontCache = fs.existsSync(fontPath) ? fs.readFileSync(fontPath) : null;
 		return fontCache;
 	} catch (err) {
 		console.warn("Error loading local fonts:", err);
-		fontCache = { regular: null, bold: null };
-		return { regular: null, bold: null };
+		fontCache = null;
+		return null;
 	}
 }
 
@@ -70,9 +62,6 @@ export async function GET({
 }: APIContext<{ post: CollectionEntry<"posts"> }>): Promise<Response> {
 	const { post } = props;
 	const data = post.data as PostData;
-
-	// Load local Noto Sans SC fonts
-	const { regular: fontRegular, bold: fontBold } = loadLocalNotoSansSCFonts();
 
 	// Avatar + icon: still read from disk (small assets)
 	let avatarBase64: string;
@@ -122,7 +111,7 @@ export async function GET({
 				flexDirection: "column",
 				backgroundColor: backgroundColor,
 				fontFamily:
-					'"Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+					'"AaZongYiYuan", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 				padding: "60px",
 			},
 			children: [
@@ -290,20 +279,13 @@ export async function GET({
 		},
 	};
 
+	const fontData = loadLocalAaZongYiYuanFont();
 	const fonts: FontOptions[] = [];
-	if (fontRegular) {
+	if (fontData) {
 		fonts.push({
-			name: "Noto Sans SC",
-			data: fontRegular,
+			name: "AaZongYiYuan",
+			data: fontData,
 			weight: 400,
-			style: "normal",
-		});
-	}
-	if (fontBold) {
-		fonts.push({
-			name: "Noto Sans SC",
-			data: fontBold,
-			weight: 700,
 			style: "normal",
 		});
 	}

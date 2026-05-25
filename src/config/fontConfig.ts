@@ -22,15 +22,6 @@ export const fontConfig = {
 				"system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
 		},
 
-		// 本地字体 - Zen Maru Gothic
-		"zen-maru-gothic": {
-			id: "zen-maru-gothic",
-			name: "Zen Maru Gothic",
-			src: "/fonts/zen-maru-gothic/zen-maru-gothic.css",
-			family: "Zen Maru Gothic",
-			display: "swap" as const,
-		},
-
 		// Google Fonts - Inter
 		inter: {
 			id: "inter",
@@ -41,12 +32,12 @@ export const fontConfig = {
 		},
 
 		// Aa综艺圆
-		"aazongyiyuan": {
+		aazongyiyuan: {
 			id: "aazongyiyuan",
 			name: "Aa综艺圆",
 			src: "/fonts/AaZongYiYuan/AaZongYiYuan-2.ttf",
 			family: "AaZongYiYuan",
-			format: "truetype",
+			format: "truetype" as const,
 			display: "swap" as const,
 		},
 
