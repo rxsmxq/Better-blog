@@ -8,7 +8,7 @@ draft: false
 ---
 
 # 工作原理&执行流程
-![|492x553](./image/2003_000_Spring-MyBatis.assets/2003_000_Spring-MyBatis-20260104215117.png)
+![|492x553](./image/2003_003_Spring-MyBatis.assets/2003_003_Spring-MyBatis-20260104215117.png)
 1. **读取MyBatis的配置文件**：mybatis-config.xml为MyBatis的全局配置文件，用于配置数据库连接信息，现在都用yml配置了
 2. **构造会话工厂**：通过MyBatis的环境配置信息构建会话工厂SQLsessionFactory。
 3. **创建会话对象**：由工厂创建SqlSession对象，该对象中包含了执行SQL语句的所有方法
@@ -17,7 +17,7 @@ draft: false
 6. **输入参数映射**：转换类型将输入的参数转换为数据库的
 7. **输出结果映射**：SQL输出的类型转换成java的
 MappedStatement对象：
- ![](./image/2003_000_Spring-MyBatis.assets/2003_000_Spring-MyBatis-20260104215755.png)
+ ![](./image/2003_003_Spring-MyBatis.assets/2003_003_Spring-MyBatis-20260104215755.png)
 
 # 延迟加载
 - 需要用到数据时候才加载

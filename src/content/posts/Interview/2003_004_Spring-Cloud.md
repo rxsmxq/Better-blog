@@ -23,10 +23,10 @@ draft: false
 	seata 分布式事务
 # 注册中心
 ## nacos
-![|655x337](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260105163847.png)
+![|655x337](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260105163847.png)
 
 ## Eureka
-![|541x310](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260105164017.png)
+![|541x310](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260105164017.png)
 ## nacos和Eureka区别
 Nacos与eureka的共同点（注册中心)
 - 都支持服务注册和服务拉取
@@ -102,28 +102,28 @@ Seata事务管理中有三个重要的角色：
 - TC(TransactionCoordinator)-事务协调者：维护全局和分支事务的状态，协调全局事务提交或回滚。
 - TM（TransactionManager)-事务管理器：定义全局事务的范围、开始全局事务、提交或回滚全局事务。
 - RM(ResourceManager）-资源管理器：管理分支事务处理的资源，与TC交谈以注册分支事务和报告分支事务的状态，并驱动分支事务提交或回滚。
-![](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106172317.png)
+![](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106172317.png)
 
 
 ## 模式
 ### XA
 数据强一致性
-![](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106172614.png)
+![](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106172614.png)
 
 ### AT
 多了一个undo-log的表进行回滚
-![](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106172830.png)
+![](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106172830.png)
 
 ### TCC
 相当于冻结，手动维护一个类似状态的字段，代码耦合度高
-![](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106173148.png)
+![](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106173148.png)
 
 ### SAGA
 
 ## MQ
 上游处理，通知下游，预定重传
 上游通知，下游处理，
-![](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106174112.png)
+![](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106174112.png)
 
 
 
@@ -131,14 +131,14 @@ Seata事务管理中有三个重要的角色：
 # 前后端幂等处理
 如果前端不干防止接口抖动的话
 客户端（按钮防重抖）+ 网关（拦截重复参数）+ 服务（幂等校验）+ 数据库（唯一约束）
-![|655x335](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106180425.png)
+![|655x335](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106180425.png)
 
 ## token+redis
 相当于预备操作
 使用token+redis来实现，性能较好
 - 第一次请求，生成一个唯一token存入redis，返回给前端
 - 第二次请求，业务处理，携带之前的token，到redis进行验证，如果存在，可以执行业务，删除token；如果不存在，则直接返回，不处理业务
-![|541x409](./image/2003_000_Spring-Cloud.assets/2003_000_Spring-Cloud-20260106180437.png)
+![|541x409](./image/2003_004_Spring-Cloud.assets/2003_004_Spring-Cloud-20260106180437.png)
 
 # 分布式任务调度
 

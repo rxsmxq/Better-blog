@@ -22,7 +22,7 @@ draft: false
 2. `@EnableAutoConfiguration`通过注解`@Import` 导入对应的选择器，内部读取了该项目和该项目的引用jar包的classpath路径下的 `META-INF/spring.factories`下的自动配置类全类名。
 3. 在这些配置类中，根据条件注解定义的条件来决定哪些BEAN需要导入到spring容器中。
 
-![](./image/2003_000_Spring-Boot.assets/2003_000_Spring-Boot-20260104205730.png)
+![](./image/2003_001_Spring-Boot.assets/2003_001_Spring-Boot-20260104205730.png)
 
 
 

@@ -17,7 +17,7 @@ draft: false
 	说人话就是前面的组件定位到具体Java方法后，用来执行Java方法的组件
 - 视图解析器（ViewResolver）
 	对controller生成的值进行解析，给你的渲染视图用的
-![](./image/2003_000_Spring-MVC.assets/2003_000_Spring-MVC-20260104201129.png)
+![](./image/2003_002_Spring-MVC.assets/2003_002_Spring-MVC-20260104201129.png)
 
 ## 目前版本
 1. 用户发送出请求到前端控制器DispatcherServlet
@@ -27,4 +27,4 @@ draft: false
 5. HandlerAdapter经过适配调用具体的处理器（Handler/Controller）
 6. 方法上添加了@ResponseBody
 7. 通过HttpMessageConverter来返回结果转换为JSON并响应
-![](./image/2003_000_Spring-MVC.assets/2003_000_Spring-MVC-20260104202546.png)
+![](./image/2003_002_Spring-MVC.assets/2003_002_Spring-MVC-20260104202546.png)
