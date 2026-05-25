@@ -212,7 +212,7 @@ async function generateEmbeddings(texts) {
 	}
 
 	// Cloudflare Workers AI
-	const res = await fetch(`${API_BASE}/ai/run/@cf/baai/bge-base-en-v1.5`, {
+	const res = await fetch(`${API_BASE}/ai/run/@cf/baai/bge-large-en-v1.5`, {
 		method: "POST",
 		headers: { Authorization: `Bearer ${API_TOKEN}`, "Content-Type": "application/json" },
 		body: JSON.stringify({ text: texts }),
@@ -275,45 +275,48 @@ async function createIndex() {
 // ── 同步 chunks ──────────────────────────────────────
 
 async function syncChunks(chunks) {
-	let processed = 0;
 	const total = chunks.length;
-	
+	let uploaded = 0;
+	const buffer = [];
+
 	for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
 		const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
-		const batchStart = i + 1;
-		const batchEnd = Math.min(i + EMBED_BATCH_SIZE, total);
+		const embedStart = i + 1;
+		const embedEnd = Math.min(i + EMBED_BATCH_SIZE, total);
 
 		try {
-			console.log(`\n📝 正在生成嵌入 [${batchStart}-${batchEnd}/${total}]...`);
+			console.log(`📝 生成嵌入 [${embedStart}-${embedEnd}/${total}]...`);
 			const embeddings = await generateEmbeddings(batch.map((c) => c.text));
-			console.log(`✅ 嵌入生成完成`);
 
-			const vectors = batch.map((chunk, idx) => ({
-				id: chunk.id,
-				values: embeddings[idx],
-				metadata: chunk.metadata,
-			}));
+			for (let k = 0; k < batch.length; k++) {
+				buffer.push({
+					id: batch[k].id,
+					values: embeddings[k],
+					metadata: batch[k].metadata,
+				});
+			}
 
-			for (let j = 0; j < vectors.length; j += BATCH_SIZE) {
-				const subBatch = vectors.slice(j, j + BATCH_SIZE);
-				const subStart = processed + 1;
-				const subEnd = Math.min(processed + BATCH_SIZE, total);
-				
-				console.log(`📤 正在上传向量 [${subStart}-${subEnd}/${total}]...`);
-				await insertVectors(subBatch);
-				processed += subBatch.length;
-				console.log(`✅ 上传完成，累计 ${processed}/${total}`);
+			if (buffer.length >= BATCH_SIZE || i + EMBED_BATCH_SIZE >= chunks.length) {
+				for (let j = 0; j < buffer.length; j += BATCH_SIZE) {
+					const subBatch = buffer.slice(j, j + BATCH_SIZE);
+					const upStart = uploaded + 1;
+					const upEnd = uploaded + subBatch.length;
+					console.log(`📤 上传向量 [${upStart}-${upEnd}/${total}]...`);
+					await insertVectors(subBatch);
+					uploaded += subBatch.length;
+					console.log(`✅ 累计 ${uploaded}/${total}`);
+				}
+				buffer.length = 0;
 			}
 
 			if (i + EMBED_BATCH_SIZE < chunks.length) {
-				console.log(`⏳ 等待 500ms...`);
 				await new Promise((r) => setTimeout(r, 500));
 			}
 		} catch (err) {
-			console.error(`❌ 批次 ${batchStart}-${batchEnd} 处理失败:`, err.message);
+			console.error(`❌ 嵌入 [${embedStart}-${embedEnd}] 失败:`, err.message);
 		}
 	}
-	return processed;
+	return uploaded;
 }
 
 // ── 主流程 ────────────────────────────────────────────
@@ -368,11 +371,12 @@ async function main() {
 
 	const toProcess = [...added, ...changed];
 	if (toProcess.length > 0) {
-		const newChunks = toProcess.flatMap((p) => buildChunksForPost(p));
+		const chunkMap = new Map(toProcess.map((p) => [p.slug, buildChunksForPost(p)]));
+		const newChunks = [...chunkMap.values()].flat();
 		const processed = await syncChunks(newChunks);
 
 		for (const post of toProcess) {
-			manifest[post.slug] = { hash: post.hash, chunkIds: buildChunksForPost(post).map((c) => c.id) };
+			manifest[post.slug] = { hash: post.hash, chunkIds: chunkMap.get(post.slug).map((c) => c.id) };
 		}
 		console.log(`增量更新完成，新增/更新 ${processed} 个向量`);
 	}

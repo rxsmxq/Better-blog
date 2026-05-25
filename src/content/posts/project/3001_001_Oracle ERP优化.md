@@ -7,7 +7,7 @@ tags:
   - 数据库
   - ERP
   - 性能优化
-category: 项目
+category: project
 draft: false
 ---
 

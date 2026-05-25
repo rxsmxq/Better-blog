@@ -6,7 +6,7 @@ tags:
   - JAVA
   - gateway
   - 框架
-category: JAVA
+category: java
 draft: false
 ---
 

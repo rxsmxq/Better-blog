@@ -6,7 +6,7 @@ tags:
   - JAVA
   - Sentinel
   - 框架
-category: JAVA
+category: java
 draft: false
 ---
 

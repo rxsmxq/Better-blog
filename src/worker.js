@@ -486,7 +486,7 @@ async function getEmbedding(env, text) {
 		const data = await res.json();
 		return data.data?.[0]?.embedding;
 	}
-	const result = await env.AI.run("@cf/baai/bge-base-en-v1.5", { text });
+	const result = await env.AI.run("@cf/baai/bge-large-en-v1.5", { text });
 	return result.data[0];
 }
 
