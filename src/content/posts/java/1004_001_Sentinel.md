@@ -3,7 +3,7 @@ title: Sentinel
 published: 2025-07-08
 description: Alibaba Sentinel流量控制组件学习笔记，包含Maven依赖配置、流控规则配置（资源名、来源限制、阈值类型等）的详细说明与示例。
 tags:
-  - JAVA
+  - Java
   - Sentinel
   - 框架
 category: java
