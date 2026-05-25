@@ -5,7 +5,7 @@ export const fontConfig = {
 	// 是否预加载字体文件
 	preload: true,
 	// 当前选择的字体，支持多个字体组合
-	selected: ["zen-maru-gothic"] as string[],
+	selected: ["aazongyiyuan"] as string[],
 
 	// 字体列表
 	// 推荐使用可靠的 CDN 服务商提供的字体链接，它天然做了按需分片加载，且性能较好
@@ -37,6 +37,16 @@ export const fontConfig = {
 			name: "Inter",
 			src: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
 			family: "Inter",
+			display: "swap" as const,
+		},
+
+		// Aa综艺圆
+		"aazongyiyuan": {
+			id: "aazongyiyuan",
+			name: "Aa综艺圆",
+			src: "/fonts/AaZongYiYuan/AaZongYiYuan-2.ttf",
+			family: "AaZongYiYuan",
+			format: "truetype",
 			display: "swap" as const,
 		},
 
