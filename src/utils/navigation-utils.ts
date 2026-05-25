@@ -31,7 +31,8 @@ export function navigateToPage(
 		url.startsWith("https://") ||
 		url.startsWith("//")
 	) {
-		window.open(url, "_blank");
+		const w = window.open(url, "_blank", "noopener,noreferrer");
+		if (w) w.opener = null;
 		return;
 	}
 

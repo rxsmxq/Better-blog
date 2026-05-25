@@ -271,45 +271,67 @@ const pageNumbers = generatePageNumbers(currentPage, totalPages);
     }
 
     function updatePaginationButtons(totalPages) {
-      // 更新所有的上一页和下一页按钮（移动端和桌面端）
       const prevButtons = pagination.querySelectorAll('[data-page="prev"]');
       const nextButtons = pagination.querySelectorAll('[data-page="next"]');
       const pageNumbersContainer = pagination.querySelector(`[data-page-numbers="${sectionId}"]`);
 
-      prevButtons.forEach(btn => {
-        btn.disabled = currentPage === 1;
-      });
+      prevButtons.forEach(btn => { btn.disabled = currentPage === 1; });
+      nextButtons.forEach(btn => { btn.disabled = currentPage === totalPages; });
 
-      nextButtons.forEach(btn => {
-        btn.disabled = currentPage === totalPages;
-      });
+      if (!pageNumbersContainer) return;
 
-      if (pageNumbersContainer) {
-        pageNumbersContainer.innerHTML = '';
-        const pageNumbers = generatePageNumbers(currentPage, totalPages);
+      const pageNumbers = generatePageNumbers(currentPage, totalPages);
+      const children = pageNumbersContainer.children;
+      let childIdx = 0;
 
-        pageNumbers.forEach(pageItem => {
-          if (pageItem === '...') {
-            // 创建省略号图标
-            const iconContainer = document.createElement('span');
-            iconContainer.innerHTML = '<svg class="mx-1" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>';
-            pageNumbersContainer.appendChild(iconContainer.firstChild);
+      pageNumbers.forEach(pageItem => {
+        if (pageItem === '...') {
+          const existing = children[childIdx];
+          if (existing && existing.tagName === 'svg') {
+            childIdx++;
           } else {
-            const button = document.createElement('button');
-            button.className = pageItem === currentPage
-              ? 'rounded-lg overflow-hidden w-11 h-11 flex items-center justify-center font-bold bg-(--primary) text-white dark:text-black/70'
-              : 'rounded-lg overflow-hidden w-11 h-11 flex items-center justify-center font-bold btn-card active:scale-[0.85]';
-            button.dataset.page = pageItem.toString();
-            button.dataset.section = sectionId;
-            button.textContent = pageItem.toString();
-            button.addEventListener('click', function() {
-              currentPage = pageItem;
-              updatePage();
-              updateMobileDisplay();
-            });
-            pageNumbersContainer.appendChild(button);
+            const span = document.createElement('span');
+            span.innerHTML = '<svg class="mx-1" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>';
+            pageNumbersContainer.insertBefore(span.firstChild, children[childIdx]);
           }
-        });
+          return;
+        }
+
+        const isActive = pageItem === currentPage;
+        let btn = children[childIdx];
+
+        if (btn && btn.tagName === 'button' && btn.dataset.page === pageItem.toString()) {
+          // Reuse existing button
+          btn.className = isActive
+            ? 'rounded-lg overflow-hidden w-11 h-11 flex items-center justify-center font-bold bg-(--primary) text-white dark:text-black/70'
+            : 'rounded-lg overflow-hidden w-11 h-11 flex items-center justify-center font-bold btn-card active:scale-[0.85]';
+          btn.ariaCurrent = isActive ? 'page' : null;
+          childIdx++;
+        } else {
+          // Remove old nodes up to this position, then create new button
+          while (children[childIdx] && children[childIdx].tagName !== 'button') {
+            children[childIdx].remove();
+          }
+          btn = document.createElement('button');
+          btn.className = isActive
+            ? 'rounded-lg overflow-hidden w-11 h-11 flex items-center justify-center font-bold bg-(--primary) text-white dark:text-black/70'
+            : 'rounded-lg overflow-hidden w-11 h-11 flex items-center justify-center font-bold btn-card active:scale-[0.85]';
+          btn.dataset.page = pageItem.toString();
+          btn.dataset.section = sectionId;
+          btn.textContent = pageItem.toString();
+          btn.addEventListener('click', function() {
+            currentPage = pageItem;
+            updatePage();
+            updateMobileDisplay();
+          });
+          pageNumbersContainer.insertBefore(btn, children[childIdx]);
+          childIdx++;
+        }
+      });
+
+      // Remove surplus nodes
+      while (children.length > childIdx) {
+        children[childIdx].remove();
       }
     }
 

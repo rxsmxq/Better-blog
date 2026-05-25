@@ -67,6 +67,9 @@ const siteLang = lang.replace("_", "-");
     {siteConfig.analytics?.googleAnalyticsId && (
       <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
     )}
+    {siteConfig.font.enable && siteConfig.font.selected?.includes("aazongyiyuan") && (
+      <link rel="preload" href="/fonts/AaZongYiYuan/AaZongYiYuan-2.ttf" as="font" type="font/ttf" crossorigin />
+    )}
     {siteConfig.analytics?.microsoftClarityId && (
       <link rel="preconnect" href="https://www.clarity.ms" crossorigin />
     )}

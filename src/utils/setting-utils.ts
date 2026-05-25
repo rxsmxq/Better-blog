@@ -216,9 +216,6 @@ export function setupSystemThemeListener(): void {
 		window.dispatchEvent(new CustomEvent("theme-change"));
 	};
 
-	// 立即调用一次以设置初始状态
-	handleSystemThemeChange(mediaQuery);
-
 	// 监听系统主题变化（现代浏览器）
 	if (mediaQuery.addEventListener) {
 		mediaQuery.addEventListener("change", handleSystemThemeChange);

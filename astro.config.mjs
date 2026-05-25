@@ -269,6 +269,9 @@ export default defineConfig({
 							if (id.includes("pixi") || id.includes("live2d")) return "vendor-live2d";
 							if (id.includes("gsap")) return "vendor-gsap";
 						}
+						if (id.includes("AISearch")) return "vendor-ai";
+						if (id.includes("Guestbook")) return "vendor-guestbook";
+						if (id.includes("CalendarGrid")) return "vendor-calendar";
 					},
 				},
 				onwarn(warning, warn) {
