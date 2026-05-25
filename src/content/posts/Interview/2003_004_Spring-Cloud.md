@@ -1,9 +1,9 @@
 ﻿---
-title: 面试-Spring-Cloud
+title: Spring-Cloud
 published: 2026-02-01
 description: 系统总结Spring Cloud微服务架构核心组件与面试知识点，涵盖注册中心Nacos与Eureka对比、负载均衡策略、服务雪崩与熔断降级、限流算法与实现、分布式事务Seata的XA/AT/TCC/SAGA模式、前后端幂等处理方案以及分布式任务调度xxl-job路由策略等内容。
-tags: [JAVA, Spring-Cloud]
-category: 面试
+tags: [Java, 面试, Spring-Cloud]
+category: interview
 draft: false
 ---
 

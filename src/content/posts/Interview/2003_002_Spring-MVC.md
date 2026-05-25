@@ -2,8 +2,8 @@
 title: Spring-MVC
 published: 2026-01-24
 description: 梳理Spring MVC的核心执行流程，对比传统JSP版本与现代注解版本的请求处理机制，详细讲解DispatcherServlet前端控制器、HandlerMapping处理器映射器、HandlerAdapter处理器适配器以及HttpMessageConverter消息转换器在请求处理链路中的职责与协作关系。
-tags: [JAVA, Spring-MVC]
-category: 面试
+tags: [Java, 面试, Spring-MVC]
+category: interview
 draft: false
 ---
 
