@@ -17,6 +17,7 @@ import {
 	type PostMeta,
 } from "@/utils/calendar-events";
 import { getLunarMonthDayChinese } from "@/utils/lunar-utils";
+import { navigateToPage } from "@/utils/navigation-utils";
 import { eventTypeMeta } from "./eventTypes";
 
 interface Props {
@@ -96,7 +97,7 @@ function handleSelected(e: Event) {
 }
 
 function openEvent(ev: CalendarEvent) {
-	if (ev.url) window.location.href = ev.url;
+	if (ev.url) navigateToPage(ev.url);
 }
 
 onMount(() => {
@@ -225,7 +226,7 @@ onDestroy(() => {
 
 	.card-bar {
 		position: absolute;
-		left: 0;
+		left: -1rem;
 		top: 0.75rem;
 		bottom: 0.75rem;
 		width: 3px;
