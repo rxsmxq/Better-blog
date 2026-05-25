@@ -50,6 +50,17 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 - `src/components/analytics/` — GoogleAnalytics、UmamiAnalytics、MicrosoftClarity、La51Analytics
 - `src/components/comment/` — 评论系统集成
 
+### Workers 后端
+
+Cloudflare Workers 入口 `src/worker.js` 提供三个 API 端点，通过 wrangler 自动 bundle 依赖发布为单文件。
+
+- `src/worker.js` — 入口：根据 URL pathname 路由分发，无业务逻辑。
+- `src/workers/count.js` — 计数 API（`/api/count`）：PV/UV 统计，cookie 去重。
+- `src/workers/guestbook.js` — 留言板 API（`/api/guestbook`）：CRUD + 投票，含输入校验和 XSS 过滤。
+- `src/workers/ai-chat.js` — AI 聊天 API（`/api/ai-chat`）：embedding 向量检索 + SSE 流式生成，含猫娘人设 prompt。
+- `src/workers/utils/rate-limit.js` — KV 限流（`checkRateLimit`），被 guestbook 和 ai-chat 共用。
+- `src/workers/utils/streaming.js` — SSE 流读取器（OpenAI 格式 / Workers AI 原生格式），被 ai-chat 使用。
+
 ### 配置系统
 
 所有配置集中在 `src/config/`，通过 `@/config`（barrel 文件 `index.ts` 统一导出）导入。核心配置文件 `siteConfig.ts` 控制语言（顶部 `SITE_LANG`）、主题色、壁纸模式、页面开关、文章列表布局（list/grid/masonry）、分页、分析、图片优化、字体等。
