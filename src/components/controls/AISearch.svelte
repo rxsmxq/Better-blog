@@ -1,5 +1,4 @@
 <script lang="ts">
-import { marked } from "marked";
 import { onMount, tick } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import { aiSearchConfig } from "@/config";
@@ -158,106 +157,56 @@ function scrollToBottom() {
 	});
 }
 
-function escapeHtml(text: string): string {
-	return text
+function isSafeUrl(value: string): boolean {
+	return /^(https?:|mailto:|tel:|\/|#|\.\/|\.\.\/|\?)/i.test(value.trim());
+}
+
+function renderSimpleMd(text: string): string {
+	// 先转义 HTML 特殊字符，防止 XSS
+	let html = text
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#039;");
-}
 
-function isSafeUrl(value: string): boolean {
-	const trimmed = value
-		.trim()
-		// biome-ignore lint/complexity/useRegexLiterals: avoids control-character ranges in regex literals.
-		.replace(new RegExp("[\\u0000-\\u001F\\u007F\\s]+", "g"), "");
-	return /^(https?:|mailto:|tel:|\/|#|\.\/|\.\.\/|\?)/i.test(trimmed);
-}
+	// 代码块 ```...```
+	html = html.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+	// 行内代码 `...`
+	html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+	// 粗体 **...**
+	html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+	// 斜体 *...*（排除已处理的粗体）
+	html = html.replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, "<em>$1</em>");
+	// 删除线 ~~...~~
+	html = html.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+	// 链接 [text](url)
+	html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+		if (!isSafeUrl(url)) return `[${label}](${url})`;
+		return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+	});
+	// 换行符 → <br>
+	html = html.replace(/\n/g, "<br>");
 
-function sanitizeHtml(html: string): string {
-	if (typeof document === "undefined") return escapeHtml(html);
-
-	const blockedTags = new Set([
-		"script",
-		"style",
-		"iframe",
-		"object",
-		"embed",
-		"link",
-		"meta",
-		"form",
-		"input",
-		"button",
-		"svg",
-		"math",
-	]);
-	const allowedAttrs = new Set([
-		"href",
-		"src",
-		"alt",
-		"title",
-		"class",
-		"id",
-		"target",
-		"rel",
-		"role",
-		"aria-label",
-		"aria-hidden",
-	]);
-
-	const template = document.createElement("template");
-	template.innerHTML = html;
-	const elements = Array.from(template.content.querySelectorAll("*"));
-
-	for (const el of elements) {
-		if (blockedTags.has(el.tagName.toLowerCase())) {
-			el.remove();
-			continue;
-		}
-
-		for (const attr of Array.from(el.attributes)) {
-			const name = attr.name.toLowerCase();
-			const value = attr.value;
-			const isDataAttr = name.startsWith("data-");
-
-			if (name.startsWith("on") || name === "style" || name === "srcdoc") {
-				el.removeAttribute(attr.name);
-				continue;
-			}
-
-			if (!allowedAttrs.has(name) && !isDataAttr) {
-				el.removeAttribute(attr.name);
-				continue;
-			}
-
-			if ((name === "href" || name === "src") && !isSafeUrl(value)) {
-				el.removeAttribute(attr.name);
-			}
-		}
-
-		if (
-			el.tagName.toLowerCase() === "a" &&
-			el.getAttribute("target") === "_blank"
-		) {
-			el.setAttribute("rel", "noopener noreferrer");
-		}
-	}
-
-	return template.innerHTML;
-}
-
-function renderMd(text: string): string {
-	try {
-		return sanitizeHtml(marked.parse(text, { breaks: true }) as string);
-	} catch {
-		return escapeHtml(text);
-	}
+	return html;
 }
 
 async function send() {
 	const q = inputVal.trim();
 	if (!q || isLoading) return;
+
+	const MAX_INPUT_LEN = 2000;
+	if (q.length > MAX_INPUT_LEN) {
+		messages = [
+			...messages,
+			{
+				role: "assistant",
+				content: `输入太长了喵，最多支持 ${MAX_INPUT_LEN} 个字符~`,
+			},
+		];
+		scrollToBottom();
+		return;
+	}
 
 	inputVal = "";
 	messages = [...messages, { role: "user", content: q }];
@@ -338,7 +287,8 @@ async function send() {
 		if (e.name === "AbortError") {
 			messages[aiIdx].content += "\n\n> *(已取消)*";
 		} else {
-			messages[aiIdx].content = `抱歉，请求出错了：${e.message}。请稍后再试。`;
+			console.error("AI chat error:", e);
+			messages[aiIdx].content = "抱歉，请求出错了，请稍后再试喵~";
 		}
 		messages = [...messages];
 	} finally {
@@ -498,16 +448,20 @@ onMount(() => {
             </div>
             <div class="ai-msg-body">
               <div class="ai-msg-content prose-sm">
-                {@html renderMd(msg.content)}
-                {#if msg.streaming}
-                  <span class="ai-cursor"></span>
+                {#if msg.role === "user"}
+                  {msg.content}
+                {:else}
+                  {@html renderSimpleMd(msg.content)}
+                  {#if msg.streaming}
+                    <span class="ai-cursor"></span>
+                  {/if}
                 {/if}
               </div>
               {#if msg.refs && msg.refs.length > 0}
                 <div class="ai-refs">
                   <div class="ai-refs-title">参考文章</div>
                   {#each msg.refs as ref}
-                    <a href={ref.path} class="ai-ref-link" onclick={() => (isOpen = false)}>
+                    <a href={isSafeUrl(ref.path) ? ref.path : '#'} class="ai-ref-link" onclick={() => (isOpen = false)}>
                       <Icon icon="material-symbols:article-outline" size="sm" />
                       <span>{ref.title}</span>
                       {#if ref.published}
@@ -577,9 +531,9 @@ onMount(() => {
 
   .ai-panel {
     width: 100%;
-    max-width: 42rem;
-    height: 80vh;
-    max-height: 600px;
+    max-width: 56rem;
+    height: 85vh;
+    max-height: 800px;
     background: var(--float-panel-bg, #fff);
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -850,21 +804,12 @@ onMount(() => {
   .ai-msg.user .ai-msg-content {
     background: var(--primary);
     color: white;
+    white-space: pre-wrap;
   }
   :root.dark .ai-msg.user .ai-msg-content {
     color: rgba(0, 0, 0, 0.7);
   }
 
-  /* markdown 内容样式 */
-  .ai-msg-content :global(p) {
-    margin: 0.3em 0;
-  }
-  .ai-msg-content :global(p:first-child) {
-    margin-top: 0;
-  }
-  .ai-msg-content :global(p:last-child) {
-    margin-bottom: 0;
-  }
   .ai-msg-content :global(code) {
     background: oklch(0.9 0 0 / 0.6);
     padding: 0.1em 0.3em;
@@ -888,16 +833,9 @@ onMount(() => {
     padding: 0;
     font-size: inherit;
   }
-  .ai-msg-content :global(ul),
-  .ai-msg-content :global(ol) {
-    padding-left: 1.2em;
-    margin: 0.3em 0;
-  }
-  .ai-msg-content :global(blockquote) {
-    border-left: 3px solid var(--primary);
-    padding-left: 0.6em;
-    margin: 0.3em 0;
-    opacity: 0.7;
+  .ai-msg-content :global(a) {
+    color: var(--primary);
+    text-decoration: underline;
   }
 
   .ai-cursor {
