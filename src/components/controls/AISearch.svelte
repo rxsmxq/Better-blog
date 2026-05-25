@@ -288,7 +288,12 @@ async function send() {
 			messages[aiIdx].content += "\n\n> *(已取消)*";
 		} else {
 			console.error("AI chat error:", e);
-			messages[aiIdx].content = "抱歉，请求出错了，请稍后再试喵~";
+			if (/429|insufficient_quota|quota/i.test(e.message)) {
+				messages[aiIdx].content =
+					"抱歉喵~喵墩今天收藏的 token 被爸爸偷偷用光了，请明天再来~";
+			} else {
+				messages[aiIdx].content = "抱歉，请求出错了，请稍后再试喵~";
+			}
 		}
 		messages = [...messages];
 	} finally {
