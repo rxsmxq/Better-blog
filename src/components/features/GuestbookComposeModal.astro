@@ -92,26 +92,27 @@
 
 <script>
 	function initGuestbookComposeModal() {
-		const modal = document.getElementById('guestbook-compose-modal') as HTMLDialogElement | null;
+		const modal = document.getElementById('guestbook-compose-modal');
 		if (!modal) return;
 
-		const authorInput = document.getElementById('gb-author') as HTMLInputElement | null;
-		const contentInput = document.getElementById('gb-content') as HTMLTextAreaElement | null;
+		const authorInput = document.getElementById('gb-author');
+		const contentInput = document.getElementById('gb-content');
 		const charCount = document.getElementById('gb-char-count');
-		const submitBtn = document.getElementById('gb-submit') as HTMLButtonElement | null;
+		const submitBtn = document.getElementById('gb-submit');
 
 		if (!authorInput || !contentInput || !submitBtn) return;
 
 		let isSubmitting = false;
 
 		function updateSubmitState() {
-			if (!submitBtn || !authorInput || !contentInput) return;
-			submitBtn.disabled = !authorInput.value.trim() || !contentInput.value.trim() || isSubmitting;
+			submitBtn.disabled = !(authorInput as HTMLInputElement).value.trim()
+				|| !(contentInput as HTMLTextAreaElement).value.trim()
+				|| isSubmitting;
 		}
 
 		// 字符计数
 		contentInput.addEventListener('input', () => {
-			if (charCount) charCount.textContent = contentInput.value.length + '/500';
+			if (charCount) charCount.textContent = (contentInput as HTMLTextAreaElement).value.length + '/500';
 			updateSubmitState();
 		});
 		authorInput.addEventListener('input', updateSubmitState);
@@ -120,16 +121,15 @@
 		window.addEventListener('guestbook:open-compose', () => {
 			modal.showModal();
 			document.body.style.overflow = 'hidden';
-			authorInput.value = '';
-			contentInput.value = '';
+			(authorInput as HTMLInputElement).value = '';
+			(contentInput as HTMLTextAreaElement).value = '';
 			if (charCount) charCount.textContent = '0/500';
 			updateSubmitState();
-			setTimeout(() => authorInput.focus(), 100);
+			setTimeout(() => (authorInput as HTMLInputElement).focus(), 100);
 		});
 
 		// 关闭
 		function closeModal() {
-			if (!modal) return;
 			modal.close();
 			document.body.style.overflow = '';
 		}
@@ -153,12 +153,10 @@
 
 		const errorMessageEl = document.getElementById('gb-error-message');
 
-		function showErrorMessage(message: string) {
+		function showErrorMessage(message) {
 			if (!errorMessageEl) return;
 			const errorTextEl = errorMessageEl.querySelector('.error-text');
-			if (errorTextEl) {
-				errorTextEl.textContent = message;
-			}
+			if (errorTextEl) errorTextEl.textContent = message;
 			errorMessageEl.style.display = 'flex';
 			setTimeout(() => {
 				errorMessageEl.classList.add('show');
@@ -181,39 +179,29 @@
 			});
 		}
 
-		function getErrorMessage(status: number, errorText: string) {
+		function getErrorMessage(status, errorText) {
 			switch (status) {
 				case 400:
-					if (errorText.includes('prohibited')) {
-						return '内容包含不安全的内容，请检查是否包含脚本或特殊标签';
-					}
-					if (errorText.includes('author')) {
-						return '昵称长度必须在2-30个字符之间';
-					}
+					if (errorText.includes('prohibited')) return '内容包含不安全的内容，请检查是否包含脚本或特殊标签';
+					if (errorText.includes('author')) return '昵称长度必须在2-30个字符之间';
 					if (errorText.includes('content')) {
-						if (errorText.includes('short')) {
-							return '内容太短，至少需要5个字符';
-						}
+						if (errorText.includes('short')) return '内容太短，至少需要5个字符';
 						return '内容长度必须在5-500个字符之间';
 					}
 					return '输入内容无效，请检查后重试';
-				case 429:
-					return '发送太频繁了，请稍后再试';
-				case 500:
-					return '服务器内部错误，请稍后重试';
-				default:
-					return `提交失败 (${status})，请稍后重试`;
+				case 429: return '发送太频繁了，请稍后再试';
+				case 500: return '服务器内部错误，请稍后重试';
+				default: return `提交失败 (${status})，请稍后重试`;
 			}
 		}
 
 		// 提交
 		submitBtn.addEventListener('click', async () => {
-			const author = authorInput.value.trim();
-			const content = contentInput.value.trim();
+			const author = (authorInput as HTMLInputElement).value.trim();
+			const content = (contentInput as HTMLTextAreaElement).value.trim();
 			if (!author || !content || isSubmitting) return;
 
 			hideErrorMessage();
-
 			isSubmitting = true;
 			submitBtn.textContent = '发送中...';
 			submitBtn.disabled = true;

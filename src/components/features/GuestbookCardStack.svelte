@@ -890,7 +890,7 @@ function swipeCard(x: number, y: number) {
 		border-color: inherit;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		padding: 0 1rem;
 		background: var(--card-footer-bg);
 		cursor: pointer;
@@ -1030,16 +1030,15 @@ function swipeCard(x: number, y: number) {
 		}
 
 		.cards-container {
-			width: 95%;
-			max-width: none;
-			height: auto;
+			width: auto;
+			max-width: 95%;
+			height: 400px;
 			aspect-ratio: 3 / 2;
-			max-height: 420px;
 		}
 
 		.message-card,
 		.card-inner {
-			max-height: 420px;
+			max-height: 400px;
 		}
 
 		.card-body {
