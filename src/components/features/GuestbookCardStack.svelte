@@ -502,13 +502,6 @@ function swipeCard(x: number, y: number) {
 
 					<!-- 底部 -->
 					<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
-						<div class="footer-bars">
-							<div class="bar"></div>
-							<div class="bar"></div>
-							<div class="bar"></div>
-							<div class="bar"></div>
-							<div class="bar"></div>
-						</div>
 						<span class="footer-text">读取档案 >></span>
 					</div>
 
@@ -908,18 +901,6 @@ function swipeCard(x: number, y: number) {
 		filter: brightness(1.1);
 	}
 
-	.footer-bars {
-		display: flex;
-		gap: 0.25rem;
-	}
-
-	.bar {
-		width: 0.25rem;
-		height: 1rem;
-		background: var(--card-footer-text);
-		opacity: 0.4;
-	}
-
 	.footer-text {
 		font-size: 0.65rem;
 		font-weight: 700;
@@ -1042,13 +1023,23 @@ function swipeCard(x: number, y: number) {
 	}
 
 	/* 响应式 */
-	@media (max-width: 640px) {
+	@media (max-width: 768px) {
 		.guestbook-card-stack {
-			min-height: 440px;
+			min-height: auto;
+			padding: 8px;
 		}
 
 		.cards-container {
-			height: 380px;
+			width: 95%;
+			max-width: none;
+			height: auto;
+			aspect-ratio: 3 / 2;
+			max-height: 420px;
+		}
+
+		.message-card,
+		.card-inner {
+			max-height: 420px;
 		}
 
 		.card-body {

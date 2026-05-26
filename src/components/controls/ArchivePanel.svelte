@@ -358,7 +358,7 @@ onMount(() => {
 });
 </script>
 
-<div class="archive-panel card-base px-6 py-6 md:px-10 md:py-8" bind:this={panelEl}>
+<div class="archive-panel card-base px-3 py-6 md:px-10 md:py-8" bind:this={panelEl}>
 
 	<!-- 筛选器摘要 -->
 	{#if primaryFilter}
@@ -666,7 +666,7 @@ onMount(() => {
 .ap-post-link {
 	display: flex; align-items: center; gap: 0.6rem;
 	flex: 1; min-height: 2.25rem; padding: 0.2rem 0.5rem 0.2rem 0;
-	margin-left: calc(var(--tw) / -2);
+	margin-left: 0;
 	border-radius: 0.5rem; text-decoration: none; overflow: hidden;
 }
 .ap-date {
@@ -689,10 +689,26 @@ onMount(() => {
 	--nh: oklch(0.9 0 0);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
 	.archive-panel { --tw: 1.5rem; }
 	.ap-date     { width: 2.4rem; font-size: 0.8rem; }
 	.ap-category { min-width: 2.5rem; font-size: 0.75rem; }
 	.ap-title    { font-size: 0.82rem; }
+
+	/* 移动端隐藏时间线虚线、节点与高亮层，保留标题与文章列表 */
+	.ap-year-block::before,
+	.ap-month-block::before {
+		content: none;
+	}
+	.ap-hline,
+	.ap-node,
+	.ap-col,
+	.ap-highlight-layer {
+		display: none;
+	}
+	.ap-months-area,
+	.ap-posts-area {
+		padding-left: 0.5rem;
+	}
 }
 </style>

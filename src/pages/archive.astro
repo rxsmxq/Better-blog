@@ -14,7 +14,7 @@ const title = i18n(I18nKey.archive);
 
 <MainGridLayout title={title}>
   <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-    <div class="card-base z-10 px-9 py-6 relative w-full">
+    <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
       <ArchiveHeatmap posts={sortedPostsList} />
       <div class="mb-8">
         <div class="flex items-center gap-3 mb-3">
@@ -24,7 +24,9 @@ const title = i18n(I18nKey.archive);
           </div>
         </div>
       </div>
-      <TerrariumModel client:visible />
+      <div class="hidden md:block">
+        <TerrariumModel client:visible />
+      </div>
       <ArchivePanel sortedPosts={sortedPostsList} client:load />
     </div>
   </div>
