@@ -298,7 +298,7 @@ const siteLang = lang.replace("_", "-");
 
     // 像素过渡期间，等待遮罩完全覆盖后再让 Swup 替换内容
     // 确保用户看不到内容切换过程
-    window.swup.hooks.on("animation:out:await", async (visit, args, defaultHandler) => {
+    window.swup.hooks.on("animation:out:await", async (_visit: any, _args: any, defaultHandler: (() => void) | undefined) => {
       if (isPixelActive) {
         await pixelTransitionModule.getMaskReadyPromise();
         return;
@@ -306,7 +306,7 @@ const siteLang = lang.replace("_", "-");
       return defaultHandler?.();
     });
 
-    window.swup.hooks.on("animation:in:await", (visit, args, defaultHandler) => {
+    window.swup.hooks.on("animation:in:await", (_visit: any, _args: any, defaultHandler: (() => void) | undefined) => {
       if (isPixelActive) {
         // 不等待 CSS 动画，立即继续
         return;

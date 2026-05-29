@@ -92,27 +92,27 @@
 
 <script>
 	function initGuestbookComposeModal() {
-		const modal = document.getElementById('guestbook-compose-modal');
+		const modal = document.getElementById('guestbook-compose-modal') as HTMLDialogElement | null;
 		if (!modal) return;
 
-		const authorInput = document.getElementById('gb-author');
-		const contentInput = document.getElementById('gb-content');
+		const authorInput = document.getElementById('gb-author') as HTMLInputElement | null;
+		const contentInput = document.getElementById('gb-content') as HTMLTextAreaElement | null;
 		const charCount = document.getElementById('gb-char-count');
-		const submitBtn = document.getElementById('gb-submit');
+		const submitBtn = document.getElementById('gb-submit') as HTMLButtonElement | null;
 
 		if (!authorInput || !contentInput || !submitBtn) return;
 
 		let isSubmitting = false;
 
 		function updateSubmitState() {
-			submitBtn.disabled = !(authorInput as HTMLInputElement).value.trim()
-				|| !(contentInput as HTMLTextAreaElement).value.trim()
+			submitBtn!.disabled = !authorInput!.value.trim()
+				|| !contentInput!.value.trim()
 				|| isSubmitting;
 		}
 
 		// 字符计数
 		contentInput.addEventListener('input', () => {
-			if (charCount) charCount.textContent = (contentInput as HTMLTextAreaElement).value.length + '/500';
+			if (charCount) charCount.textContent = contentInput.value.length + '/500';
 			updateSubmitState();
 		});
 		authorInput.addEventListener('input', updateSubmitState);
@@ -122,16 +122,16 @@
 			if (!modal.isConnected) return;
 			modal.showModal();
 			document.body.style.overflow = 'hidden';
-			(authorInput as HTMLInputElement).value = '';
-			(contentInput as HTMLTextAreaElement).value = '';
+			authorInput.value = '';
+			contentInput.value = '';
 			if (charCount) charCount.textContent = '0/500';
 			updateSubmitState();
-			setTimeout(() => (authorInput as HTMLInputElement).focus(), 100);
+			setTimeout(() => authorInput.focus(), 100);
 		});
 
 		// 关闭
 		function closeModal() {
-			modal.close();
+			modal!.close();
 			document.body.style.overflow = '';
 		}
 
@@ -154,7 +154,7 @@
 
 		const errorMessageEl = document.getElementById('gb-error-message');
 
-		function showErrorMessage(message) {
+		function showErrorMessage(message: string) {
 			if (!errorMessageEl) return;
 			const errorTextEl = errorMessageEl.querySelector('.error-text');
 			if (errorTextEl) errorTextEl.textContent = message;
@@ -180,7 +180,7 @@
 			});
 		}
 
-		function getErrorMessage(status, errorText) {
+		function getErrorMessage(status: number, errorText: string) {
 			switch (status) {
 				case 400:
 					if (errorText.includes('prohibited')) return '内容包含不安全的内容，请检查是否包含脚本或特殊标签';

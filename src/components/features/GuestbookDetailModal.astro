@@ -54,11 +54,11 @@
 
 <script>
 	function initGuestbookDetailModal() {
-		const modal = document.getElementById('guestbook-detail-modal');
+		const modal = document.getElementById('guestbook-detail-modal') as HTMLDialogElement | null;
 		if (!modal) return;
 
 		function closeModal() {
-			modal.close();
+			modal!.close();
 			document.body.style.overflow = '';
 		}
 
