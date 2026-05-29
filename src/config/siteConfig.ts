@@ -72,31 +72,23 @@ export const siteConfig: SiteConfig = {
 			sizes: "48x48",
 		},
 		{
-			src: "/favicon/favicon-64x64.png",
-			sizes: "64x64",
-		},
-		{
-			src: "/favicon/favicon-128x128.png",
-			sizes: "128x128",
-		},
-		{
-			src: "/favicon/favicon-180x180.png",
-			sizes: "180x180",
-		},
-		{
-			src: "/favicon/favicon-192x192.png",
-			sizes: "192x192",
-		},
-		{
-			src: "/favicon/favicon-256x256.png",
-			sizes: "256x256",
-		},
-		{
-			src: "/favicon/favicon-512x512.png",
-			sizes: "512x512",
+			src: "/favicon/favicon.svg",
+			sizes: "any",
 		},
 		{
 			src: "/favicon/apple-touch-icon.png",
+			sizes: "180x180",
+		},
+		{
+			src: "/favicon/apple-touch-icon-152x152.png",
+			sizes: "152x152",
+		},
+		{
+			src: "/favicon/apple-touch-icon-167x167.png",
+			sizes: "167x167",
+		},
+		{
+			src: "/favicon/apple-touch-icon-180x180.png",
 			sizes: "180x180",
 		},
 		{
@@ -106,6 +98,10 @@ export const siteConfig: SiteConfig = {
 		{
 			src: "/favicon/android-chrome-512x512.png",
 			sizes: "512x512",
+		},
+		{
+			src: "/favicon/safari-pinned-tab.svg",
+			sizes: "any",
 		},
 	],
 
@@ -119,7 +115,7 @@ export const siteConfig: SiteConfig = {
 		// 4. 网络图片: { type: "url", value: "https://example.com/logo.png", alt: "Logo" }
 		logo: {
 			type: "image",
-			value: "assets/images/MyLogoSvg.png",
+			value: "assets/images/favicon.svg",
 			alt: "logo",
 		},
 		// 导航栏标题
