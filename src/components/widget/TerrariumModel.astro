@@ -1,6 +1,6 @@
 ---
 // TerrariumModel — Three.js GLB 模型展示组件
-// 用于展示 terrarium 风格的 3D 模型，支持鼠标拖拽旋转/缩放交互
+// 滚动驱动旋转，点击播放动画/音乐
 ---
 
 <div
@@ -18,7 +18,6 @@
   import * as THREE from "three";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
   import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
   // Track the active instance so we can dispose it before creating a new one
   let currentDispose: (() => void) | null = null;
@@ -74,18 +73,6 @@
     camera.position.set(0, 0.6, 5);
     camera.lookAt(0, -0.1, 0);
 
-    // ── OrbitControls ────────────────────────────────
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.enableZoom = false;
-    controls.enablePan = false;
-    controls.autoRotate = false;
-    controls.maxPolarAngle = Math.PI * 0.75;
-    controls.minPolarAngle = Math.PI * 0.15;
-    controls.target.set(0, -0.1, 0);
-    controls.update();
-
     // ── Lighting ─────────────────────────────────────
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
     scene.add(ambientLight);
@@ -127,21 +114,34 @@
     let animationId = 0;
     let disposed = false;
 
-    // ── Click tracking (separate drag from tap) ──────
-    let pointerStartX = 0;
-    let pointerStartY = 0;
+    // ── Scroll-driven rotation ───────────────────────
+    // Initial: tilted to the left (negative Y rotation)
+    // On scroll down: rotate right toward 0 (facing front)
+    // Viewport-position-based: model stays at -45° while in lower viewport,
+    // only rotates when element approaches the top of the viewport
+    const INITIAL_ROTATION_Y = -Math.PI / 4; // -45deg, tilted left
+    const SCROLL_ROTATION_RANGE = Math.PI / 4; // 45deg of rotation driven by scroll
 
-    canvas.addEventListener("pointerdown", (e) => {
-      pointerStartX = e.clientX;
-      pointerStartY = e.clientY;
-    });
+    function updateScrollRotation() {
+      if (!modelGroup || !container) return;
 
-    canvas.addEventListener("pointerup", (e) => {
-      const dx = e.clientX - pointerStartX;
-      const dy = e.clientY - pointerStartY;
-      if (Math.sqrt(dx * dx + dy * dy) < 5) {
-        togglePlay();
+      const rect = container.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      // Rotation only happens in the top 30% of the viewport
+      const threshold = windowHeight * 0.3;
+
+      let progress = 0;
+      if (rect.top < threshold) {
+        progress = 1 - rect.top / threshold;
       }
+
+      modelGroup.rotation.y = INITIAL_ROTATION_Y + progress * SCROLL_ROTATION_RANGE;
+    }
+
+    // ── Click to play ───────────────────────────────
+    canvas.addEventListener("click", () => {
+      togglePlay();
     });
 
     // ── Animation loop ──────────────────────────────
@@ -153,7 +153,6 @@
       const delta = lastTime ? (now - lastTime) / 1000 : 0;
       lastTime = now;
       mixer?.update(delta);
-      controls.update();
 
       renderer.render(scene, camera);
     }
@@ -222,12 +221,19 @@
 
         scene.add(modelGroup);
 
+        // Set initial rotation (tilted left)
+        modelGroup.rotation.y = INITIAL_ROTATION_Y;
+
         // Hide loading
         loadingEl.style.opacity = "0";
         setTimeout(() => {
           loadingEl.style.display = "none";
         }, 400);
         container.setAttribute("data-loaded", "true");
+
+        // Start scroll listener after model is loaded
+        window.addEventListener("scroll", updateScrollRotation, { passive: true });
+        updateScrollRotation();
 
         animate();
       },
@@ -245,9 +251,9 @@
       disposed = true;
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", updateScrollRotation);
       mixer?.stopAllAction();
       audio?.pause();
-      controls.dispose();
       renderer.dispose();
       dracoLoader.dispose();
       scene.traverse((obj) => {
@@ -287,11 +293,11 @@
     margin-top: 0.5rem;
     border: none;
     box-shadow: none;
-    cursor: grab;
+    cursor: pointer;
   }
 
   .terrarium-container:active {
-    cursor: grabbing;
+    cursor: pointer;
   }
 
   :global(.dark) .terrarium-container {
@@ -308,6 +314,7 @@
     display: block;
     width: 100%;
     height: 100%;
+    cursor: pointer;
   }
 
   .terrarium-loading {
