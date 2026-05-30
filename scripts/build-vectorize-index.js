@@ -176,7 +176,7 @@ function buildChunksForPost(post) {
 			text: chunkText,
 			metadata: {
 				articleTitle: post.title,
-				articlePath: `/posts/${post.slug}/`,
+				articlePath: `/posts/${post.slug.toLowerCase()}/`,
 				published: post.published,
 				category: post.category,
 				tags: post.tags.join(", "),
