@@ -21,7 +21,7 @@ const workAvatarModules = import.meta.glob<{ default: ImageMetadata }>(
 const workAvatarUrls: string[] = [];
 for (const [, loader] of Object.entries(workAvatarModules)) {
 	const meta = await loader();
-	workAvatarUrls.push(meta.src);
+	workAvatarUrls.push(meta.default.src);
 }
 // 降级：如果没有找到动态头像，使用配置中的静态头像
 if (workAvatarUrls.length === 0 && profileConfig.avatar) {
@@ -395,7 +395,7 @@ import { initMagicRings } from '@components/features/MagicRings.ts';
 		if (isWork) {
 			var url = pickNextWorkAvatar(wrapper);
 			applyWorkAvatar(url, function() {
-				wrapper.setAttribute('data-time-mode', 'work');
+				if (wrapper) wrapper.setAttribute('data-time-mode', 'work');
 			});
 		} else {
 			wrapper.setAttribute('data-time-mode', 'off');
