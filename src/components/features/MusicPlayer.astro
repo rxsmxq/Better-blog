@@ -366,7 +366,7 @@ const widgetId =
             itemEl.setAttribute('role', 'option');
             itemEl.setAttribute('aria-label', track.name + ' - ' + track.artist);
             itemEl.onclick = function () {
-                mgr.playTrackByIndex(idx);
+                mgr.playTrackByIndex(parseInt(this.dataset.index));
             };
             ui.playlistContainer.appendChild(clone);
         }

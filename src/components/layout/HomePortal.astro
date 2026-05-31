@@ -48,10 +48,10 @@ if (workAvatarUrls.length === 0 && profileConfig.avatar) {
 						alt="Profile Image of the Author"
 						class="w-full h-full object-cover"
 					/>
-					{/* JS 禁用时的兜底：直接显示静态头像 */}
+					{/* JS 禁用时的兜底：使用 data-src 避免推测性预加载 */}
 					<noscript>
 						<img
-							src={profileConfig.avatar || ""}
+							data-src={profileConfig.avatar || ""}
 							alt="Profile Image of the Author"
 							class="w-full h-full object-cover"
 						/>
