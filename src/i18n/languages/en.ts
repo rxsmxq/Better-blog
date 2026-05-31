@@ -332,7 +332,7 @@ export const en: Translation = {
 	[Key.galleryNoImages]: "No images yet, click the button above to fetch",
 
 	// Collections API page
-	[Key.collections]: "API&TOOL",
+	[Key.collections]: "Tools",
 	[Key.collectionsDescription]: "Collect and manage useful APIs and tools",
 	[Key.collectionsEmpty]: "No collected APIs yet",
 	[Key.collectionsCopy]: "Copy link",

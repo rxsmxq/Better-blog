@@ -14,13 +14,125 @@ const description =
 	collectionsApiConfig.description || i18n(I18nKey.collectionsDescription);
 const enabledApis = collectionsApiConfig.apis.filter((api) => api.enabled);
 
-// 提取分类
-const categories = collectionsApiConfig.categories?.length
-	? collectionsApiConfig.categories
-	: [...new Set(enabledApis.map((api) => api.category))];
+// 从列表顺序自动提取分类（保持首次出现顺序，去重）
+const categories = [
+	...new Set(enabledApis.map((api) => api.category)),
+];
+
+// 计算每个分类的数量
+const categoryCounts: Record<string, number> = {};
+for (const api of enabledApis) {
+	categoryCounts[api.category] = (categoryCounts[api.category] || 0) + 1;
+}
 ---
 
 <MainGridLayout title={title} description={description}>
+
+<script slot="head" is:inline>
+  (function() {
+    function initToolsTabs() {
+      var tabNav = document.querySelector('[data-tools-tab-nav]');
+      var tabButtons = document.querySelectorAll('[data-tools-tab]');
+      var sections = document.querySelectorAll('[data-tools-section]');
+      var indicator = document.querySelector('[data-tools-tab-indicator]');
+      if (!tabNav || !tabButtons.length || !indicator) return;
+
+      function updateIndicator(targetBtn) {
+        if (!indicator || !targetBtn) return;
+        indicator.style.left = targetBtn.offsetLeft + 'px';
+        indicator.style.top = targetBtn.offsetTop + 'px';
+        indicator.style.width = targetBtn.offsetWidth + 'px';
+        indicator.style.height = targetBtn.offsetHeight + 'px';
+        indicator.style.opacity = '1';
+      }
+
+      function activateTab(targetTab) {
+        if (!targetTab) return;
+        var targetButton = Array.from(tabButtons).find(function(btn) {
+          return btn.dataset.toolsTab === targetTab;
+        });
+        if (!targetButton) return;
+
+        // 切换按钮激活状态
+        tabButtons.forEach(function(btn) {
+          btn.classList.remove('tools-tab-btn-active');
+          btn.classList.add('tools-tab-btn-inactive');
+          btn.disabled = false;
+        });
+        targetButton.classList.remove('tools-tab-btn-inactive');
+        targetButton.classList.add('tools-tab-btn-active');
+        targetButton.disabled = true;
+
+        // 更新指示器
+        requestAnimationFrame(function() { updateIndicator(targetButton); });
+
+        // 切换内容区域并重置卡片动画
+        sections.forEach(function(section) {
+          if (section.dataset.toolsSection === targetTab) {
+            section.classList.remove('hidden');
+            var cards = section.querySelectorAll('.tools-card');
+            cards.forEach(function(card) {
+              card.style.animation = 'none';
+              card.offsetHeight;
+              card.style.animation = '';
+            });
+          } else {
+            section.classList.add('hidden');
+          }
+        });
+
+        var nextHash = '#tools-' + encodeURIComponent(targetTab);
+        if (window.location.hash !== nextHash) {
+          window.history.replaceState(null, '', nextHash);
+        }
+      }
+
+      // 绑定点击事件
+      tabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+          var targetTab = button.dataset.toolsTab;
+          if (targetTab) activateTab(targetTab);
+        });
+      });
+
+      // 从 hash 恢复 Tab
+      function getTabFromHash() {
+        var hash = window.location.hash.replace(/^#tools-/, '');
+        if (!hash) return '';
+        try { return decodeURIComponent(hash); } catch(e) { return ''; }
+      }
+
+      var initialTab = getTabFromHash();
+      if (initialTab) {
+        activateTab(initialTab);
+      } else {
+        var activeBtn = tabNav.querySelector('.tools-tab-btn-active');
+        if (activeBtn) {
+          requestAnimationFrame(function() { updateIndicator(activeBtn); });
+        }
+      }
+
+      window.addEventListener('hashchange', function() {
+        var tabFromHash = getTabFromHash();
+        if (tabFromHash) activateTab(tabFromHash);
+      });
+
+      window.addEventListener('resize', function() {
+        var activeBtn = tabNav.querySelector('.tools-tab-btn-active');
+        if (activeBtn) updateIndicator(activeBtn);
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initToolsTabs);
+    } else {
+      initToolsTabs();
+    }
+    document.addEventListener("astro:page-load", initToolsTabs);
+    document.addEventListener("astro:after-swap", initToolsTabs);
+  })();
+</script>
+
   <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题 -->
@@ -38,85 +150,136 @@ const categories = collectionsApiConfig.categories?.length
         )}
       </div>
 
-      <!-- API 列表：按分类分组 -->
+      <!-- Tab 分类导航（椭圆胶囊 + 换行） -->
+      {enabledApis.length > 0 && categories.length > 1 && (
+        <div class="tools-tab-wrapper">
+          <div class="tools-tab-pill" data-tools-tab-nav>
+            <div class="tools-tab-indicator" data-tools-tab-indicator></div>
+            <button data-tools-tab="all" class="tools-tab-btn tools-tab-btn-active">
+              全部
+              <span class="tools-tab-badge">{enabledApis.length}</span>
+            </button>
+            {categories.map((cat) => (
+              <button data-tools-tab={cat} class="tools-tab-btn tools-tab-btn-inactive">
+                {cat}
+                <span class="tools-tab-badge">{categoryCounts[cat]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- 工具卡片内容 -->
       {enabledApis.length > 0 ? (
-        categories.map((cat) => {
-          const catApis = enabledApis.filter((api) => api.category === cat);
-          if (catApis.length === 0) return null;
-          return (
-            <div class="category-group mt-10 first:mt-0">
-              <!-- 分类头部：图标 + 名称 + 数量 + 分隔线 -->
-              <div class="flex items-center gap-3 mb-6">
-                <div class="flex items-center gap-2">
-                  <Icon name="material-symbols:label-outline" class="text-lg text-neutral-900 dark:text-neutral-100" />
-                  <span class="text-lg font-bold text-neutral-900 dark:text-neutral-100">{cat}</span>
-                </div>
-                <span class="text-xs text-neutral-400 dark:text-neutral-500">{catApis.length}</span>
-                <div class="flex-1 h-[2px] bg-black dark:bg-white" />
-              </div>
-
-              <!-- 分类下的 API 卡片 -->
-              <div class="api-grid">
-                {catApis.map((api, index) => (
-                  <a
-                    href={api.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="api-card group"
-                    data-category={api.category}
-                    style={`animation-delay: ${index * 60}ms`}
-                  >
-                    <!-- 右上角跳转图标 -->
-                    <div class="api-card-jump-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+        <div>
+          <!-- 全部：按分类分组显示 -->
+          <div data-tools-section="all">
+            {categories.map((cat) => {
+              const catApis = enabledApis.filter((api) => api.category === cat);
+              if (catApis.length === 0) return null;
+              return (
+                <div class="tools-category-group mt-8 first:mt-0">
+                  <div class="flex items-center gap-3 mb-5">
+                    <div class="flex items-center gap-2">
+                      <Icon name="material-symbols:label-outline" class="text-lg text-neutral-900 dark:text-neutral-100" />
+                      <span class="text-base font-bold text-neutral-900 dark:text-neutral-100">{cat}</span>
+                    </div>
+                    <span class="text-xs text-neutral-400 dark:text-neutral-500">{catApis.length}</span>
+                    <div class="flex-1 h-[2px] bg-black dark:bg-white" />
+                  </div>
+                  <div class="tools-card-grid">
+                    {catApis.map((api, index) => (
+                      <a
+                        href={api.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="tools-card group"
+                        data-category={api.category}
+                        style={`animation-delay: ${index * 60}ms`}
                       >
-                        <path d="M7 17L17 7" />
-                        <path d="M7 7h10v10" />
-                      </svg>
-                    </div>
+                        <div class="tools-card-jump-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 17L17 7" />
+                            <path d="M7 7h10v10" />
+                          </svg>
+                        </div>
+                        <div class="flex items-center gap-2 mb-3">
+                          {api.icon ? (
+                            api.icon.startsWith('http') ? (
+                              <img src={api.icon} alt={api.name} class="w-6 h-6 rounded object-contain shrink-0" />
+                            ) : (
+                              <Icon name={api.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                            )
+                          ) : (
+                            <Icon name="material-symbols:api" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                          )}
+                          <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
+                            {api.name}
+                          </h3>
+                        </div>
+                        <p class="tools-card-desc">{api.description}</p>
+                        <div class="tools-card-footer">
+                          <span class="text-xs text-neutral-400 dark:text-neutral-500 truncate">
+                            {new URL(api.url).hostname}
+                          </span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-                    <!-- 顶部：图标 + 名称同行 -->
-                    <div class="flex items-center gap-2 mb-3">
-                      {api.icon ? (
-                        api.icon.startsWith('http') ? (
-                          <img src={api.icon} alt={api.name} class="w-6 h-6 rounded object-contain shrink-0" />
+          <!-- 各分类独立 Tab 内容 -->
+          {categories.map((cat) => {
+            const catApis = enabledApis.filter((api) => api.category === cat);
+            if (catApis.length === 0) return null;
+            return (
+              <div data-tools-section={cat} class="hidden">
+                <div class="tools-card-grid">
+                  {catApis.map((api, index) => (
+                    <a
+                      href={api.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tools-card group"
+                      data-category={api.category}
+                      style={`animation-delay: ${index * 60}ms`}
+                    >
+                      <div class="tools-card-jump-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M7 17L17 7" />
+                          <path d="M7 7h10v10" />
+                        </svg>
+                      </div>
+                      <div class="flex items-center gap-2 mb-3">
+                        {api.icon ? (
+                          api.icon.startsWith('http') ? (
+                            <img src={api.icon} alt={api.name} class="w-6 h-6 rounded object-contain shrink-0" />
+                          ) : (
+                            <Icon name={api.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                          )
                         ) : (
-                          <Icon name={api.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                        )
-                      ) : (
-                        <Icon name="material-symbols:api" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                      )}
-                      <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
-                        {api.name}
-                      </h3>
-                    </div>
-
-                    <!-- 描述 -->
-                    <p class="api-card-desc">
-                      {api.description}
-                    </p>
-
-                    <!-- 底部域名 -->
-                    <div class="api-card-footer">
-                      <span class="text-xs text-neutral-400 dark:text-neutral-500 truncate">
-                        {new URL(api.url).hostname}
-                      </span>
-                    </div>
-                  </a>
-                ))}
+                          <Icon name="material-symbols:api" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                        )}
+                        <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
+                          {api.name}
+                        </h3>
+                      </div>
+                      <p class="tools-card-desc">{api.description}</p>
+                      <div class="tools-card-footer">
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 truncate">
+                          {new URL(api.url).hostname}
+                        </span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       ) : (
         <div class="text-center py-16">
           <Icon name="material-symbols:bookmark-outline" class="text-5xl text-neutral-300 dark:text-neutral-600 mb-4" />
@@ -126,126 +289,3 @@ const categories = collectionsApiConfig.categories?.length
     </div>
   </div>
 </MainGridLayout>
-
-<style is:global>
-  .api-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-
-  @media (max-width: 1024px) {
-    .api-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 640px) {
-    .api-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .api-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    border-radius: var(--radius-large, 0.75rem);
-    border: 2px solid #000;
-    background: #fff;
-    text-decoration: none;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: cardSlideIn 0.5s ease-out forwards;
-    transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease, background-color 300ms ease;
-  }
-
-  :root.dark .api-card {
-    border-color: #fff;
-    background: #000;
-  }
-
-  .api-card:hover {
-    border-color: #000;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-  }
-
-  :root.dark .api-card:hover {
-    border-color: #fff;
-    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
-  }
-
-  /* 右上角跳转图标 */
-  .api-card-jump-icon {
-    position: absolute;
-    top: 0.875rem;
-    right: 0.875rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 0.5rem;
-    color: oklch(0.55 0 0);
-    background: oklch(0.9 0 0);
-    opacity: 0;
-    transform: scale(0.8) translateY(-4px);
-    transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1),
-                transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
-    pointer-events: none;
-  }
-
-  :root.dark .api-card-jump-icon {
-    color: oklch(0.6 0 0);
-    background: oklch(0.2 0 0);
-  }
-
-  .api-card:hover .api-card-jump-icon {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-
-  /* 描述文本：固定高度 + 省略号 */
-  .api-card-desc {
-    margin: 0 0 0.75rem 0;
-    font-size: 0.875rem;
-    font-weight: 400;
-    color: oklch(0.45 0 0);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-    min-height: 2.625rem;
-  }
-
-  :root.dark .api-card-desc {
-    color: oklch(0.55 0 0);
-  }
-
-  /* 底部域名 */
-  .api-card-footer {
-    display: flex;
-    align-items: center;
-    padding-top: 0.75rem;
-    border-top: 1px solid oklch(0.9 0 0);
-    margin-top: auto;
-  }
-
-  :root.dark .api-card-footer {
-    border-color: oklch(0.2 0 0);
-  }
-
-  @keyframes cardSlideIn {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-</style>

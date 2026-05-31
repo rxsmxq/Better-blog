@@ -80,23 +80,23 @@ const tabs = [
 
       <div data-gallery-section="local">
         {albums.length > 0 && allTags.length > 0 && (
-          <div class="gallery-filter-outer mb-6">
-            <gallery-filter class="gallery-filter-tabs flex gap-1 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-gallery-filter>
+          <div class="tools-tab-wrapper">
+            <gallery-filter class="tools-tab-pill" data-gallery-filter>
+              <div class="tools-tab-indicator gallery-filter-indicator" style="opacity:0;"></div>
               <button
                 data-tag="all"
-                class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-white dark:text-neutral-900"
+                class="tools-tab-btn tools-tab-btn-active"
               >
                 {i18n(I18nKey.all)}
               </button>
               {allTags.map((tag) => (
                 <button
                   data-tag={tag}
-                  class="gallery-filter-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+                  class="tools-tab-btn tools-tab-btn-inactive"
                 >
                   {tag}
                 </button>
               ))}
-              <div class="gallery-filter-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
             </gallery-filter>
           </div>
         )}
@@ -131,44 +131,6 @@ const tabs = [
   </div>
 
   <style>
-    .gallery-filter-outer {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      padding: 2px 0;
-    }
-    .gallery-filter-outer::-webkit-scrollbar {
-      display: none;
-    }
-
-    .gallery-filter-tabs {
-      position: relative;
-      display: inline-flex;
-      flex-wrap: nowrap;
-      white-space: nowrap;
-      width: max-content;
-    }
-
-    .gallery-filter-indicator {
-      opacity: 0;
-    }
-
-    .gallery-filter-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .gallery-filter-btn:hover {
-      opacity: 0.7;
-    }
-
-    .gallery-filter-btn:active {
-      transform: scale(0.95);
-    }
-
     [data-gallery-tab-nav] {
       position: relative;
     }
@@ -215,6 +177,20 @@ const tabs = [
 
     :root.dark .gallery-tab-btn-active {
       color: white;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .gallery-card-fade-in {
+      animation: fadeInUp 0.35s ease-out both;
     }
   </style>
 
@@ -336,13 +312,11 @@ const tabs = [
         const indicator = filterEl.querySelector(".gallery-filter-indicator");
         if (!allBtn || !indicator) return;
 
-        allBtn.classList.remove("text-neutral-900", "dark:text-neutral-100");
-        allBtn.classList.add("text-white", "dark:text-neutral-900");
-
-        const parentRect = filterEl.getBoundingClientRect();
-        const btnRect = allBtn.getBoundingClientRect();
-        indicator.style.left = (btnRect.left - parentRect.left) + "px";
-        indicator.style.width = btnRect.width + "px";
+        // 初始化指示器位置
+        indicator.style.left = allBtn.offsetLeft + "px";
+        indicator.style.top = allBtn.offsetTop + "px";
+        indicator.style.width = allBtn.offsetWidth + "px";
+        indicator.style.height = allBtn.offsetHeight + "px";
         indicator.style.opacity = "1";
       }
 
@@ -375,10 +349,10 @@ const tabs = [
           const indicator = this.querySelector(".gallery-filter-indicator");
           if (!indicator) return;
 
-          const parentRect = this.getBoundingClientRect();
-          const btnRect = button.getBoundingClientRect();
-          indicator.style.left = (btnRect.left - parentRect.left) + "px";
-          indicator.style.width = btnRect.width + "px";
+          indicator.style.left = button.offsetLeft + "px";
+          indicator.style.top = button.offsetTop + "px";
+          indicator.style.width = button.offsetWidth + "px";
+          indicator.style.height = button.offsetHeight + "px";
           indicator.style.opacity = "1";
         }
 
@@ -394,16 +368,19 @@ const tabs = [
 
           const cards = container.querySelectorAll(".album-card");
 
+          // 切换激活态
           filters.forEach((f) => {
-            f.classList.remove("text-white", "dark:text-neutral-900");
-            f.classList.add("text-neutral-900", "dark:text-neutral-100");
+            f.classList.remove("tools-tab-btn-active");
+            f.classList.add("tools-tab-btn-inactive");
+            f.disabled = false;
           });
-
-          button.classList.remove("text-neutral-900", "dark:text-neutral-100");
-          button.classList.add("text-white", "dark:text-neutral-900");
+          button.classList.remove("tools-tab-btn-inactive");
+          button.classList.add("tools-tab-btn-active");
+          button.disabled = true;
 
           this.updateIndicator(button);
 
+          // 过滤卡片
           cards.forEach((card) => {
             const cardEl = card;
             const tags = (cardEl.dataset.tags || "").split(",");
@@ -412,10 +389,12 @@ const tabs = [
               (selectedTag && tags.includes(selectedTag))
             ) {
               cardEl.style.display = "";
-              cardEl.classList.add("animate-fade-in-up");
+              cardEl.classList.remove("gallery-card-fade-in");
+              void cardEl.offsetHeight;
+              cardEl.classList.add("gallery-card-fade-in");
             } else {
               cardEl.style.display = "none";
-              cardEl.classList.remove("animate-fade-in-up");
+              cardEl.classList.remove("gallery-card-fade-in");
             }
           });
         }

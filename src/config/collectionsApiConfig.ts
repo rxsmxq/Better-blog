@@ -45,6 +45,14 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("saucenao.com"),
 			enabled: true,
 		},
+		{
+			name: "StarDots",
+			url: "https://dashboard.stardots.io/?lang=zh",
+			description: "一站式图片托管与 CDN 加速平台，支持图片管理、转换与分发",
+			category: "图片",
+			icon: favicon("stardots.io"),
+			enabled: true,
+		},
 		// AI 聊天
 		{
 			name: "豆包",
@@ -159,6 +167,14 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("withgoogle.com"),
 			enabled: true,
 		},
+		{
+			name: "Ollama",
+			url: "https://ollama.com/",
+			description: "本地运行大语言模型的轻量框架，支持一键部署 Llama、Qwen 等开源模型",
+			category: "AI",
+			icon: favicon("ollama.com"),
+			enabled: true,
+		},
 		// BOT
 		{
 			name: "NapCat",
@@ -231,6 +247,22 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			description: "高性能 React UI 组件库，基于 Tailwind 和 Tailwind Variants",
 			category: "UI 组件库",
 			icon: favicon("heroui.com"),
+			enabled: true,
+		},
+		{
+			name: "Iconify",
+			url: "https://iconify.design/",
+			description: "统一图标框架，提供 200,000+ 图标，涵盖 100+ 图标集，支持按需加载",
+			category: "UI 组件库",
+			icon: favicon("iconify.design"),
+			enabled: true,
+		},
+		{
+			name: "Sketchfab",
+			url: "https://sketchfab.com/",
+			description: "全球最大的 3D 模型展示与分享平台，支持在线预览和免费下载",
+			category: "UI 组件库",
+			icon: favicon("sketchfab.com"),
 			enabled: true,
 		},
 		// 知识库 / 学习
@@ -342,6 +374,23 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			description: "网易有道提供的翻译API服务，支持多语言互译",
 			category: "API",
 			icon: favicon("youdao.com"),
+			enabled: true,
+		},
+		{
+			name: "Tavily",
+			url: "https://app.tavily.com/home",
+			description: "AI 优化的搜索引擎 API，为大模型提供实时网页检索能力",
+			category: "API",
+			icon: favicon("tavily.com"),
+			enabled: true,
+		},
+		// 其他
+		{
+			name: "PatorJK",
+			url: "https://patorjk.com/",
+			description: "在线 ASCII 艺术字生成器及其他实用小工具集合",
+			category: "其他",
+			icon: favicon("patorjk.com"),
 			enabled: true,
 		},
 	],

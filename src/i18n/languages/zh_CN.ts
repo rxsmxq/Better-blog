@@ -324,7 +324,7 @@ export const zh_CN: Translation = {
 	[Key.galleryNoImages]: "暂无图片，点击上方按钮随机获取",
 
 	// 收藏API页面
-	[Key.collections]: "实用API&TOOL",
+	[Key.collections]: "工具导航",
 	[Key.collectionsDescription]: "收集和管理常用的 API 与工具",
 	[Key.collectionsEmpty]: "暂无收藏的 API",
 	[Key.collectionsCopy]: "复制链接",

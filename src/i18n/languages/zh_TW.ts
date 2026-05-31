@@ -325,7 +325,7 @@ export const zh_TW: Translation = {
 	[Key.galleryNoImages]: "暫無圖片，點擊上方按鈕隨機獲取",
 
 	// 收藏API頁面
-	[Key.collections]: "實用API&TOOL",
+	[Key.collections]: "工具導航",
 	[Key.collectionsDescription]: "收集和管理常用的 API 與工具",
 	[Key.collectionsEmpty]: "暫無收藏的 API",
 	[Key.collectionsCopy]: "複製連結",
