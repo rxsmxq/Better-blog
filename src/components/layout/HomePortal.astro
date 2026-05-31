@@ -14,7 +14,7 @@ import { profileConfig, siteConfig } from "@/config";
 import { url } from "@/utils/url-utils";
 
 // 上班头像：从 avatar_sb 文件夹加载所有动态 WebP
-const workAvatarModules = import.meta.glob<{ default: ImageMetadata }>(
+const workAvatarModules = import.meta.glob<ImageMetadata>(
 	"../../assets/images/avatar_sb/*.webp",
 	{ import: "default" },
 );
