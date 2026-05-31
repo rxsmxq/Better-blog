@@ -15,9 +15,7 @@ const description =
 const enabledApis = collectionsApiConfig.apis.filter((api) => api.enabled);
 
 // 从列表顺序自动提取分类（保持首次出现顺序，去重）
-const categories = [
-	...new Set(enabledApis.map((api) => api.category)),
-];
+const categories = [...new Set(enabledApis.map((api) => api.category))];
 
 // 计算每个分类的数量
 const categoryCounts: Record<string, number> = {};

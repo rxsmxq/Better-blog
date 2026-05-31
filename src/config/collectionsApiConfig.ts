@@ -170,7 +170,8 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 		{
 			name: "Ollama",
 			url: "https://ollama.com/",
-			description: "本地运行大语言模型的轻量框架，支持一键部署 Llama、Qwen 等开源模型",
+			description:
+				"本地运行大语言模型的轻量框架，支持一键部署 Llama、Qwen 等开源模型",
 			category: "AI",
 			icon: favicon("ollama.com"),
 			enabled: true,
@@ -252,7 +253,8 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 		{
 			name: "Iconify",
 			url: "https://iconify.design/",
-			description: "统一图标框架，提供 200,000+ 图标，涵盖 100+ 图标集，支持按需加载",
+			description:
+				"统一图标框架，提供 200,000+ 图标，涵盖 100+ 图标集，支持按需加载",
 			category: "UI 组件库",
 			icon: favicon("iconify.design"),
 			enabled: true,
