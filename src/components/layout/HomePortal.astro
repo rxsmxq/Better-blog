@@ -1,4 +1,5 @@
 ---
+import type { ImageMetadata } from "astro";
 /**
  * 极简门户区：将原侧边栏中的"门户级信息"以纯文本垂直堆叠展示。
  * 每块仅用 [ LABEL ] 小标签 + 细线分隔，无卡片填充。
@@ -11,24 +12,50 @@ import TypewriterText from "@/components/features/TypewriterText.astro";
 import SiteStats from "@/components/widget/SiteStats.astro";
 import { profileConfig, siteConfig } from "@/config";
 import { url } from "@/utils/url-utils";
+
+// 上班头像：从 avatar_sb 文件夹加载所有动态 WebP
+const workAvatarModules = import.meta.glob<{ default: ImageMetadata }>(
+	"../../assets/images/avatar_sb/*.webp",
+	{ import: "default" },
+);
+const workAvatarUrls: string[] = [];
+for (const [, loader] of Object.entries(workAvatarModules)) {
+	const meta = await loader();
+	workAvatarUrls.push(meta.src);
+}
+// 降级：如果没有找到动态头像，使用配置中的静态头像
+if (workAvatarUrls.length === 0 && profileConfig.avatar) {
+	workAvatarUrls.push(profileConfig.avatar);
+}
 ---
 
 <div class="home-portal">
 	{/* PROFILE */}
 	<section class="section onload-animation flex flex-col items-center gap-8 mt-2 magic-rings-container">
-		<div class="avatar-ripple-wrapper" id="avatar-ripple-wrapper" data-work-start={siteConfig.workHours?.start ?? 9} data-work-end={siteConfig.workHours?.end ?? 18} data-work-days={JSON.stringify(siteConfig.workHours?.workDays ?? [1,2,3,4,5])}>
+		<div
+			class="avatar-ripple-wrapper" id="avatar-ripple-wrapper"
+			data-work-start={siteConfig.workHours?.start ?? 9}
+			data-work-end={siteConfig.workHours?.end ?? 18}
+			data-work-days={JSON.stringify(siteConfig.workHours?.workDays ?? [1,2,3,4,5])}
+			data-work-avatars={JSON.stringify(workAvatarUrls)}
+		>
 			<div class="magic-rings-bg" id="magic-rings-bg"></div>
 			<a href={url("/about/")} class="group block relative w-44 h-44 overflow-hidden rounded-full border border-(--line-divider) shrink-0 avatar-core">
 				<div class="avatar-img avatar-work">
-					<ImageWrapper
-						src={profileConfig.avatar || ""}
+					<img
+						id="work-avatar-img"
+						src=""
 						alt="Profile Image of the Author"
-						class="w-full h-full"
-						loading="eager"
-						fetchpriority="high"
-						widths={[400]}
-						sizes="400px"
+						class="w-full h-full object-cover"
 					/>
+					{/* JS 禁用时的兜底：直接显示静态头像 */}
+					<noscript>
+						<img
+							src={profileConfig.avatar || ""}
+							alt="Profile Image of the Author"
+							class="w-full h-full object-cover"
+						/>
+					</noscript>
 				</div>
 				{profileConfig.avatarOffWork && (
 					<div class="avatar-img avatar-off">
@@ -149,11 +176,15 @@ import { url } from "@/utils/url-utils";
 		width: 100%;
 		height: 100%;
 	}
+	/* === 默认隐藏两个头像，等 JS 判断时间后再显示 === */
+	.avatar-img.avatar-work {
+		display: none;
+	}
 	.avatar-img.avatar-off {
 		display: none;
 	}
-	[data-time-mode="off"] .avatar-img.avatar-work {
-		display: none;
+	[data-time-mode="work"] .avatar-img.avatar-work {
+		display: block;
 	}
 	[data-time-mode="off"] .avatar-img.avatar-off {
 		display: block;
@@ -326,13 +357,49 @@ import { initMagicRings } from '@components/features/MagicRings.ts';
 		return isWorkDay && hour >= start && hour < end;
 	}
 
+	/**
+	 * 从上班头像列表中选取下一张，返回选中的 URL。
+	 * 用 localStorage 记录索引，每次刷新切换到下一张。
+	 */
+	function pickNextWorkAvatar(wrapper: HTMLElement): string {
+		var urls: string[] = [];
+		try { urls = JSON.parse(wrapper.dataset.workAvatars || '[]'); } catch(e) {}
+		if (urls.length === 0) return '';
+		var idx = parseInt(localStorage.getItem('work-avatar-idx') || '-1') || 0;
+		idx = (idx + 1) % urls.length;
+		localStorage.setItem('work-avatar-idx', String(idx));
+		return urls[idx] || urls[0];
+	}
+
+	/**
+	 * 将 url 设置到 src，等图片加载完成后再显示头像区域。
+	 * 如果图片已加载（缓存命中），则立即显示。
+	 */
+	function applyWorkAvatar(url: string, onReady: () => void) {
+		var img = document.getElementById('work-avatar-img') as HTMLImageElement | null;
+		if (!img || !url) { onReady(); return; }
+		// 已经是同一张图且加载完毕，直接就绪
+		if (img.complete && img.src && img.src.indexOf(url) !== -1) { onReady(); return; }
+		img.onload = function() { onReady(); };
+		img.onerror = function() { onReady(); };
+		img.src = url;
+	}
+
 	function setTimeMode() {
 		var wrapper = document.getElementById('avatar-ripple-wrapper');
 		var statusText = document.getElementById('status-text');
 		if (!wrapper) return;
 		var isWork = getIsWork(wrapper);
-		wrapper.setAttribute('data-time-mode', isWork ? 'work' : 'off');
 		if (statusText) statusText.textContent = isWork ? '上班中' : '下班';
+
+		if (isWork) {
+			var url = pickNextWorkAvatar(wrapper);
+			applyWorkAvatar(url, function() {
+				wrapper.setAttribute('data-time-mode', 'work');
+			});
+		} else {
+			wrapper.setAttribute('data-time-mode', 'off');
+		}
 	}
 
 	function initRings() {
