@@ -244,7 +244,12 @@ const widgetId =
     var local = {
         isUserScrolling: false,
         scrollTimeout: null,
-        currentLrcIndex: -1
+        currentLrcIndex: -1,
+        // 歌单分批渲染
+        playlistData: [],
+        playlistRenderedCount: 0,
+        playlistBatchSize: 100,
+        playlistScrollBound: false
     };
 
     // ── UI update functions ──────────────────────────────────
@@ -340,9 +345,12 @@ const widgetId =
         ui.totalTime.innerText = '0:00';
     }
 
-    function renderPlaylist(playlist, currentIndex) {
-        ui.playlistContainer.innerHTML = '';
-        playlist.forEach(function (track, idx) {
+    // ── 歌单分批渲染 ────────────────────────────────────────
+    function appendPlaylistBatch(start, end) {
+        var playlist = local.playlistData;
+        var actualEnd = Math.min(end, playlist.length);
+        for (var idx = start; idx < actualEnd; idx++) {
+            var track = playlist[idx];
             var clone = ui.itemTemplate.content.cloneNode(true);
             var itemEl = clone.querySelector('.playlist-item');
             var img = clone.querySelector('.item-cover');
@@ -361,11 +369,47 @@ const widgetId =
                 mgr.playTrackByIndex(idx);
             };
             ui.playlistContainer.appendChild(clone);
-        });
+        }
+        local.playlistRenderedCount = actualEnd;
+    }
+
+    function onPlaylistScroll() {
+        if (local.playlistRenderedCount >= local.playlistData.length) return;
+        var el = ui.playlistContainer;
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
+            appendPlaylistBatch(local.playlistRenderedCount, local.playlistRenderedCount + local.playlistBatchSize);
+        }
+    }
+
+    function ensurePlaylistItemVisible(index) {
+        if (index < local.playlistRenderedCount) return;
+        appendPlaylistBatch(local.playlistRenderedCount, index + 1);
+        var target = ui.playlistContainer.querySelector('[data-index="' + index + '"]');
+        if (target) target.scrollIntoView({ block: 'nearest' });
+    }
+
+    function renderPlaylist(playlist, currentIndex) {
+        local.playlistData = playlist;
+        local.playlistRenderedCount = 0;
+        ui.playlistContainer.innerHTML = '';
+
+        if (playlist.length > 0) {
+            appendPlaylistBatch(0, local.playlistBatchSize);
+        }
+
+        if (!local.playlistScrollBound) {
+            local.playlistScrollBound = true;
+            ui.playlistContainer.addEventListener('scroll', onPlaylistScroll);
+        }
+
         updatePlaylistActiveUI(currentIndex);
     }
 
     function updatePlaylistActiveUI(currentIndex) {
+        // 如果活跃项尚未渲染，先加载到该位置
+        if (currentIndex >= local.playlistRenderedCount && local.playlistData.length > 0) {
+            ensurePlaylistItemVisible(currentIndex);
+        }
         var items = ui.playlistContainer.querySelectorAll('.playlist-item');
         items.forEach(function (el) {
             var idx = parseInt(el.dataset.index);
