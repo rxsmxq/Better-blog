@@ -86,6 +86,14 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			icon: favicon("gemini.google.com"),
 			enabled: true,
 		},
+		{
+			name: "Grok",
+			url: "https://grok.com/",
+			description: "xAI 开发的 AI 助手，支持实时搜索、图像生成与深度推理",
+			category: "AI 聊天",
+			icon: favicon("grok.com"),
+			enabled: true,
+		},
 		// AI
 		{
 			name: "Artificial Analysis",
@@ -154,7 +162,8 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 		{
 			name: "Google AI Studio",
 			url: "https://aistudio.google.com/",
-			description: "Google AI 开发平台，快速构建和测试 Gemini 模型应用",
+			description:
+				"Google 官方 AI 开发平台，支持 Chat/Build/Stream 三模式，可快速原型化 Gemini 应用",
 			category: "AI",
 			icon: favicon("aistudio.google.com"),
 			enabled: true,
@@ -162,7 +171,8 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 		{
 			name: "Google Stitch",
 			url: "https://stitch.withgoogle.com/",
-			description: "Google 推出的 AI 视频编辑工具，智能剪辑与创意制作",
+			description:
+				"Google Labs 推出的 AI 原生 UI 设计工具，用文字或图片生成界面并导出代码",
 			category: "AI",
 			icon: favicon("withgoogle.com"),
 			enabled: true,
@@ -199,6 +209,22 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			description: "音乐游戏 MaiMai 相关机器人，支持查分、排位等功能",
 			category: "BOT",
 			icon: favicon("mai-mai.org"),
+			enabled: true,
+		},
+		{
+			name: "NoneBot",
+			url: "https://nonebot.dev/docs/",
+			description: "Python 异步机器人框架，支持多平台适配器与插件生态",
+			category: "BOT",
+			icon: favicon("nonebot.dev"),
+			enabled: true,
+		},
+		{
+			name: "LLBot",
+			url: "https://github.com/LLOneBot/LuckyLilliaBot",
+			description: "基于 NTQQ 的 QQ 机器人框架，轻量高效，支持 OneBot 协议",
+			category: "BOT",
+			icon: favicon("github.com"),
 			enabled: true,
 		},
 		// UI 组件库
@@ -344,14 +370,6 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			description: "阿里云提供的API交易平台，涵盖天气、短信、物流等各类服务",
 			category: "API",
 			icon: favicon("aliyun.com"),
-			enabled: true,
-		},
-		{
-			name: "和风天气API",
-			url: "https://dev.qweather.com/",
-			description: "国内专业天气API服务，支持全球天气查询，免费额度充足",
-			category: "API",
-			icon: favicon("qweather.com"),
 			enabled: true,
 		},
 		{

@@ -1,10 +1,10 @@
 ---
 import { getEntry } from "astro:content";
 import Icon from "@components/common/Icon.astro";
-import GuestbookCardStack from "@components/features/GuestbookCardStack.svelte";
 import GuestbookComposeButton from "@components/features/GuestbookComposeButton.svelte";
 import GuestbookComposeModal from "@components/features/GuestbookComposeModal.astro";
 import GuestbookDetailModal from "@components/features/GuestbookDetailModal.astro";
+import GuestbookViewContainer from "@components/features/GuestbookViewContainer.svelte";
 import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -49,10 +49,8 @@ const description = i18n(I18nKey.guestbookDescription);
 				)}
 			</div>
 
-			<!-- 卡片堆叠区域 -->
-			<div class="guestbook-container">
-				<GuestbookCardStack client:load />
-			</div>
+			<!-- 视图容器：包含 Tabs + 卡片/列表视图 -->
+			<GuestbookViewContainer client:only="svelte" />
 		</div>
 	</div>
 
@@ -60,21 +58,3 @@ const description = i18n(I18nKey.guestbookDescription);
 	<GuestbookDetailModal />
 	<GuestbookComposeModal />
 </MainGridLayout>
-
-<style>
-	.guestbook-container {
-		position: relative;
-		width: 100%;
-		min-height: 560px;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-
-	@media (max-width: 768px) {
-		.guestbook-container {
-			min-height: 420px;
-			height: auto;
-		}
-	}
-</style>

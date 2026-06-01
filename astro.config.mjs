@@ -242,6 +242,12 @@ export default defineConfig({
 			watch: {
 				ignored: ["**/package/**", "**/Firefly-docs/**"],
 			},
+			proxy: {
+				"/api": {
+					target: "http://localhost:8787",
+					changeOrigin: true,
+				},
+			},
 		},
 		resolve: {
 			alias: {

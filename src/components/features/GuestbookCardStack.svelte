@@ -2,28 +2,18 @@
 import { onDestroy, onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
-import {
-	fetchGuestbookMessages,
-	voteGuestbookMessage,
-} from "@/utils/guestbook-api";
+import { voteGuestbookMessage } from "@/utils/guestbook-api";
 
 /**
  * 留言板卡片堆叠拖拽组件
  * 参考 neuro.lubeiluchen.cc 的卡片交互设计
  * 左右滑动 = 赞同/反对，上下滑动 = 中立
+ * 数据通过 guestbook:data-update 事件从 GuestbookDataProvider 获取
  */
 
-interface Props {
-	messages?: GuestbookMessage[];
-}
-
-let { messages: initialMessages = [] }: Props = $props();
-
-// 初始时为空，由 onMount 逐张发牌入场
+// 初始时为空，由 onMount 监听数据提供者逐张发牌入场
 let allMessages = $state<GuestbookMessage[]>([]);
 let isInitialDealing = $state(true);
-// 分页偏移量
-let listOffset = $state(0);
 let totalMessages = $state(0);
 let isLoading = $state(false);
 
@@ -47,6 +37,7 @@ let enterTransform = $state<string | null>(null);
 let rafId: number | null = null;
 let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 let handleNew: ((e: Event) => void) | null = null;
+let handleDataUpdate: ((e: Event) => void) | null = null;
 
 function safeSetTimeout(fn: () => void, ms: number) {
 	const id = setTimeout(() => {
@@ -64,6 +55,9 @@ onDestroy(() => {
 	});
 	if (handleNew) {
 		window.removeEventListener("guestbooknew", handleNew);
+	}
+	if (handleDataUpdate) {
+		window.removeEventListener("guestbook:data-update", handleDataUpdate);
 	}
 });
 
@@ -255,119 +249,87 @@ function handlePointerUp() {
 		currentY = 0;
 		flyOutTransform = null;
 
-		// 5张卡片全部飞走后，逐张补充新卡片
 		if (visibleCards.length === 0) {
-			refillCards();
+			const availableMessages = allMessages.slice(
+				currentIndex,
+				currentIndex + 5,
+			);
+			if (availableMessages.length > 0) {
+				dealCards(availableMessages);
+			}
 		}
 	}, 450);
 }
 
-// 发牌动效：从 API 获取下一页卡片并逐张飞入
-async function refillCards() {
-	if (isLoading) return;
-	isLoading = true;
+// 发牌动效：从共享数据中获取下一批卡片并逐张飞入
+function dealCards(messages: GuestbookMessage[]) {
+	if (messages.length === 0) return;
 
-	// 如果已经加载完所有数据，从头循环
-	if (listOffset >= totalMessages && totalMessages > 0) {
-		listOffset = 0;
-	}
+	// 清空，准备发牌
+	allMessages = [];
+	currentIndex = 0;
+	enteringCardId = null;
+	enterTransform = null;
 
-	try {
-		const { messages, total } = await fetchGuestbookMessages(listOffset, 5);
-		totalMessages = total;
-		listOffset += messages.length;
+	const entryTrajectories = [
+		{ x: -600, y: 50, rot: -25 },
+		{ x: 600, y: -30, rot: 20 },
+		{ x: 0, y: -500, rot: -10 },
+		{ x: -450, y: -350, rot: 30 },
+		{ x: 500, y: 300, rot: -18 },
+	];
 
-		if (messages.length === 0) return;
+	// 逐张发牌
+	for (let i = 0; i < messages.length; i++) {
+		safeSetTimeout(() => {
+			const traj = entryTrajectories[i % entryTrajectories.length];
 
-		// 清空，准备发牌
-		allMessages = [];
-		currentIndex = 0;
-		enteringCardId = null;
-		enterTransform = null;
+			enteringCardId = messages[i].id;
+			enterTransform = `transform: translate3d(${traj.x}px, ${traj.y}px, 0) rotate(${traj.rot}deg) scale(0.6); opacity: 0;`;
 
-		const entryTrajectories = [
-			{ x: -600, y: 50, rot: -25 },
-			{ x: 600, y: -30, rot: 20 },
-			{ x: 0, y: -500, rot: -10 },
-			{ x: -450, y: -350, rot: 30 },
-			{ x: 500, y: 300, rot: -18 },
-		];
+			allMessages.push(messages[i]);
 
-		// 逐张发牌
-		for (let i = 0; i < messages.length; i++) {
-			safeSetTimeout(() => {
-				const traj = entryTrajectories[i % entryTrajectories.length];
-
-				enteringCardId = messages[i].id;
-				enterTransform = `transform: translate3d(${traj.x}px, ${traj.y}px, 0) rotate(${traj.rot}deg) scale(0.6); opacity: 0;`;
-
-				allMessages.push(messages[i]);
-
-				requestAnimationFrame(() => {
-					enteringCardId = null;
-					enterTransform = null;
-				});
-			}, i * 220);
-		}
-	} catch (err) {
-		console.error("Failed to load guestbook messages:", err);
-	} finally {
-		isLoading = false;
+			requestAnimationFrame(() => {
+				enteringCardId = null;
+				enterTransform = null;
+			});
+		}, i * 220);
 	}
 }
 
-// 初始发牌动效：从 API 获取首批卡片并逐张飞入
-onMount(async () => {
+// 初始发牌动效：监听数据提供者的事件
+onMount(() => {
 	handleNew = (e: Event) => {
 		handleNewMessage(e as CustomEvent<GuestbookMessage>);
 	};
 	window.addEventListener("guestbooknew", handleNew);
 
-	try {
-		const { messages, total } = await fetchGuestbookMessages(0, 5);
-		totalMessages = total;
-		listOffset = messages.length;
+	handleDataUpdate = (e: Event) => {
+		const detail = (e as CustomEvent).detail;
+		if (!detail?.messages) return;
 
-		if (messages.length === 0) {
-			isInitialDealing = false;
-			return;
+		totalMessages = detail.total || 0;
+
+		// 首次加载或需要补充卡片时发牌
+		if (allMessages.length === 0 && detail.messages.length > 0) {
+			const messages = detail.messages.slice(0, 5);
+			dealCards(messages);
+
+			// 发牌完成后标记结束
+			safeSetTimeout(
+				() => {
+					isInitialDealing = false;
+				},
+				messages.length * 220 + 500,
+			);
 		}
+	};
+	window.addEventListener("guestbook:data-update", handleDataUpdate);
 
-		const entryTrajectories = [
-			{ x: -600, y: 50, rot: -25 },
-			{ x: 600, y: -30, rot: 20 },
-			{ x: 0, y: -500, rot: -10 },
-			{ x: -450, y: -350, rot: 30 },
-			{ x: 500, y: 300, rot: -18 },
-		];
-
-		for (let i = 0; i < messages.length; i++) {
-			safeSetTimeout(() => {
-				const traj = entryTrajectories[i % entryTrajectories.length];
-
-				enteringCardId = messages[i].id;
-				enterTransform = `transform: translate3d(${traj.x}px, ${traj.y}px, 0) rotate(${traj.rot}deg) scale(0.6); opacity: 0;`;
-
-				allMessages.push(messages[i]);
-
-				requestAnimationFrame(() => {
-					enteringCardId = null;
-					enterTransform = null;
-				});
-			}, i * 220);
-		}
-
-		// 发牌完成后标记结束
-		safeSetTimeout(
-			() => {
-				isInitialDealing = false;
-			},
-			messages.length * 220 + 500,
-		);
-	} catch (err) {
-		console.error("Failed to load initial guestbook messages:", err);
-		isInitialDealing = false;
-	}
+	// 延迟触发数据请求，确保 GuestbookDataProvider 已挂载
+	safeSetTimeout(() => {
+		window.dispatchEvent(new CustomEvent("guestbook:request-data"));
+	}, 50);
 });
 
 // 打开详情弹窗 — 通过事件通知页面级弹窗
@@ -435,7 +397,14 @@ function swipeCard(x: number, y: number) {
 		currentIndex++;
 		flyOutTransform = null;
 		if (visibleCards.length === 0) {
-			refillCards();
+			// 卡片用完时，从当前数据重新发牌
+			const availableMessages = allMessages.slice(
+				currentIndex,
+				currentIndex + 5,
+			);
+			if (availableMessages.length > 0) {
+				dealCards(availableMessages);
+			}
 		}
 	}, 500);
 }
