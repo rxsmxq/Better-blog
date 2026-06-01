@@ -17,6 +17,13 @@ let isInitialDealing = $state(true);
 let totalMessages = $state(0);
 let isLoading = $state(false);
 
+// 来自数据提供者的完整消息列表（不限于当前显示的5张）
+let providerMessages = $state<GuestbookMessage[]>([]);
+// 已经从 providerMessages 中发牌的偏移量
+let dealtOffset = $state(0);
+// 数据提供者是否还有更多数据
+let hasMoreFromProvider = $state(true);
+
 // 当前显示的卡片索引
 let currentIndex = $state(0);
 // 拖拽状态
@@ -250,13 +257,7 @@ function handlePointerUp() {
 		flyOutTransform = null;
 
 		if (visibleCards.length === 0) {
-			const availableMessages = allMessages.slice(
-				currentIndex,
-				currentIndex + 5,
-			);
-			if (availableMessages.length > 0) {
-				dealCards(availableMessages);
-			}
+			dealNextBatch();
 		}
 	}, 450);
 }
@@ -297,6 +298,22 @@ function dealCards(messages: GuestbookMessage[]) {
 	}
 }
 
+// 从 providerMessages 中取下一批卡片发牌，若本地已耗尽则请求更多数据
+function dealNextBatch() {
+	if (dealtOffset < providerMessages.length) {
+		const messages = providerMessages.slice(dealtOffset, dealtOffset + 5);
+		if (messages.length > 0) {
+			dealtOffset += messages.length;
+			dealCards(messages);
+			return;
+		}
+	}
+	if (hasMoreFromProvider) {
+		isLoading = true;
+		window.dispatchEvent(new CustomEvent("guestbook:load-more"));
+	}
+}
+
 // 初始发牌动效：监听数据提供者的事件
 onMount(() => {
 	handleNew = (e: Event) => {
@@ -309,19 +326,23 @@ onMount(() => {
 		if (!detail?.messages) return;
 
 		totalMessages = detail.total || 0;
+		hasMoreFromProvider = detail.hasMore ?? true;
+		providerMessages = detail.messages;
+		isLoading = false;
 
-		// 首次加载或需要补充卡片时发牌
-		if (allMessages.length === 0 && detail.messages.length > 0) {
-			const messages = detail.messages.slice(0, 5);
-			dealCards(messages);
+		if (visibleCards.length === 0 && providerMessages.length > 0) {
+			const messages = providerMessages.slice(dealtOffset, dealtOffset + 5);
+			if (messages.length > 0) {
+				dealtOffset += messages.length;
+				dealCards(messages);
 
-			// 发牌完成后标记结束
-			safeSetTimeout(
-				() => {
-					isInitialDealing = false;
-				},
-				messages.length * 220 + 500,
-			);
+				safeSetTimeout(
+					() => {
+						isInitialDealing = false;
+					},
+					messages.length * 220 + 500,
+				);
+			}
 		}
 	};
 	window.addEventListener("guestbook:data-update", handleDataUpdate);
@@ -397,14 +418,7 @@ function swipeCard(x: number, y: number) {
 		currentIndex++;
 		flyOutTransform = null;
 		if (visibleCards.length === 0) {
-			// 卡片用完时，从当前数据重新发牌
-			const availableMessages = allMessages.slice(
-				currentIndex,
-				currentIndex + 5,
-			);
-			if (availableMessages.length > 0) {
-				dealCards(availableMessages);
-			}
+			dealNextBatch();
 		}
 	}, 500);
 }
