@@ -35,9 +35,9 @@ export const fontConfig = {
 		aazongyiyuan: {
 			id: "aazongyiyuan",
 			name: "Aa综艺圆",
-			src: "/fonts/AaZongYiYuan/AaZongYiYuan-2.ttf",
+			src: "/fonts/AaZongYiYuan/AaZongYiYuan-2.woff2",
 			family: "AaZongYiYuan",
-			format: "truetype" as const,
+			format: "woff2" as const,
 			display: "swap" as const,
 		},
 

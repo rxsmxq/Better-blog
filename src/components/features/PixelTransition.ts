@@ -27,7 +27,7 @@ interface Block {
 	dist: number;
 }
 
-const BLOCK_COUNT = 30;
+const BLOCK_COUNT = 20;
 const REVEAL_DURATION = 0.8;
 const LOADING_TEXT_CHARS = ["<", "(", "º", "O", "º", ")", ">"];
 const MASK_READY_TIMEOUT = 3000;

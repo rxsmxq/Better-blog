@@ -1,4 +1,13 @@
-import * as THREE from "three";
+import {
+	WebGLRenderer,
+	ShaderMaterial,
+	PlaneGeometry,
+	Scene,
+	OrthographicCamera,
+	Color,
+	Vector2,
+	Mesh,
+} from "three";
 
 const vertexShader = `
 void main() {
@@ -131,9 +140,9 @@ export function initMagicRings(
 	let isHovered = false;
 	let burst = 0;
 
-	let renderer: THREE.WebGLRenderer;
+	let renderer: WebGLRenderer;
 	try {
-		renderer = new THREE.WebGLRenderer({ alpha: true });
+		renderer = new WebGLRenderer({ alpha: true });
 	} catch {
 		return null;
 	}
@@ -150,16 +159,16 @@ export function initMagicRings(
 		container.style.filter = `blur(${opts.blur}px)`;
 	}
 
-	const scene = new THREE.Scene();
-	const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0.1, 10);
+	const scene = new Scene();
+	const camera = new OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0.1, 10);
 	camera.position.z = 1;
 
 	const uniforms = {
 		uTime: { value: 0 },
 		uAttenuation: { value: opts.attenuation },
-		uResolution: { value: new THREE.Vector2() },
-		uColor: { value: new THREE.Color(opts.color) },
-		uColorTwo: { value: new THREE.Color(opts.colorTwo) },
+		uResolution: { value: new Vector2() },
+		uColor: { value: new Color(opts.color) },
+		uColorTwo: { value: new Color(opts.colorTwo) },
 		uLineThickness: { value: opts.lineThickness },
 		uBaseRadius: { value: opts.baseRadius },
 		uRadiusStep: { value: opts.radiusStep },
@@ -171,7 +180,7 @@ export function initMagicRings(
 		uRingGap: { value: opts.ringGap },
 		uFadeIn: { value: opts.fadeIn },
 		uFadeOut: { value: opts.fadeOut },
-		uMouse: { value: new THREE.Vector2() },
+		uMouse: { value: new Vector2() },
 		uMouseInfluence: { value: 0 },
 		uHoverAmount: { value: 0 },
 		uHoverScale: { value: opts.hoverScale },
@@ -182,13 +191,13 @@ export function initMagicRings(
 		},
 	};
 
-	const material = new THREE.ShaderMaterial({
+	const material = new ShaderMaterial({
 		vertexShader,
 		fragmentShader,
 		uniforms,
 		transparent: true,
 	});
-	const quad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+	const quad = new Mesh(new PlaneGeometry(1, 1), material);
 	scene.add(quad);
 
 	const resize = () => {
