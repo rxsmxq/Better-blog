@@ -195,6 +195,81 @@ const siteLang = lang.replace("_", "-");
         : []),
     ]}
   >
+    <!-- Multi-Step Loading Screen -->
+    <div id="page-loader" class="page-loader">
+      <div class="page-loader-backdrop"></div>
+      <div class="page-loader-content">
+        <div class="page-loader-steps" id="page-loader-steps">
+          <div class="page-loader-step" data-index="0">
+            <div class="page-loader-icon">
+              <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93"/>
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="page-loader-text">正在建立连接...</span>
+          </div>
+          <div class="page-loader-step" data-index="1">
+            <div class="page-loader-icon">
+              <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93"/>
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="page-loader-text">加载配置文件...</span>
+          </div>
+          <div class="page-loader-step" data-index="2">
+            <div class="page-loader-icon">
+              <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93"/>
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="page-loader-text">渲染页面组件...</span>
+          </div>
+          <div class="page-loader-step" data-index="3">
+            <div class="page-loader-icon">
+              <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93"/>
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="page-loader-text">获取文章数据...</span>
+          </div>
+          <div class="page-loader-step" data-index="4">
+            <div class="page-loader-icon">
+              <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93"/>
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="page-loader-text">加载图片资源...</span>
+          </div>
+          <div class="page-loader-step" data-index="5">
+            <div class="page-loader-icon">
+              <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.07-7.07l-2.83 2.83M9.76 14.24l-2.83 2.83m12.14 0l-2.83-2.83M9.76 9.76L6.93 6.93"/>
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="page-loader-text">准备就绪，欢迎访问</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="progress-bar"></div>
     <ConfigCarrier />
     <MusicManager />
@@ -425,4 +500,93 @@ const siteLang = lang.replace("_", "-");
     scheduleContentOverflowEnhancements();
     import("@/utils/icon-loader").then(({ initIconLoader }) => initIconLoader());
   }
+</script>
+
+<script is:inline>
+  (function() {
+    // 仅首次加载显示，SPA 页面切换不显示
+    const navEntry = performance.getEntriesByType('navigation')[0];
+    const isHardReload = !navEntry || navEntry.type === 'navigate' || navEntry.type === 'reload';
+    const isFirstVisit = !sessionStorage.getItem('pageLoaderShown');
+
+    if (!isHardReload || !isFirstVisit) {
+      const loader = document.getElementById('page-loader');
+      if (loader) loader.style.display = 'none';
+      return;
+    }
+
+    sessionStorage.setItem('pageLoaderShown', 'true');
+
+    const LOADER_STEPS = 6;
+    const STEP_DURATION = 900;
+    const MIN_TOTAL_DURATION = LOADER_STEPS * STEP_DURATION;
+    const MAX_TOTAL_DURATION = 15000;
+
+    const loader = document.getElementById('page-loader');
+    const stepsContainer = document.getElementById('page-loader-steps');
+    if (!loader || !stepsContainer) return;
+
+    const steps = stepsContainer.querySelectorAll('.page-loader-step');
+    let currentStep = 0;
+    let startTime = Date.now();
+    let stepTimer = null;
+    let isFinished = false;
+
+    function updateSteps() {
+      steps.forEach((step, index) => {
+        step.classList.remove('active', 'completed', 'pending');
+        if (index < currentStep) {
+          step.classList.add('completed');
+        } else if (index === currentStep) {
+          step.classList.add('active');
+        } else {
+          step.classList.add('pending');
+        }
+      });
+
+      const stepHeight = steps[0]?.offsetHeight || 40;
+      const offset = currentStep * stepHeight;
+      stepsContainer.style.transform = 'translateY(-' + offset + 'px)';
+    }
+
+    function nextStep() {
+      if (isFinished) return;
+      if (currentStep < LOADER_STEPS - 1) {
+        currentStep++;
+        updateSteps();
+        stepTimer = setTimeout(nextStep, STEP_DURATION);
+      }
+    }
+
+    function hideLoader() {
+      if (isFinished) return;
+      isFinished = true;
+      clearTimeout(stepTimer);
+      loader.classList.add('hidden');
+      setTimeout(() => {
+        loader.style.display = 'none';
+      }, 500);
+    }
+
+    function tryHideLoader() {
+      if (isFinished) return;
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= MIN_TOTAL_DURATION) {
+        hideLoader();
+      }
+    }
+
+    updateSteps();
+    stepTimer = setTimeout(nextStep, STEP_DURATION);
+
+    window.addEventListener('load', function() {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(MIN_TOTAL_DURATION - elapsed, 300);
+      setTimeout(tryHideLoader, remaining);
+    });
+
+    setTimeout(function() {
+      if (!isFinished) hideLoader();
+    }, MAX_TOTAL_DURATION);
+  })();
 </script>

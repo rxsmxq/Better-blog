@@ -28,9 +28,9 @@ interface Block {
 }
 
 const BLOCK_COUNT = 20;
-const REVEAL_DURATION = 0.8;
+const REVEAL_DURATION = 0.4;
 const LOADING_TEXT_CHARS = ["<", "(", "º", "O", "º", ")", ">"];
-const MASK_READY_TIMEOUT = 3000;
+const MASK_READY_TIMEOUT = 1500;
 
 let overlay: HTMLDivElement | null = null;
 let blocks: Block[] = [];
@@ -253,10 +253,10 @@ function animateInvasion(): Promise<void> {
 					y: "0vh",
 					opacity: 1,
 					scale: 1,
-					duration: 0.4,
+					duration: 0.2,
 					ease: "expo.out",
 				},
-				i * 0.015,
+				i * 0.008,
 			);
 		});
 
@@ -265,10 +265,10 @@ function animateInvasion(): Promise<void> {
 				maskEl,
 				{
 					opacity: 1,
-					duration: 0.3,
+					duration: 0.15,
 					ease: "power2.in",
 				},
-				"-=0.25",
+				"-=0.12",
 			);
 		}
 	});
@@ -297,10 +297,10 @@ function animateLoading(): void {
 				opacity: 1,
 				rotateX: 0,
 				rotateZ: 0,
-				duration: 0.5,
+				duration: 0.25,
 				ease: "back.out(1.7)",
 			},
-			">-0.35",
+			">-0.18",
 		);
 	});
 
@@ -312,7 +312,7 @@ function animateLoading(): void {
 				yoyo: true,
 				repeat: -1,
 				y: `+=${i % 2 === 0 ? 3 : -3}`,
-				duration: 0.6 + i * 0.05,
+				duration: 0.3 + i * 0.025,
 				ease: "sine.inOut",
 			});
 		});
@@ -354,7 +354,7 @@ function animateReveal(): Promise<void> {
 			opacity: 0,
 			scale: 1.05,
 			filter: "blur(10px)",
-			duration: 0.4,
+			duration: 0.2,
 			ease: "power2.in",
 		});
 
@@ -369,7 +369,7 @@ function animateReveal(): Promise<void> {
 					duration: REVEAL_DURATION,
 					ease: "power3.in",
 				},
-				0.2 + (blocks.length - 1 - i) * 0.03,
+				0.1 + (blocks.length - 1 - i) * 0.015,
 			);
 		});
 
@@ -379,10 +379,10 @@ function animateReveal(): Promise<void> {
 				{
 					opacity: 1,
 					y: "0",
-					duration: 0.4,
+					duration: 0.2,
 					ease: "power2.out",
 				},
-				"-=0.5",
+				"-=0.25",
 			);
 		}
 
@@ -390,10 +390,10 @@ function animateReveal(): Promise<void> {
 			overlay,
 			{
 				opacity: 0,
-				duration: 0.3,
+				duration: 0.15,
 				ease: "power2.out",
 			},
-			"-=0.4",
+			"-=0.2",
 		);
 	});
 }
