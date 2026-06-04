@@ -75,9 +75,7 @@ export default defineConfig({
 			cache: true,
 			preload: true,
 			accessibility: true,
-			updateHead: {
-				awaitAssets: true,
-			},
+			updateHead: true,
 			updateBodyClass: false,
 			globalInstance: true,
 			resolveUrl: (url) => url,
