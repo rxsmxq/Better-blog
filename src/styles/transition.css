@@ -3,78 +3,7 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. Swup Page Transitions
-   -------------------------------------------------------------------------- */
-
-/* Main Content Transition */
-.transition-swup-main {
-    transition:
-        opacity 350ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Leaving Animation */
-.transition-swup-leaving {
-    transition:
-        opacity 250ms cubic-bezier(0.4, 0, 1, 1),
-        transform 250ms cubic-bezier(0.4, 0, 1, 1);
-}
-
-/* State: Changing (Swup) */
-html.is-changing .transition-swup-main {
-    transition:
-        opacity 350ms cubic-bezier(0.4, 0, 0.2, 1),
-        transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-html.is-leaving .transition-swup-main {
-    transition:
-        opacity 250ms cubic-bezier(0.4, 0, 1, 1),
-        transform 250ms cubic-bezier(0.4, 0, 1, 1);
-}
-
-/* State: Animating (Entering) */
-html.is-animating .transition-swup-main {
-    opacity: 0;
-    transform: translateY(0.5rem);
-}
-
-/* State: Leaving */
-html.is-animating.is-leaving .transition-swup-leaving {
-    transform: translateY(-0.5rem);
-    opacity: 0;
-}
-
-/* Swup Fade Fallback */
-html.is-changing .transition-swup-fade {
-    transition: opacity 350ms cubic-bezier(0.4, 0, 0.2, 1), transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-html.is-animating .transition-swup-fade {
-    opacity: 0;
-    transform: translateY(0.25rem);
-}
-
-/* --------------------------------------------------------------------------
-   1b. Pixel Transition Override
-   当像素过渡覆盖层激活时，Swup 默认 CSS 过渡设为极短(1ms)，
-   让内容切换在覆盖层遮罩下快速完成（视觉过渡由覆盖层负责）
-   -------------------------------------------------------------------------- */
-html.is-pixel-transitioning .transition-swup-main,
-html.is-pixel-transitioning .transition-swup-leaving,
-html.is-pixel-transitioning .transition-swup-fade {
-    transition: opacity 1ms linear, transform 1ms linear !important;
-}
-
-html.is-pixel-transitioning.is-animating .transition-swup-main,
-html.is-pixel-transitioning.is-animating.is-leaving .transition-swup-leaving,
-html.is-pixel-transitioning.is-animating .transition-swup-fade {
-    opacity: 0;
-    transform: none;
-}
-
-/* --------------------------------------------------------------------------
-   2. Keyframes
+   1. Keyframes
    -------------------------------------------------------------------------- */
 
 @keyframes fade-in-up {
@@ -155,21 +84,6 @@ html.is-pixel-transitioning.is-animating .transition-swup-fade {
    -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-    .transition-swup-main,
-    .transition-swup-leaving,
-    html.is-changing .transition-swup-main,
-    html.is-leaving .transition-swup-main,
-    html.is-changing .transition-swup-fade {
-        transition: none;
-    }
-
-    html.is-animating .transition-swup-main,
-    html.is-animating.is-leaving .transition-swup-leaving,
-    html.is-animating .transition-swup-fade {
-        opacity: 0;
-        transform: none;
-    }
-
     .onload-animation {
         opacity: 1;
         animation: none;
@@ -186,9 +100,3 @@ html.is-pixel-transitioning.is-animating .transition-swup-fade {
     }
 }
 
-/* --------------------------------------------------------------------------
-   6. Pixel Transition Overlay - Progress Bar Hidden
-   -------------------------------------------------------------------------- */
-html.is-pixel-transitioning #progress-bar {
-    opacity: 0 !important;
-}

@@ -270,12 +270,6 @@ const siteLang = lang.replace("_", "-");
   }
 
   const setup = async () => {
-    // 静态导入像素过渡动画，确保首次点击时模块已就绪
-    const pixelTransitionModule = await import("@/components/features/PixelTransition");
-
-    // 追踪是否处于像素过渡中
-    let isPixelActive = false;
-
     window.swup.hooks.on("link:click", (_visit: any, { el }: { el: HTMLAnchorElement }) => {
       document.documentElement.style.setProperty("--content-delay", "0ms");
       const targetHref = el.getAttribute("href") || "";
@@ -291,29 +285,7 @@ const siteLang = lang.replace("_", "-");
         document.documentElement.classList.remove("is-page-transitioning");
       } else {
         document.documentElement.classList.add("is-page-transitioning");
-        // 启动像素入侵过渡动画
-        isPixelActive = true;
-        document.documentElement.classList.add("is-pixel-transitioning");
-        pixelTransitionModule.startInvasion();
       }
-    });
-
-    // 像素过渡期间，等待遮罩完全覆盖后再让 Swup 替换内容
-    // 确保用户看不到内容切换过程
-    window.swup.hooks.on("animation:out:await", async (_visit: any, _args: any, defaultHandler: (() => void) | undefined) => {
-      if (isPixelActive) {
-        await pixelTransitionModule.getMaskReadyPromise();
-        return;
-      }
-      return defaultHandler?.();
-    });
-
-    window.swup.hooks.on("animation:in:await", (_visit: any, _args: any, defaultHandler: (() => void) | undefined) => {
-      if (isPixelActive) {
-        // 不等待 CSS 动画，立即继续
-        return;
-      }
-      return defaultHandler?.();
     });
 
     window.swup.hooks.on("content:replace", () => {
@@ -338,19 +310,13 @@ const siteLang = lang.replace("_", "-");
     });
 
     window.swup.hooks.on("visit:start", (visit: any) => {
-      // 如果还没启动像素过渡（程序化导航如 navigateToPage），在这里启动
-      if (!isPixelActive) {
-        const targetUrl = visit?.to?.url || "";
-        const targetPathname = (() => {
-          try { return new URL(targetUrl, window.location.href).pathname; } catch { return targetUrl; }
-        })();
-        const isSamePage = pathsEqual(targetPathname, window.location.pathname);
-        if (!isSamePage) {
-          isPixelActive = true;
-          document.documentElement.classList.add("is-pixel-transitioning");
-          document.documentElement.classList.add("is-page-transitioning");
-          pixelTransitionModule.startInvasion();
-        }
+      const targetUrl = visit?.to?.url || "";
+      const targetPathname = (() => {
+        try { return new URL(targetUrl, window.location.href).pathname; } catch { return targetUrl; }
+      })();
+      const isSamePage = pathsEqual(targetPathname, window.location.pathname);
+      if (!isSamePage) {
+        document.documentElement.classList.add("is-page-transitioning");
       }
 
       const progressBar = document.getElementById("progress-bar");
@@ -393,18 +359,9 @@ const siteLang = lang.replace("_", "-");
         }, 200);
       }
 
-      // 触发像素退场揭示动画
-      const revealPromise = isPixelActive
-        ? pixelTransitionModule.triggerReveal()
-        : Promise.resolve();
-
-      revealPromise.then(() => {
-        isPixelActive = false;
-        document.documentElement.classList.remove("is-pixel-transitioning");
-        setTimeout(() => {
-          document.documentElement.classList.remove("is-page-transitioning");
-        }, 400);
-      });
+      setTimeout(() => {
+        document.documentElement.classList.remove("is-page-transitioning");
+      }, 400);
     });
   };
 
