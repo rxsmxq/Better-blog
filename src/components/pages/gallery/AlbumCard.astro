@@ -17,7 +17,7 @@ interface Props {
 const { id, name, cover, description, date, location, tags, photoCount } =
 	Astro.props;
 
-function truncateLocation(loc: string | undefined, maxChars: number = 4): string {
+function truncateLocation(loc: string | undefined, maxChars = 4): string {
 	if (!loc) return "";
 	if (loc.length <= maxChars) return loc;
 	return loc.slice(0, maxChars) + "...";
