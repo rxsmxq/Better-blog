@@ -14,13 +14,12 @@ interface Props {
 	photoCount: number;
 }
 
-const { id, name, cover, description, date, location, tags, photoCount } =
-	Astro.props;
+const { id, name, cover, date, location, tags, photoCount } = Astro.props;
 
 function truncateLocation(loc: string | undefined, maxChars = 4): string {
 	if (!loc) return "";
 	if (loc.length <= maxChars) return loc;
-	return loc.slice(0, maxChars) + "...";
+	return `${loc.slice(0, maxChars)}...`;
 }
 
 const displayLocation = truncateLocation(location);

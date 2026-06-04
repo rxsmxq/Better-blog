@@ -151,11 +151,11 @@ const siteLang = lang.replace("_", "-");
         lightTheme: expressiveCodeConfig.lightTheme,
       }}
     >
-      const stored = localStorage.getItem("theme") || defaultMode;
-      // Resolve legacy "system" value to actual theme
+      const stored = localStorage.getItem("theme");
+      // 如果没有存储过主题，使用配置的默认值（不写入 localStorage，让用户后续切换才持久化）
       const theme = stored === "system"
         ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-        : stored;
+        : (stored || defaultMode);
       const isDark = theme === "dark";
       if (isDark) document.documentElement.classList.add("dark");
       else document.documentElement.classList.remove("dark");

@@ -44,14 +44,9 @@ let hoveredPostId: string | null = null;
 let highlightedYear: number | null = null;
 let highlightedMonth: string | null = null;
 
-// ===== 高亮覆盖层状态 =====
-// 每条高亮线段：{ x, top, height } 相对于 .archive-panel
-interface HighlightSeg {
-	x: number;
-	top: number;
-	height: number;
-}
-let highlightSegs: HighlightSeg[] = [];
+// ===== 高亮 SVG path 状态 =====
+// 用一条 SVG path 绘制从年节点 → 月节点 → 文章节点的整条高亮线
+let highlightPathD = "";
 
 // DOM 引用
 let panelEl: HTMLElement;
@@ -159,20 +154,16 @@ function formatFilterSummary(filters: ActiveFilter[]): string {
 		.join("  ·  ");
 }
 
-// ===== 高亮线段计算 =====
+// ===== 高亮 SVG path 计算 =====
 /**
- * 计算从年节点中心到悬停文章节点中心的高亮线段集合。
- * 线段分三段：
- *   1. 年竖线：从年节点中心 → 月节点中心（同 X = 年竖线 X）
- *   2. 月竖线：从月节点中心 → 文章节点中心（同 X = 月竖线 X）
- *   3. 横线：月竖线 X → 文章节点 X（同 Y = 文章节点中心）
- *      以及月横线：年竖线 X → 月节点 X（同 Y = 月节点中心）
- * 实际上用 DOM getBoundingClientRect 精确计算每段的位置和长度。
+ * 计算从年节点中心到悬停文章节点中心的 SVG path。
+ * 路径：年节点中心 → 向下到月节点 Y → 向右到月节点 X → 向下到文章节点 Y → 向右到文章节点 X
+ * 拐角处用圆弧 (arc) 连接，保证视觉连续。
  */
 async function computeHighlight(postId: string) {
 	await tick();
 	if (!panelEl) {
-		highlightSegs = [];
+		highlightPathD = "";
 		return;
 	}
 
@@ -190,7 +181,7 @@ async function computeHighlight(postId: string) {
 		if (targetYear !== null) break;
 	}
 	if (targetYear === null || targetMonth === null) {
-		highlightSegs = [];
+		highlightPathD = "";
 		highlightedYear = null;
 		highlightedMonth = null;
 		return;
@@ -202,74 +193,51 @@ async function computeHighlight(postId: string) {
 	const panelRect = panelEl.getBoundingClientRect();
 	const tw =
 		Number.parseFloat(getComputedStyle(panelEl).getPropertyValue("--tw")) * 16; // rem→px
+	const r = 4; // 拐角圆弧半径
 
-	// 年块
 	const yearBlock = yearBlockRefs.get(targetYear);
-	// 月块
 	const monthBlock = monthBlockRefs.get(`${targetYear}-${targetMonth}`);
-	// 文章行
 	const postRow = postRowRefs.get(postId);
 
 	if (!yearBlock || !monthBlock || !postRow) {
-		highlightSegs = [];
+		highlightPathD = "";
 		return;
 	}
 
-	const yearBlockRect = yearBlock.getBoundingClientRect();
-	const monthBlockRect = monthBlock.getBoundingClientRect();
-	const postRowRect = postRow.getBoundingClientRect();
+	const yr = yearBlock.getBoundingClientRect();
+	const mr = monthBlock.getBoundingClientRect();
+	const pr = postRow.getBoundingClientRect();
 
-	// 各竖线的 X（相对于 panel 左边）
-	// 年竖线 X = yearBlock.left - panel.left + tw/2
-	const yearLineX = yearBlockRect.left - panelRect.left + tw / 2;
-	// 月竖线 X = monthBlock.left - panel.left + tw/2
-	const monthLineX = monthBlockRect.left - panelRect.left + tw / 2;
-	// 文章竖线 X = postRow.left - panel.left + tw/2
-	const postLineX = postRowRect.left - panelRect.left + tw / 2;
+	// 各节点中心坐标（相对于 panel）
+	const x0 = yr.left - panelRect.left + tw / 2; // 年竖线 X
+	const y0 = yr.top - panelRect.top + tw / 2; // 年节点中心 Y
+	const x1 = mr.left - panelRect.left + tw / 2; // 月竖线 X
+	const y1 = mr.top - panelRect.top + tw / 2; // 月节点中心 Y
+	const x2 = pr.left - panelRect.left + tw / 2; // 文章竖线 X
+	const y2 = pr.top - panelRect.top + pr.height / 2; // 文章节点中心 Y
 
-	// 各节点中心 Y（相对于 panel 顶部）
-	const yearNodeCY = yearBlockRect.top - panelRect.top + tw / 2;
-	const monthNodeCY = monthBlockRect.top - panelRect.top + tw / 2;
-	const postNodeCY = postRowRect.top - panelRect.top + postRowRect.height / 2;
+	// 路径（所有拐角均为外拐角，圆弧向外凸出）：
+	// M x0 y0
+	// L x0 (y1 - r)               // 年竖线向下，预留拐角
+	// A r r 0 0 0 (x0 + r) y1     // 第一个圆弧：外拐角（逆时针）
+	// L (x1 - r) y1               // 月横线
+	// A r r 0 0 0 x1 (y1 + r)     // 第二个拐角：外拐角（逆时针）
+	// L x1 (y2 - r)               // 月竖线向下，预留拐角
+	// A r r 0 0 0 (x1 + r) y2     // 第三个圆弧：外拐角（逆时针）
+	// L x2 y2                     // 文章横线
+	const d = [
+		`M ${x0} ${y0}`,
+		`L ${x0} ${y1 - r}`,
+		`A ${r} ${r} 0 0 0 ${x0 + r} ${y1}`,
+		`L ${x1 - r} ${y1}`,
+		`A ${r} ${r} 0 0 0 ${x1} ${y1 + r}`,
+		`L ${x1} ${y2 - r}`,
+		`A ${r} ${r} 0 0 0 ${x1 + r} ${y2}`,
+		`L ${x2} ${y2}`,
+	].join(" ");
 
-	const segs: HighlightSeg[] = [];
-
-	// 段1：年竖线，从年节点中心 → 月节点中心
-	segs.push({
-		x: yearLineX,
-		top: yearNodeCY,
-		height: monthNodeCY - yearNodeCY,
-	});
-
-	// 段2：月横线，从年竖线 → 月节点中心（水平）
-	// 用一个水平线段：top = monthNodeCY, left = yearLineX, width = monthLineX - yearLineX
-	// 这里用 height=0 的横线，通过 width 表示（在模板里特殊处理）
-	// 为了统一，横线也用 HighlightSeg，但 height 表示线宽，x 表示起点，用 width 字段
-	// 改用扩展接口处理横线
-
-	// 段3：月竖线，从月节点中心 → 文章节点中心
-	segs.push({
-		x: monthLineX,
-		top: monthNodeCY,
-		height: postNodeCY - monthNodeCY,
-	});
-
-	// 段4：文章横线，从月竖线 → 文章节点中心（水平）
-	// 同样特殊处理
-
-	highlightSegs = segs;
-	highlightHLines = [
-		{ x: yearLineX, y: monthNodeCY, width: monthLineX - yearLineX },
-		{ x: monthLineX, y: postNodeCY, width: postLineX - monthLineX },
-	];
+	highlightPathD = d;
 }
-
-interface HighlightHLine {
-	x: number;
-	y: number;
-	width: number;
-}
-let highlightHLines: HighlightHLine[] = [];
 
 async function onPostEnter(postId: string) {
 	hoveredPostId = postId;
@@ -280,8 +248,7 @@ function onPostLeave() {
 	hoveredPostId = null;
 	highlightedYear = null;
 	highlightedMonth = null;
-	highlightSegs = [];
-	highlightHLines = [];
+	highlightPathD = "";
 }
 
 // ===== Svelte use: 指令（注册 DOM 引用） =====
@@ -385,7 +352,6 @@ onMount(() => {
 	{#each yearGroups as yearGroup (yearGroup.year)}
 		<div
 			class="ap-year-block"
-			bind:this={yearBlockRefs[yearGroup.year]}
 			use:registerYearBlock={yearGroup.year}
 		>
 			<!-- 年份标题行 -->
@@ -469,24 +435,11 @@ onMount(() => {
 		</div>
 	{/each}
 
-	<!-- 高亮覆盖层：绝对定位在 panel 内，pointer-events:none -->
-	{#if highlightSegs.length > 0 || highlightHLines.length > 0}
-		<div class="ap-highlight-layer" aria-hidden="true">
-			<!-- 竖线段 -->
-			{#each highlightSegs as seg}
-				<div
-					class="ap-hl-vline"
-					style="left:{seg.x}px; top:{seg.top}px; height:{seg.height}px;"
-				></div>
-			{/each}
-			<!-- 横线段 -->
-			{#each highlightHLines as hl}
-				<div
-					class="ap-hl-hline"
-					style="left:{hl.x}px; top:{hl.y}px; width:{hl.width}px;"
-				></div>
-			{/each}
-		</div>
+	<!-- 高亮 SVG 线：一条连续 path 覆盖虚线，拐角带圆弧 -->
+	{#if highlightPathD}
+		<svg class="ap-highlight-svg" aria-hidden="true">
+			<path d={highlightPathD} fill="none" stroke="var(--lh)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+		</svg>
 	{/if}
 
 </div>
@@ -577,6 +530,10 @@ onMount(() => {
 	z-index: 2;
 	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
+.ap-node.highlighted,
+.ap-node.hovered {
+	z-index: 3;
+}
 
 .ap-year-node {
 	top: calc(50% - 0.375rem);
@@ -596,6 +553,7 @@ onMount(() => {
 }
 .ap-month-node.highlighted {
 	background: var(--nh);
+	transform: translateX(-50%) scale(1.5);
 }
 
 .ap-post-node {
@@ -627,28 +585,23 @@ onMount(() => {
 }
 
 /* ══════════════════════════════════════════════════
-   高亮覆盖层
-   绝对定位在 .archive-panel 内，pointer-events:none
-   竖线和横线都是精确计算位置的实线覆盖在虚线上方
+   高亮 SVG 线
+   一条连续 path 覆盖虚线，拐角带圆弧
 ══════════════════════════════════════════════════ */
-.ap-highlight-layer {
+.ap-highlight-svg {
 	position: absolute;
 	inset: 0;
+	width: 100%;
+	height: 100%;
 	pointer-events: none;
-	z-index: 10;
+	z-index: 1;
+	overflow: visible;
 }
-
-.ap-hl-vline {
-	position: absolute;
-	width: 0;
-	border-left: 3px solid var(--lh);
-	transform: translateX(-50%);
+.ap-highlight-svg path {
+	filter: drop-shadow(0 0 2px var(--page-bg, white)) drop-shadow(0 0 2px var(--page-bg, white));
 }
-
-.ap-hl-hline {
-	position: absolute;
-	height: 0;
-	border-top: 3px solid var(--lh);
+:global(.dark) .ap-highlight-svg path {
+	filter: drop-shadow(0 0 2px var(--page-bg, #0d0d0d)) drop-shadow(0 0 2px var(--page-bg, #0d0d0d));
 }
 
 /* ── 标题行 ── */
