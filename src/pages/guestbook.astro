@@ -50,7 +50,11 @@ const description = i18n(I18nKey.guestbookDescription);
 			</div>
 
 			<!-- 视图容器：包含 Tabs + 卡片/列表视图 -->
-			<GuestbookViewContainer client:only="svelte" />
+			<GuestbookViewContainer client:only="svelte">
+				<div slot="fallback" class="flex items-center justify-center" style="min-height: 560px;">
+					<div class="text-neutral-400 dark:text-neutral-500 text-sm animate-pulse">加载中...</div>
+				</div>
+			</GuestbookViewContainer>
 		</div>
 	</div>
 

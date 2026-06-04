@@ -140,6 +140,7 @@ function formatTime(ts: number): string {
 
 export function toggle() {
 	isOpen = !isOpen;
+	window.__aiSearchOpen = isOpen;
 	if (isOpen) {
 		tick().then(() => inputEl?.focus());
 	}
@@ -147,6 +148,7 @@ export function toggle() {
 
 function close() {
 	isOpen = false;
+	window.__aiSearchOpen = false;
 }
 
 function scrollToBottom() {
@@ -342,20 +344,12 @@ onMount(() => {
 		sessionId = generateSessionId();
 	}
 
-	const keyHandler = (e: KeyboardEvent) => {
-		if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-			e.preventDefault();
-			toggle();
-		}
-	};
-	window.addEventListener("keydown", keyHandler);
-
+	// Ctrl+K 由 SearchModal 统一处理，通过 toggle-ai-search 事件切换到 AI 搜索
 	const toggleHandler = () => toggle();
 	window.addEventListener("toggle-ai-search", toggleHandler);
 
 	return () => {
 		saveCurrentSession();
-		window.removeEventListener("keydown", keyHandler);
 		window.removeEventListener("toggle-ai-search", toggleHandler);
 	};
 });

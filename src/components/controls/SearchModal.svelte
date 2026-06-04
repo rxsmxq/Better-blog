@@ -247,12 +247,20 @@ function handleResultClick(e: MouseEvent, url: string) {
 }
 
 // --- Global keyboard shortcut (Ctrl+K / Cmd+K) ---
+// 统一处理：默认打开普通搜索，再次按切换到 AI 搜索，再按关闭
 function handleGlobalKeyDown(e: KeyboardEvent) {
 	if ((e.ctrlKey || e.metaKey) && e.key === "k") {
 		e.preventDefault();
-		if (visible) {
+		const aiOpen = !!window.__aiSearchOpen;
+		if (aiOpen) {
+			// AI 搜索已打开 → 关闭它
+			window.dispatchEvent(new CustomEvent("toggle-ai-search"));
+		} else if (visible) {
+			// 普通搜索已打开 → 切换到 AI 搜索
 			close();
+			window.dispatchEvent(new CustomEvent("toggle-ai-search"));
 		} else {
+			// 都没打开 → 打开普通搜索
 			open();
 		}
 	}

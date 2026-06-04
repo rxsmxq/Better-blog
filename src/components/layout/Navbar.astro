@@ -414,7 +414,10 @@ document.addEventListener("swup:page:view", () => {
 });
 
 // Navbar search button → open search modal
-document.getElementById("nav-search-btn")?.addEventListener("click", (e) => {
+// 使用事件委托绑定在 #navbar 上，Swup 导航后无需重新绑定
+document.getElementById("navbar")?.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement)?.closest?.("#nav-search-btn");
+    if (!btn) return;
     e.stopPropagation();
     window.dispatchEvent(new CustomEvent("toggle-search-modal"));
 });

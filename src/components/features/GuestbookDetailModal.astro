@@ -56,13 +56,20 @@
 	function initGuestbookDetailModal() {
 		const modal = document.getElementById('guestbook-detail-modal') as HTMLDialogElement | null;
 		if (!modal) return;
+		// 防止 swup 重复执行脚本或 astro:page-load 多次触发导致重复初始化
+		if ((modal as any).__gb_initialized) return;
+		(modal as any).__gb_initialized = true;
 
 		function closeModal() {
 			modal!.close();
 			document.body.style.overflow = '';
 		}
 
-		window.addEventListener('guestbook:open-detail', (e) => {
+		// 移除旧处理器防止累积
+		if ((window as any).__gb_open_detail_handler) {
+			window.removeEventListener('guestbook:open-detail', (window as any).__gb_open_detail_handler);
+		}
+		const openDetailHandler = (e: Event) => {
 			if (!modal.isConnected) return;
 			const card = (e as CustomEvent).detail;
 			if (!card) return;
@@ -85,7 +92,9 @@
 
 			modal.showModal();
 			document.body.style.overflow = 'hidden';
-		});
+		};
+		(window as any).__gb_open_detail_handler = openDetailHandler;
+		window.addEventListener('guestbook:open-detail', openDetailHandler);
 
 		modal.querySelectorAll('[data-close-detail]').forEach(el => {
 			el.addEventListener('click', closeModal);
@@ -111,7 +120,6 @@
 		initGuestbookDetailModal();
 	}
 	document.addEventListener('astro:page-load', initGuestbookDetailModal);
-	document.addEventListener('astro:after-swap', initGuestbookDetailModal);
 </script>
 
 <style>

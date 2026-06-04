@@ -274,6 +274,12 @@ const siteLang = lang.replace("_", "-");
     });
 
     window.swup.hooks.on("content:replace", () => {
+      // Swup 内容替换后，立即移除 onload-animation 避免 opacity:0 闪烁
+      // （onload-animation 仅在首次页面加载时有意义，swup 过渡期间应跳过）
+      document.querySelectorAll('#swup-container .onload-animation').forEach(el => {
+        el.classList.remove('onload-animation');
+        (el as HTMLElement).style.opacity = '1';
+      });
       scheduleContentOverflowEnhancements();
       import("@/utils/icon-loader").then(({ initIconLoader }) => initIconLoader());
     });

@@ -94,6 +94,9 @@
 	function initGuestbookComposeModal() {
 		const modal = document.getElementById('guestbook-compose-modal') as HTMLDialogElement | null;
 		if (!modal) return;
+		// 防止 swup 重复执行脚本或 astro:page-load 多次触发导致重复初始化
+		if ((modal as any).__gb_initialized) return;
+		(modal as any).__gb_initialized = true;
 
 		const authorInput = document.getElementById('gb-author') as HTMLInputElement | null;
 		const contentInput = document.getElementById('gb-content') as HTMLTextAreaElement | null;
@@ -117,8 +120,11 @@
 		});
 		authorInput.addEventListener('input', updateSubmitState);
 
-		// 监听打开事件
-		window.addEventListener('guestbook:open-compose', () => {
+		// 监听打开事件 — 移除旧处理器防止累积
+		if ((window as any).__gb_open_compose_handler) {
+			window.removeEventListener('guestbook:open-compose', (window as any).__gb_open_compose_handler);
+		}
+		const openComposeHandler = () => {
 			if (!modal.isConnected) return;
 			modal.showModal();
 			document.body.style.overflow = 'hidden';
@@ -127,7 +133,9 @@
 			if (charCount) charCount.textContent = '0/500';
 			updateSubmitState();
 			setTimeout(() => authorInput.focus(), 100);
-		});
+		};
+		(window as any).__gb_open_compose_handler = openComposeHandler;
+		window.addEventListener('guestbook:open-compose', openComposeHandler);
 
 		// 关闭
 		function closeModal() {
@@ -244,7 +252,6 @@
 		initGuestbookComposeModal();
 	}
 	document.addEventListener('astro:page-load', initGuestbookComposeModal);
-	document.addEventListener('astro:after-swap', initGuestbookComposeModal);
 </script>
 
 <style>
