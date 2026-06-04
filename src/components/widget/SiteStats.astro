@@ -300,11 +300,15 @@ const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 	initTextReveal();
 	fetchStats();
 
-	document.addEventListener('astro:page-load', function() {
-		initStars();
-		animateStars();
-		initTextReveal();
-		fetchStats();
-	});
+	// 防止 swup 重复执行脚本导致监听器累积
+	if (!window.__siteStats_listener) {
+		window.__siteStats_listener = true;
+		document.addEventListener('astro:page-load', function() {
+			initStars();
+			animateStars();
+			initTextReveal();
+			fetchStats();
+		});
+	}
 })();
 </script>

@@ -189,5 +189,9 @@ function renderRandomPosts() {
 }
 
 renderRandomPosts();
-document.addEventListener('swup:contentReplaced', renderRandomPosts);
+// 防止 swup 重复执行脚本导致监听器累积
+if (!window.__recommendedPost_listener) {
+  window.__recommendedPost_listener = true;
+  document.addEventListener('astro:page-load', renderRandomPosts);
+}
 </script>

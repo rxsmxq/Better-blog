@@ -48,21 +48,26 @@ const giscus = commentConfig.giscus;
 
   loadGiscus();
 
-  // 站点主题切换时同步 Giscus 主题
-  window.addEventListener('theme-change', syncGiscusTheme);
+  // 防止 swup 重复执行脚本导致监听器累积
+  if (!window.__giscus_listeners_done) {
+    window.__giscus_listeners_done = true;
 
-  // Swup 页面切换后重新加载
-  if (window.swup && window.swup.hooks) {
-    window.swup.hooks.on('content:replace', function () {
-      setTimeout(loadGiscus, 200);
-    });
-  } else {
-    document.addEventListener('swup:enable', function () {
-      if (window.swup && window.swup.hooks) {
-        window.swup.hooks.on('content:replace', function () {
-          setTimeout(loadGiscus, 200);
-        });
-      }
-    });
+    // 站点主题切换时同步 Giscus 主题
+    window.addEventListener('theme-change', syncGiscusTheme);
+
+    // Swup 页面切换后重新加载
+    if (window.swup && window.swup.hooks) {
+      window.swup.hooks.on('content:replace', function () {
+        setTimeout(loadGiscus, 200);
+      });
+    } else {
+      document.addEventListener('swup:enable', function () {
+        if (window.swup && window.swup.hooks) {
+          window.swup.hooks.on('content:replace', function () {
+            setTimeout(loadGiscus, 200);
+          });
+        }
+      });
+    }
   }
 </script>

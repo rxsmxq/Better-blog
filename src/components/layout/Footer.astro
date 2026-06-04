@@ -179,8 +179,11 @@ const todayText = i18n(I18nKey.today);
 	// 页面加载时更新
 	updateFooterStats();
 
-	// 页面切换时重新更新
-	document.addEventListener("astro:page-load", () => {
-		setTimeout(updateFooterStats, 100);
-	});
+	// 页面切换时重新更新（防止 swup 重复执行脚本导致监听器累积）
+	if (!window.__footer_listener) {
+		window.__footer_listener = true;
+		document.addEventListener("astro:page-load", () => {
+			setTimeout(updateFooterStats, 100);
+		});
+	}
 </script>

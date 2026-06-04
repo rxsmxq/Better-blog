@@ -63,26 +63,31 @@ const config = {
   // 页面加载时初始化
   document.addEventListener("DOMContentLoaded", initTwikoo);
 
-  // Swup 页面切换后重新初始化
-  if (window.swup && window.swup.hooks) {
-    window.swup.hooks.on("content:replace", function () {
-      setTimeout(initTwikoo, 200);
-    });
-  } else {
-    document.addEventListener("swup:enable", function () {
-      if (window.swup && window.swup.hooks) {
-        window.swup.hooks.on("content:replace", function () {
-          setTimeout(initTwikoo, 200);
-        });
+  // 防止 swup 重复执行脚本导致监听器累积
+  if (!window.__twikoo_listeners_done) {
+    window.__twikoo_listeners_done = true;
+
+    // Swup 页面切换后重新初始化
+    if (window.swup && window.swup.hooks) {
+      window.swup.hooks.on("content:replace", function () {
+        setTimeout(initTwikoo, 200);
+      });
+    } else {
+      document.addEventListener("swup:enable", function () {
+        if (window.swup && window.swup.hooks) {
+          window.swup.hooks.on("content:replace", function () {
+            setTimeout(initTwikoo, 200);
+          });
+        }
+      });
+    }
+
+    // 自定义事件监听
+    document.addEventListener("firefly:page:loaded", function () {
+      const commentEl = document.getElementById("tcomment");
+      if (commentEl) {
+        initTwikoo();
       }
     });
   }
-
-  // 自定义事件监听
-  document.addEventListener("firefly:page:loaded", function () {
-    const commentEl = document.getElementById("tcomment");
-    if (commentEl) {
-      initTwikoo();
-    }
-  });
 </script>
