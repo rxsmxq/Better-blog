@@ -47,6 +47,12 @@ function handleBackdropClick(e: MouseEvent) {
 	}
 }
 
+function handleKeydown(e: KeyboardEvent) {
+	if (e.key === "Escape" && isMenuOpen) {
+		closeMenu();
+	}
+}
+
 $effect(() => {
 	if (!isMenuOpen) return;
 
@@ -84,6 +90,16 @@ $effect(() => {
 	});
 });
 
+// Swup 页面切换后关闭菜单，避免状态残留
+if (typeof document !== "undefined") {
+	document.addEventListener("astro:page-load", () => {
+		closeMenu();
+	});
+	document.addEventListener("swup:contentReplaced", () => {
+		closeMenu();
+	});
+}
+
 function isDarkMode() {
 	return (
 		typeof document !== "undefined" &&
@@ -112,11 +128,13 @@ function getCategoryColor(_name: string, index: number) {
       type="button"
       class={`category-toggle-btn ${isMenuOpen ? "open" : ""}`}
       onclick={handleToggle}
+      onkeydown={handleKeydown}
       aria-label="Toggle categories"
       aria-pressed={isMenuOpen}
     >
-      <span class="category-menu-line" />
-      <span class="category-menu-line short" />
+      <div class="category-menu-line" id="cat-bar1"></div>
+      <div class="category-menu-line" id="cat-bar2"></div>
+      <div class="category-menu-line" id="cat-bar3"></div>
     </button>
   </div>
 
@@ -127,6 +145,10 @@ function getCategoryColor(_name: string, index: number) {
       use:portal
       class="category-bubble-backdrop"
       onclick={handleBackdropClick}
+      onkeydown={handleKeydown}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Category menu"
       style="position:fixed;inset:0;z-index:998;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);"
     >
       <div
@@ -179,6 +201,7 @@ function getCategoryColor(_name: string, index: number) {
   }
 
   .category-toggle-btn {
+    position: relative;
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -190,6 +213,7 @@ function getCategoryColor(_name: string, index: number) {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 3.5px;
     padding: 0;
     transition: box-shadow 0.3s ease;
   }
@@ -209,27 +233,36 @@ function getCategoryColor(_name: string, index: number) {
     background: #ffffff;
     border-radius: 2px;
     display: block;
-    margin: 0 auto;
-    transition:
-      transform 0.3s ease,
-      opacity 0.3s ease;
-    transform-origin: center;
+    margin: 0;
+    transition-duration: 0.3s;
   }
 
   :global(.dark) .category-menu-line {
     background: #111111;
   }
 
-  .category-menu-line + .category-menu-line {
-    margin-top: 5px;
+  /* 汉堡菜单 → X 动效（基于原型图 test.css） */
+  .category-toggle-btn.open .category-menu-line {
+    margin-left: 2px;
   }
 
-  .category-toggle-btn.open .category-menu-line:first-child {
-    transform: translateY(3.5px) rotate(45deg);
+  .category-toggle-btn.open #cat-bar2 {
+    transform: rotate(135deg);
+    margin-left: 0;
+    transform-origin: center;
+    transition-duration: 0.3s;
   }
 
-  .category-toggle-btn.open .category-menu-line:last-child {
-    transform: translateY(-3.5px) rotate(-45deg);
+  .category-toggle-btn.open #cat-bar1 {
+    transform: translateY(5.5px) rotate(45deg);
+    transition-duration: 0.3s;
+    transform-origin: center;
+  }
+
+  .category-toggle-btn.open #cat-bar3 {
+    transform: translateY(-5.5px) rotate(-45deg);
+    transition-duration: 0.3s;
+    transform-origin: center;
   }
 
   .category-bubble-items {

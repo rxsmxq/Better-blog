@@ -1,10 +1,9 @@
 <script lang="ts">
 /**
- * Aceternity UI 风格的 Animated Tabs 组件
- * 用于切换列表/网格布局，只显示图标，带滑动动画效果
+ * 骷髅开关组件 - 用于切换列表/网格布局
+ * 基于 Uiverse.io by ashif_6672 的原型改造
+ * 注意：Swup 兼容，通过 astro:page-load 事件重新初始化 checkbox 状态
  */
-import { onMount } from "svelte";
-
 interface Props {
 	activeTab: "list" | "grid";
 	class?: string;
@@ -12,159 +11,459 @@ interface Props {
 
 let { activeTab = $bindable("list"), class: className = "" }: Props = $props();
 
-let tabRef = $state<HTMLDivElement | null>(null);
-let listBtnRef = $state<HTMLButtonElement | null>(null);
-let gridBtnRef = $state<HTMLButtonElement | null>(null);
-let hoverStyle = $state({ left: 0, width: 0, opacity: 0 });
+let checkboxRef = $state<HTMLInputElement | null>(null);
 
-function updateHoverPosition(tab: "list" | "grid") {
-	const btnRef = tab === "list" ? listBtnRef : gridBtnRef;
-	if (!btnRef || !tabRef) return;
-
-	const parentRect = tabRef.getBoundingClientRect();
-	const btnRect = btnRef.getBoundingClientRect();
-
-	hoverStyle = {
-		left: btnRect.left - parentRect.left,
-		width: btnRect.width,
-		opacity: 1,
-	};
+function syncCheckbox() {
+	if (checkboxRef) {
+		checkboxRef.checked = activeTab === "grid";
+	}
 }
 
-function handleTabChange(tab: "list" | "grid") {
-	activeTab = tab;
-	localStorage.setItem("postListLayout", tab);
+function handleChange() {
+	const newLayout = checkboxRef?.checked ? "grid" : "list";
+	activeTab = newLayout;
+	localStorage.setItem("postListLayout", newLayout);
 	window.dispatchEvent(
-		new CustomEvent("layoutChange", { detail: { layout: tab } }),
+		new CustomEvent("layoutChange", { detail: { layout: newLayout } }),
 	);
-	updateHoverPosition(tab);
 }
 
-function handleMouseEnter(tab: "list" | "grid") {
-	updateHoverPosition(tab);
-}
-
-function handleMouseLeave() {
-	updateHoverPosition(activeTab);
-}
-
-onMount(() => {
-	// 同步localStorage中的实际布局（anti-flash脚本可能已更改）
+function initFromStorage() {
 	const saved = localStorage.getItem("postListLayout");
 	if (saved === "list" || saved === "grid") {
 		activeTab = saved;
 	}
-	updateHoverPosition(activeTab);
+	syncCheckbox();
+}
+
+// 初始化 + Swup 页面切换后重新初始化
+$effect(() => {
+	initFromStorage();
 });
+
+if (typeof document !== "undefined") {
+	document.addEventListener("astro:page-load", initFromStorage);
+}
 </script>
 
-<div
-  class="animated-tabs {className}"
-  bind:this={tabRef}
-  onmouseleave={handleMouseLeave}
->
-  <!-- 滑动背景指示器 -->
-  <div
-    class="tab-indicator"
-    style="left: {hoverStyle.left}px; width: {hoverStyle.width}px; opacity: {hoverStyle.opacity};"
-  ></div>
-
-  <!-- List 按钮 -->
-  <button
-    bind:this={listBtnRef}
-    class="tab-button {activeTab === 'list' ? 'active' : ''}"
-    onclick={() => handleTabChange("list")}
-    onmouseenter={() => handleMouseEnter("list")}
-    aria-label="List View"
-  >
-    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-    </svg>
-  </button>
-
-  <!-- Grid 按钮 -->
-  <button
-    bind:this={gridBtnRef}
-    class="tab-button {activeTab === 'grid' ? 'active' : ''}"
-    onclick={() => handleTabChange("grid")}
-    onmouseenter={() => handleMouseEnter("grid")}
-    aria-label="Grid View"
-  >
-    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z" />
-    </svg>
-  </button>
-</div>
+<label class="skull-switch {className}">
+	<input
+		bind:this={checkboxRef}
+		type="checkbox"
+		checked={activeTab === "grid"}
+		onchange={handleChange}
+	/>
+	<span class="thumb">
+		<span class="cranium"></span>
+		<span class="mouth"></span>
+	</span>
+	<span class="arm-wrapper">
+		<span class="arm">
+			<span class="bone"></span>
+			<span class="bone"></span>
+			<span class="hand">
+				<span class="bone"></span>
+				<span class="bone"></span>
+				<span class="bone"></span>
+				<span class="bone"></span>
+			</span>
+			<span class="big"></span>
+		</span>
+	</span>
+</label>
 
 <style>
-  .animated-tabs {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    background: var(--card-bg, rgba(255, 255, 255, 0.1));
-    border-radius: 0.75rem;
-    padding: 0.25rem;
-    border: 2px solid #000;
-    box-shadow: 0 1px 3px oklch(0.5 0 0 / 0.08);
-  }
+	.skull-switch {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 5rem;
+		height: 2.5rem;
+		background: #141414;
+		border-radius: 1.25rem;
+		overflow: hidden;
+		box-shadow:
+			0 0 0.1rem 0.1rem #000000,
+			0 0 0.5rem 0.1rem #0b0b10 inset;
+		cursor: pointer;
+		flex-shrink: 0;
+	}
 
-  :root.dark .animated-tabs {
-    border-color: #fff;
-    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
-  }
+	.skull-switch input {
+		display: none;
+	}
 
-  .tab-indicator {
-    position: absolute;
-    top: 0.25rem;
-    bottom: 0.25rem;
-    background: var(--primary, #3b82f6);
-    border-radius: 0.5rem;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 3px oklch(0.5 0 0 / 0.15);
-    z-index: 0;
-  }
+	.thumb {
+		position: absolute;
+		width: 2.1875rem;
+		height: 2.1875rem;
+		top: 0.15625rem;
+		left: calc(100% - 2.33331rem);
+		border-radius: 1.25rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1;
+		animation: move-skull-left 0.5s ease-in-out 0.5s forwards;
+	}
 
-  :root.dark .tab-indicator {
-    box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
-  }
+	.skull-switch input:checked ~ .thumb {
+		left: 0.15625rem;
+		animation: move-skull-right 0.5s ease-in-out 0.5s forwards;
+	}
 
-  .tab-button {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.5rem;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    color: var(--btn-content, #666);
-  }
+	@keyframes move-skull-right {
+		0% {
+			left: 0.15625rem;
+		}
+		100% {
+			left: calc(100% - 2.33331rem);
+		}
+	}
 
-  .tab-button:hover {
-    color: #000;
-  }
+	@keyframes move-skull-left {
+		0% {
+			left: calc(100% - 2.33331rem);
+		}
+		100% {
+			left: 0.15625rem;
+		}
+	}
 
-  .tab-button.active {
-    color: #fff;
-  }
+	/*** Skull ***/
 
-  :root.dark .tab-indicator {
-    background: #fff;
-  }
+	.thumb > * {
+		position: absolute;
+		filter: drop-shadow(0px 1px 1px #000);
+		animation: unselected 1.5s ease-in-out 0s reverse forwards;
+	}
 
-  :root.dark .tab-button:hover {
-    color: #fff;
-  }
+	.skull-switch input:checked ~ .thumb * {
+		animation: selected 1.5s ease-in-out 0s forwards;
+	}
 
-  :root.dark .tab-button.active {
-    color: #000;
-  }
+	@keyframes selected {
+		0%,
+		50% {
+			filter: drop-shadow(0px 1px 1px #000) brightness(1);
+		}
+		50.01%,
+		100% {
+			filter: drop-shadow(0px 1px 1px #000) brightness(1.875);
+		}
+	}
 
-  .tab-button:active {
-    transform: scale(0.95);
-  }
+	@keyframes unselected {
+		0%,
+		50% {
+			filter: drop-shadow(0px 1px 1px #000) brightness(1);
+		}
+		50.01%,
+		100% {
+			filter: drop-shadow(0px 1px 1px #000) brightness(1.875);
+		}
+	}
+
+	.cranium {
+		background: linear-gradient(180deg, #888 0 54%, #fff0 0 94%, #888 0 100%),
+			radial-gradient(
+				circle at 75% 69%,
+				#fff0 0 0.21875rem,
+				#888 calc(0.21875rem + 1px) 0.6058rem,
+				#fff0 calc(0.6058rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 25% 69%,
+				#fff0 0 0.21875rem,
+				#888 calc(0.21875rem + 1px) 0.6058rem,
+				#fff0 calc(0.6058rem + 1px) 100%
+			);
+		width: 100%;
+		height: 1.75rem;
+		left: 0;
+		top: 0;
+		border-radius: 1.25rem 1.25rem 0.6875rem 0.6875rem;
+	}
+
+	.cranium:before {
+		content: "";
+		position: absolute;
+		width: 0.15625rem;
+		height: 0.15625rem;
+		bottom: -0.09375rem;
+		left: 0.9375rem;
+		background: #888;
+		border-radius: 100%;
+		box-shadow: 0.15625rem 0 0 0 #888;
+	}
+
+	.cranium:after {
+		content: "";
+		position: absolute;
+		width: 0.65625rem;
+		height: 0.1875rem;
+		bottom: -0.11875rem;
+		left: 0.75rem;
+		background: radial-gradient(
+				circle at 90% 10%,
+				#888 0 0.125rem,
+				#fff0 calc(0.125rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 10% 10%,
+				#888 0 0.125rem,
+				#fff0 calc(0.125rem + 1px) 100%
+			);
+		border-radius: 0.125rem;
+	}
+
+	.mouth {
+		border: 0.10625rem solid #fff0;
+		border-bottom-color: #888;
+		width: 1.46875rem;
+		left: 0.35625rem;
+		height: 0.75rem;
+		top: 1.40625rem;
+		background: radial-gradient(
+				circle at 35% 98%,
+				#888 0 0.08125rem,
+				#fff0 calc(0.08125rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 45% 100%,
+				#888 0 0.08125rem,
+				#fff0 calc(0.08125rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 55% 100%,
+				#888 0 0.08125rem,
+				#fff0 calc(0.08125rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 65% 98%,
+				#888 0 0.08125rem,
+				#fff0 calc(0.08125rem + 1px) 100%
+			);
+		background-repeat: no-repeat;
+		border-radius: 100%;
+	}
+
+	.mouth:before,
+	.mouth:after {
+		content: "";
+		position: absolute;
+		border-radius: 100%;
+		background: #888;
+		width: 0.0875rem;
+		height: 0.0875rem;
+		left: 0.05rem;
+		bottom: 0.03125rem;
+	}
+
+	.mouth:after {
+		left: 1.130625rem;
+	}
+
+	/*** Arm ***/
+
+	@keyframes check-on {
+		0% {
+			right: -65%;
+		}
+		25%,
+		33% {
+			right: 0%;
+		}
+		66%,
+		80% {
+			right: -50%;
+		}
+		100% {
+			right: -65%;
+		}
+	}
+
+	@keyframes check-off {
+		0% {
+			right: -65%;
+		}
+		25%,
+		33% {
+			right: 0%;
+		}
+		66%,
+		80% {
+			right: -50%;
+		}
+		100% {
+			right: -65%;
+		}
+	}
+
+	.arm-wrapper {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		border-radius: 1.25rem;
+		overflow: hidden;
+		right: -65%;
+		animation: check-off 1.5s ease-in-out 0s reverse forwards;
+	}
+
+	.skull-switch input:checked ~ .arm-wrapper {
+		animation: check-on 1.5s ease-in-out 0s forwards;
+	}
+
+	.arm {
+		position: absolute;
+		width: 2rem;
+		height: 0.625rem;
+		right: 2%;
+		top: calc(50% - 0.3125rem);
+		border-radius: 0.03125rem;
+	}
+
+	.bone {
+		background: #fff;
+		width: 1rem;
+		height: 0.25rem;
+		position: absolute;
+		transform: rotate(0deg);
+		top: 0.1875rem;
+		right: -0.5rem;
+	}
+
+	.bone:before,
+	.bone:after,
+	.big:before,
+	.big:after {
+		content: "";
+		background: #fff;
+		width: 0.1875rem;
+		height: 0.1875rem;
+		position: absolute;
+		left: -0.0625rem;
+		top: -0.0625rem;
+		border-radius: 100%;
+		box-shadow: 1rem 0 0 0 #fff;
+	}
+
+	.bone:after {
+		top: calc(100% - 0.125rem);
+	}
+
+	.arm > .bone + .bone {
+		top: 0.1875rem;
+		left: 0.0625rem;
+		height: 0.10625rem;
+		width: 1.3125rem;
+		box-shadow: 0 0.14375rem 0 0 #fff;
+	}
+	.arm > .bone + .bone:before,
+	.arm > .bone + .bone:after {
+		box-shadow: 1.26875rem 0 0 0 #fff;
+	}
+
+	.arm > .bone + .bone:after {
+		top: 100%;
+	}
+
+	/*** Hand ***/
+
+	.hand {
+		position: absolute;
+		background: radial-gradient(
+				circle at 91% 29%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 92% 49%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 91% 69%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 76% 21%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 78% 39%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 79% 58%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			),
+			radial-gradient(
+				circle at 78% 78%,
+				#fff 0.0625rem,
+				#fff0 calc(0.0625rem + 1px) 100%
+			);
+		width: 0.875rem;
+		height: 0.625rem;
+		left: -0.875rem;
+		z-index: 0;
+	}
+
+	.hand .bone,
+	.big {
+		width: 0.375rem;
+		left: 0.16875rem;
+		height: 0.09375rem;
+		border-radius: 0.0625rem 0 0 0.0625rem;
+	}
+
+	.hand .bone:before,
+	.hand .bone:after,
+	.big:before,
+	.big:after {
+		width: 0.1rem;
+		height: 0.1rem;
+		top: -0.03125rem;
+		left: 0.28125rem;
+		box-shadow: none;
+	}
+	.hand .bone:after,
+	.big:after {
+		top: 0.015625rem;
+	}
+
+	.hand .bone:nth-child(1) {
+		transform: rotate(5deg) translateY(-0.125rem) translateX(0.01875rem);
+		filter: drop-shadow(-0.375rem 0 0px #fff);
+	}
+
+	.hand .bone:nth-child(2) {
+		transform: rotate(0deg) translateX(0.0625rem);
+		filter: drop-shadow(-0.375rem 0 0px #fff);
+	}
+
+	.hand .bone:nth-child(3) {
+		transform: rotate(-2deg) translateY(0.14375rem) translateX(0.0625rem);
+		filter: drop-shadow(-0.375rem 0 0px #fff);
+	}
+
+	.hand .bone:nth-child(4) {
+		transform: rotate(-5deg) translateY(0.2875rem) translateX(0.0625rem);
+		filter: drop-shadow(-0.375rem 0 0px #fff);
+	}
+
+	.big {
+		background: #fff;
+		height: 0.125rem !important;
+		position: absolute;
+		left: -0.53125rem !important;
+		top: 0.14375rem;
+		z-index: 1;
+		filter: drop-shadow(-0.3125rem 0 0px #fff) drop-shadow(0 0 1px #000);
+	}
 </style>
