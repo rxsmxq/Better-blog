@@ -23,8 +23,13 @@ async function getUmamiToken(env) {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ username, password }),
-		redirect: "follow",
+		redirect: "manual",
 	});
+
+	// 检查登录是否被重定向（通常是认证失败）
+	if (resp.status >= 300 && resp.status < 400) {
+		throw new Error(`Umami login redirect detected (${resp.status}). This usually means invalid username/password.`);
+	}
 
 	if (!resp.ok) {
 		throw new Error(`Umami login failed: ${resp.status}`);
