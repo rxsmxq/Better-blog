@@ -292,30 +292,3 @@ function openPostOrSelect(ev: CalendarEvent) {
 		</div>
 	{/each}
 </section>
-
-<style>
-	.nearest-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-		gap: 0.625rem;
-	}
-
-	.nearest-card {
-		border-radius: 1.25rem;
-	}
-
-	@media (max-width: 767px) {
-		.nearest-grid {
-			display: flex;
-			overflow-x: auto;
-			scroll-snap-type: x mandatory;
-			padding-bottom: 0.5rem;
-			gap: 0.5rem;
-			-webkit-overflow-scrolling: touch;
-		}
-		.nearest-card {
-			flex: 0 0 80%;
-			scroll-snap-align: start;
-		}
-	}
-</style>

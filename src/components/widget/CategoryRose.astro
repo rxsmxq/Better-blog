@@ -7,12 +7,13 @@ interface Props {
 
 const { categories } = Astro.props;
 
-// 准备图表数据
 const chartData = categories.map((c) => ({
 	name: c.name,
 	value: c.count,
 	url: c.url,
 }));
+
+const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
 ---
 
 <div
@@ -20,172 +21,144 @@ const chartData = categories.map((c) => ({
 	class="category-rose"
 	data-chart-data={JSON.stringify(chartData)}
 >
-  <div id="category-rose-chart" class="category-rose__chart"></div>
+  <div class="category-rose__layout">
+    <div id="category-rose-chart" class="category-rose__chart"></div>
+    <div class="category-rose__list">
+      {categories.map((cat) => (
+        <a href={cat.url} class="category-rose__list-item">
+          <span class="category-rose__list-name">{cat.name}</span>
+          <span class="category-rose__list-count">{cat.count} 篇</span>
+        </a>
+      ))}
+      <div class="category-rose__list-total">
+        共 {totalCount} 篇文章
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
-	import echarts from "@/utils/charts";
-	import { navigateToPage } from "@utils/navigation-utils";
+<script is:inline>
+(function() {
+  function initCategoryRose() {
+    var container = document.getElementById("category-rose-container");
+    if (!container) return;
 
-	document.addEventListener("astro:page-load", () => {
-		const container = document.getElementById("category-rose-container");
-		if (!container) return;
+    var chartDom = document.getElementById("category-rose-chart");
+    if (!chartDom) return;
 
-		const chartDom = document.getElementById("category-rose-chart");
-		if (!chartDom) return;
+    // 避免重复初始化
+    if (chartDom.getAttribute("data-echarts-initialized")) return;
+    chartDom.setAttribute("data-echarts-initialized", "true");
 
-		// 读取数据
-		const rawData = container.dataset.chartData;
-		if (!rawData) return;
+    var rawData = container.getAttribute("data-chart-data");
+    if (!rawData) return;
 
-		const chartData = JSON.parse(rawData);
-		if (!chartData.length) return;
+    var chartData = JSON.parse(rawData);
+    if (!chartData.length) return;
 
-		// 读取主题颜色
-		function getThemeColors() {
-			const isDark = document.documentElement.classList.contains("dark");
-			return {
-				textColor: isDark
-					? "rgba(255, 255, 255, 0.85)"
-					: "rgba(0, 0, 0, 0.85)",
-				subtextColor: isDark
-					? "rgba(255, 255, 255, 0.5)"
-					: "rgba(0, 0, 0, 0.5)",
-				tooltipBg: isDark ? "rgba(30, 30, 30, 0.9)" : "rgba(255, 255, 255, 0.9)",
-				tooltipBorder: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)",
-			};
-		}
+    // 动态加载 echarts
+    function loadECharts(callback) {
+      if (window.echarts) {
+        callback(window.echarts);
+        return;
+      }
+      var script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js";
+      script.onload = function() { callback(window.echarts); };
+      document.head.appendChild(script);
+    }
 
-		// 调色板 - 柔和的色彩
-		const colorPalette = [
-			"#5470c6",
-			"#91cc75",
-			"#fac858",
-			"#ee6666",
-			"#73c0de",
-			"#3ba272",
-			"#fc8452",
-			"#9a60b4",
-			"#ea7ccc",
-			"#5ab1ef",
-			"#d87c7c",
-			"#8d98b3",
-		];
+    loadECharts(function(echarts) {
+      if (!echarts) return;
 
-		const colors = getThemeColors();
+      function getThemeColors() {
+        var isDark = document.documentElement.classList.contains("dark");
+        return {
+          textColor: isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.85)",
+          subtextColor: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
+          tooltipBg: isDark ? "rgba(30,30,30,0.9)" : "rgba(255,255,255,0.9)",
+          tooltipBorder: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
+        };
+      }
 
-		const chart = echarts.init(chartDom);
+      var colorPalette = [
+        "#5470c6","#91cc75","#fac858","#ee6666","#73c0de",
+        "#3ba272","#fc8452","#9a60b4","#ea7ccc","#5ab1ef","#d87c7c","#8d98b3",
+      ];
 
-		const option = {
-			tooltip: {
-				trigger: "item",
-				formatter: (params: { name: string; value: number; percent: number }) => {
-					return `<strong>${params.name}</strong><br/>文章数量：${params.value} 篇<br/>占比：${params.percent}%`;
-				},
-				backgroundColor: colors.tooltipBg,
-				borderColor: colors.tooltipBorder,
-				borderWidth: 1,
-				textStyle: {
-					color: colors.textColor,
-				},
-				extraCssText: "border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);",
-			},
-			legend: {
-				show: false,
-			},
-			series: [
-				{
-					name: "分类",
-					type: "pie",
-					radius: ["20%", "75%"],
-					center: ["50%", "50%"],
-					roseType: "area",
-					itemStyle: {
-						borderRadius: 6,
-						borderColor: "transparent",
-						borderWidth: 2,
-					},
-					label: {
-						show: true,
-						color: colors.textColor,
-						fontSize: 13,
-						fontWeight: 500,
-						formatter: "{b}\n{c} 篇",
-					},
-					labelLine: {
-						lineStyle: {
-							color: colors.subtextColor,
-						},
-					},
-					emphasis: {
-						label: {
-							show: true,
-							fontSize: 15,
-							fontWeight: "bold",
-						},
-						itemStyle: {
-							shadowBlur: 10,
-							shadowOffsetX: 0,
-							shadowColor: "rgba(0, 0, 0, 0.3)",
-						},
-					},
-					animationType: "scale",
-					animationEasing: "cubicOut",
-					animationDuration: 1000,
-					animationDelay: (idx) => idx * 100,
-					data: chartData,
-					color: colorPalette,
-				},
-			],
-		};
+      var colors = getThemeColors();
+      var chart = echarts.init(chartDom);
 
-		chart.setOption(option);
+      chart.setOption({
+        tooltip: {
+          trigger: "item",
+          formatter: function(params) {
+            return "<strong>" + params.name + "</strong><br/>文章数量：" + params.value + " 篇<br/>占比：" + params.percent + "%";
+          },
+          backgroundColor: colors.tooltipBg,
+          borderColor: colors.tooltipBorder,
+          borderWidth: 1,
+          textStyle: { color: colors.textColor },
+          extraCssText: "border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);",
+        },
+        legend: { show: false },
+        series: [{
+          name: "分类",
+          type: "pie",
+          radius: ["20%", "75%"],
+          center: ["50%", "50%"],
+          roseType: "area",
+          itemStyle: { borderRadius: 6, borderColor: "transparent", borderWidth: 2 },
+          label: {
+            show: true, color: colors.textColor, fontSize: 13, fontWeight: 500,
+            formatter: "{b}\n{c} 篇",
+          },
+          labelLine: { lineStyle: { color: colors.subtextColor } },
+          emphasis: {
+            label: { show: true, fontSize: 15, fontWeight: "bold" },
+            itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: "rgba(0,0,0,0.3)" },
+          },
+          animationType: "scale",
+          animationEasing: "cubicOut",
+          animationDuration: 1000,
+          animationDelay: function(idx) { return idx * 100; },
+          data: chartData,
+          color: colorPalette,
+        }],
+      });
 
-		// 点击事件：跳转到对应分类的归档页
-		chart.on("click", (params) => {
-			const item = chartData.find((d) => d.name === params.name);
-			if (item?.url) {
-				navigateToPage(item.url);
-			}
-		});
+      chart.on("click", function(params) {
+        for (var i = 0; i < chartData.length; i++) {
+          if (chartData[i].name === params.name && chartData[i].url) {
+            window.location.href = chartData[i].url;
+            break;
+          }
+        }
+      });
 
-		// 响应窗口大小变化
-		const resizeHandler = () => chart.resize();
-		window.addEventListener("resize", resizeHandler);
+      var resizeHandler = function() { chart.resize(); };
+      window.addEventListener("resize", resizeHandler);
 
-		// 监听主题变化
-		const observer = new MutationObserver(() => {
-			const newColors = getThemeColors();
-			chart.setOption({
-				tooltip: {
-					backgroundColor: newColors.tooltipBg,
-					borderColor: newColors.tooltipBorder,
-					textStyle: { color: newColors.textColor },
-				},
-				series: [
-					{
-						label: { color: newColors.textColor },
-						labelLine: {
-							lineStyle: { color: newColors.subtextColor },
-						},
-					},
-				],
-			});
-		});
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ["class"],
-		});
+      var observer = new MutationObserver(function() {
+        var nc = getThemeColors();
+        chart.setOption({
+          tooltip: { backgroundColor: nc.tooltipBg, borderColor: nc.tooltipBorder, textStyle: { color: nc.textColor } },
+          series: [{ label: { color: nc.textColor }, labelLine: { lineStyle: { color: nc.subtextColor } } }],
+        });
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-		// Swup 页面离开时销毁
-		document.addEventListener(
-			"swup:willReplaceContent",
-			() => {
-				window.removeEventListener("resize", resizeHandler);
-				observer.disconnect();
-				chart.dispose();
-			},
-			{ once: true },
-		);
-	});
+      document.addEventListener("swup:willReplaceContent", function() {
+        window.removeEventListener("resize", resizeHandler);
+        observer.disconnect();
+        chart.dispose();
+        chartDom.removeAttribute("data-echarts-initialized");
+      }, { once: true });
+    });
+  }
+
+  initCategoryRose();
+  document.addEventListener("astro:page-load", initCategoryRose);
+  document.addEventListener("swup:contentReplaced", initCategoryRose);
+})();
 </script>

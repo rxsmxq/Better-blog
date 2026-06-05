@@ -84,7 +84,6 @@ export type SiteConfig = {
 		friends: boolean; // 友链页面开关
 		sponsor: boolean; // 赞助页面开关
 		guestbook: boolean; // 留言板页面开关
-		bangumi: boolean;
 		gallery: boolean; // 相册页面开关
 		collections: boolean; // 收藏API页面开关
 		stats: boolean; // 统计页面开关

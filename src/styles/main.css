@@ -48,7 +48,7 @@
 @import './pages/404.css';
 @import './pages/gallery.css';
 @import './pages/categories.css';
-@import './pages/tags.css';
+@import './pages/calendar.css';
 
 
 @plugin '@tailwindcss/typography';

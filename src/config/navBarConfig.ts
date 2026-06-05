@@ -14,12 +14,12 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		// 主页
 		LinkPreset.Home,
 
-		// 归档下拉菜单（归档 + 分类 + 标签）
+		// 文章下拉菜单（归档 + 分类标签）
 		{
-			name: "归档",
+			name: "文章",
 			url: "/archive/",
-			icon: "material-symbols:schedule-outline-rounded",
-			children: [LinkPreset.Archive, LinkPreset.Categories, LinkPreset.Tags],
+			icon: "material-symbols:article",
+			children: [LinkPreset.Archive, LinkPreset.Categories],
 		},
 
 		// 日历
@@ -65,15 +65,6 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		icon: "material-symbols:person",
 		children: [
 			...(siteConfig.pages.gallery ? [LinkPreset.Gallery] : []),
-			...(siteConfig.pages.bangumi
-				? [
-						{
-							name: "追番",
-							url: "/bangumi/",
-							icon: "material-symbols:play-circle",
-						},
-					]
-				: []),
 			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
 			LinkPreset.About,
 		],

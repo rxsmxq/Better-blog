@@ -491,16 +491,8 @@ const postUrlPrefix = url("/posts/");
       }
   }
   
-  // 页面加载时渲染日历
-  initCalendar();
-
-  // 页面切换时重新渲染（使用 guard 防止 is:inline 脚本重复注册）
-  if (!window.__calendarListenerAdded) {
-    window.__calendarListenerAdded = true;
-    document.addEventListener("swup:contentReplaced", () => {
-      setTimeout(initCalendar, 100);
-    });
-  }
+  // astro:page-load 在首次加载和每次 Swup 导航后触发
+  document.addEventListener("astro:page-load", initCalendar);
 </script>
 
 <!-- 样式已迁移至 src/styles/widgets/calendar.css -->
