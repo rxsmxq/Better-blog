@@ -140,9 +140,10 @@
     }
 
     // ── Click to play ───────────────────────────────
-    canvas.addEventListener("click", () => {
+    const handleClick = () => {
       togglePlay();
-    });
+    };
+    canvas.addEventListener("click", handleClick);
 
     // ── Animation loop ──────────────────────────────
     function animate() {
@@ -250,6 +251,7 @@
     function dispose() {
       disposed = true;
       cancelAnimationFrame(animationId);
+      canvas.removeEventListener("click", handleClick);
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", updateScrollRotation);
       mixer?.stopAllAction();

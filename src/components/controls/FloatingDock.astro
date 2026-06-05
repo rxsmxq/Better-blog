@@ -147,6 +147,9 @@ const tags = await getTagList();
 
 <script>
 	(function initFloatingDock() {
+		const dockAbortController = new AbortController();
+		const dockSignal = dockAbortController.signal;
+
 		const stack = document.getElementById("dock-stack");
 		const toggleBtn = document.getElementById("dock-toggle-btn");
 		const collapsedIcon = toggleBtn?.querySelector(".dock-icon-collapsed");
@@ -204,7 +207,7 @@ const tags = await getTagList();
 				closeAllDrawers();
 				collapseDock();
 			}
-		});
+		}, { signal: dockSignal });
 
 		// 音乐抽屉懒加载：首次打开时触发 MusicManager 初始化
 		const musicDrawerBtn = document.getElementById("dock-music-btn");
@@ -278,7 +281,7 @@ const tags = await getTagList();
 			});
 
 			updateThemeIcon();
-			window.addEventListener("theme-change", updateThemeIcon);
+			window.addEventListener("theme-change", updateThemeIcon, { signal: dockSignal });
 		}
 
 		// Back to Top / Home / Comment
@@ -317,13 +320,13 @@ const tags = await getTagList();
 		}
 		updateScrollDependent();
 		updatePathDependent();
-		window.addEventListener("scroll", updateScrollDependent, { passive: true });
+		window.addEventListener("scroll", updateScrollDependent, { passive: true, signal: dockSignal });
 		document.addEventListener("astro:page-load", () => {
 			closeAllDrawers();
 			collapseDock();
 			updatePathDependent();
 			updateScrollDependent();
-		});
+		}, { signal: dockSignal });
 
 		// TOC
 		const tocBtn = document.getElementById("dock-toc-btn");

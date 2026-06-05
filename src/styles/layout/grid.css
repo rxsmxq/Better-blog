@@ -18,11 +18,11 @@
 	max-width: 15rem;
 	pointer-events: none;
 	z-index: 10;
-	transition: left 0.3s ease;
+	transition: transform 0.3s ease;
 }
 
 .article-toc-wrapper:has(.article-toc-container:hover) {
-	left: calc(50% + 31.5rem);
+	transform: translateX(-0.5rem);
 }
 
 .article-toc-container {

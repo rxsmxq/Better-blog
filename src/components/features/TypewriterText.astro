@@ -166,12 +166,7 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
     setTimeout(initTypewriterElements, 220);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", runInitWithDelay);
-  } else {
-    runInitWithDelay();
-  }
-
+  // Use astro:page-load which fires on both initial load and navigation
   document.addEventListener("astro:page-load", runInitWithDelay);
 </script>
 

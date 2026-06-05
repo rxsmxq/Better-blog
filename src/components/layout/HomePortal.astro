@@ -207,11 +207,18 @@ import { initMagicRings } from '@components/features/MagicRings.ts';
 
 	setTimeMode();
 	initRings();
-	setInterval(setTimeMode, 60000);
+	if ((window as any).__homePortalIntervalId) {
+		clearInterval((window as any).__homePortalIntervalId);
+	}
+	(window as any).__homePortalIntervalId = setInterval(setTimeMode, 60000);
 
 	document.addEventListener('astro:page-load', function() {
 		setTimeMode();
 		initRings();
+		if ((window as any).__homePortalIntervalId) {
+			clearInterval((window as any).__homePortalIntervalId);
+		}
+		(window as any).__homePortalIntervalId = setInterval(setTimeMode, 60000);
 	});
 })();
 </script>

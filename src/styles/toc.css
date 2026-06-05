@@ -144,9 +144,10 @@
 	position: absolute;
 	left: 0;
 	right: 0;
+	top: 0;
 	background: transparent;
 	border-radius: 0.875rem;
-	transition: top 0.18s ease, height 0.18s ease, opacity 0.14s ease,
+	transition: transform 0.18s ease, height 0.18s ease, opacity 0.14s ease,
 		border-top-style 0.12s ease, border-right-style 0.12s ease,
 		border-bottom-style 0.12s ease, border-left-style 0.12s ease;
 	box-shadow: none;

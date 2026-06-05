@@ -91,14 +91,16 @@ $effect(() => {
 });
 
 // Swup 页面切换后关闭菜单，避免状态残留
-if (typeof document !== "undefined") {
-	document.addEventListener("astro:page-load", () => {
-		closeMenu();
-	});
-	document.addEventListener("swup:contentReplaced", () => {
-		closeMenu();
-	});
-}
+$effect(() => {
+	if (typeof document === "undefined") return;
+	const handleClose = () => closeMenu();
+	document.addEventListener("astro:page-load", handleClose);
+	document.addEventListener("swup:contentReplaced", handleClose);
+	return () => {
+		document.removeEventListener("astro:page-load", handleClose);
+		document.removeEventListener("swup:contentReplaced", handleClose);
+	};
+});
 
 function isDarkMode() {
 	return (

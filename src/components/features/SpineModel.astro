@@ -107,6 +107,18 @@ import { url } from "@/utils/url-utils";
       window.clearModelMessage();
     }
 
+    // 清理待机动画定时器
+    if (window.__spineIdleIntervalId) {
+      clearInterval(window.__spineIdleIntervalId);
+      window.__spineIdleIntervalId = null;
+    }
+
+    // 移除事件监听器
+    if (window.__spineAbortController) {
+      window.__spineAbortController.abort();
+      window.__spineAbortController = null;
+    }
+
     // 清理现有的播放器实例
     if (window.spinePlayerInstance) {
       try {
@@ -350,7 +362,7 @@ import { url } from "@/utils/url-utils";
 
               // 设置待机动画循环（仅在至少两个有效待机动画时启用）
               if (validIdleAnims.length > 1) {
-                setInterval(() => {
+                window.__spineIdleIntervalId = setInterval(() => {
                   const randomIdle = pickRandom(validIdleAnims);
                   safeSetAnimation(randomIdle, true);
                 }, spineModelConfig.interactive.idleInterval);
@@ -393,8 +405,12 @@ import { url } from "@/utils/url-utils";
     }
   }
 
+  // 统一管理事件监听器
+  window.__spineAbortController = new AbortController();
+  const spineSignal = window.__spineAbortController.signal;
+
   // 监听页面卸载事件，清理资源
-  window.addEventListener("beforeunload", cleanupSpineModel);
+  window.addEventListener("beforeunload", cleanupSpineModel, { signal: spineSignal });
 
   // 监听 Swup 页面切换事件（如果使用了 Swup）
   if (typeof window.swup !== "undefined" && window.swup.hooks) {
@@ -411,14 +427,14 @@ import { url } from "@/utils/url-utils";
     setTimeout(() => {
       updateResponsiveDisplay();
     }, 100);
-  });
+  }, { signal: spineSignal });
 
   // 监听窗口大小变化
-  window.addEventListener("resize", updateResponsiveDisplay);
+  window.addEventListener("resize", updateResponsiveDisplay, { signal: spineSignal });
 
   // 页面加载完成后初始化（只初始化一次）
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initSpineModel);
+    document.addEventListener("DOMContentLoaded", initSpineModel, { signal: spineSignal });
   } else {
     initSpineModel();
   }

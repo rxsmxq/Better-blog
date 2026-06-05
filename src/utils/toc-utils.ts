@@ -313,7 +313,7 @@ export class TOCManager {
 		const top = firstRect.top - contentRect.top;
 		const height = lastRect.bottom - firstRect.top;
 
-		indicator.style.top = `${top}px`;
+		indicator.style.transform = `translateY(${top}px)`;
 		indicator.style.height = `${height}px`;
 		indicator.style.opacity = "1";
 

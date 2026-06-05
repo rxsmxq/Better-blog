@@ -107,15 +107,36 @@ if (isLocalSrcLogo) {
 <!-- 样式已迁移至 src/styles/layout/navbar-new.css -->
 
 <script>
+let _hoverSliderAbortController: AbortController | null = null;
+let _hoverSliderNavItems: NodeListOf<Element> | null = null;
+let _hoverSliderMouseEnterHandlers: Array<[Element, (e: Event) => void]> = [];
+
+function cleanupHoverSlider() {
+    if (_hoverSliderAbortController) {
+        _hoverSliderAbortController.abort();
+        _hoverSliderAbortController = null;
+    }
+    _hoverSliderMouseEnterHandlers.forEach(([item, handler]) => {
+        item.removeEventListener('mouseenter', handler);
+    });
+    _hoverSliderMouseEnterHandlers = [];
+    _hoverSliderNavItems = null;
+}
+
 function initHoverSlider() {
+    cleanupHoverSlider();
+
     const navContainer = document.querySelector('[data-navbar-nav]') as HTMLElement | null;
     const hoverBorder = document.querySelector('[data-hover-border]') as HTMLElement | null;
 
     if (!navContainer || !hoverBorder) return;
 
+    _hoverSliderAbortController = new AbortController();
+
     const _navContainer = navContainer;
     const _hoverBorder = hoverBorder;
     const navItems = _navContainer.querySelectorAll(':scope > .dropdown-container');
+    _hoverSliderNavItems = navItems;
 
     function detectActiveItem() {
         const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
@@ -145,7 +166,7 @@ function initHoverSlider() {
     }
 
     navItems.forEach((item) => {
-        item.addEventListener('mouseenter', () => {
+        const handler = () => {
             const rect = item.getBoundingClientRect();
             const containerRect = _navContainer.getBoundingClientRect();
 
@@ -153,7 +174,9 @@ function initHoverSlider() {
             _hoverBorder.style.height = `${rect.height}px`;
             _hoverBorder.style.left = `${rect.left - containerRect.left}px`;
             _hoverBorder.style.top = `${(containerRect.height - rect.height) / 2}px`;
-        });
+        };
+        item.addEventListener('mouseenter', handler);
+        _hoverSliderMouseEnterHandlers.push([item, handler]);
     });
 
     _navContainer.addEventListener('mouseleave', () => {
@@ -168,14 +191,14 @@ function initHoverSlider() {
         } else {
             _hoverBorder.style.opacity = '0';
         }
-    });
+    }, { signal: _hoverSliderAbortController.signal });
 
     _navContainer.addEventListener('mouseenter', () => {
         _hoverBorder.style.opacity = '1';
-    });
+    }, { signal: _hoverSliderAbortController.signal });
 
     detectActiveItem();
-    document.addEventListener('swup:page:view', detectActiveItem);
+    document.addEventListener('swup:page:view', detectActiveItem, { signal: _hoverSliderAbortController.signal });
 }
 
 initHoverSlider();

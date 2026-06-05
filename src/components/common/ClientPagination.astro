@@ -301,6 +301,11 @@ const pageNumbers = generatePageNumbers(currentPage, totalPages);
       updatePage();
     }
 
+    // Guard against multiple executions (e.g. DOMContentLoaded + astro:page-load)
+    var guardKey = '__paginationInitialized_' + sectionId;
+    if (window[guardKey]) return;
+    window[guardKey] = true;
+
     // Swup 兼容：页面加载和导航后都初始化
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initPagination);

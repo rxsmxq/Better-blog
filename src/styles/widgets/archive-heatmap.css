@@ -23,7 +23,7 @@
 	background: transparent;
 	color: var(--content-meta);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .heatmap-year-btn:hover {
 	border-color: var(--primary);

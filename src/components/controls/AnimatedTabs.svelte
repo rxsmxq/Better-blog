@@ -39,11 +39,12 @@ function initFromStorage() {
 // 初始化 + Swup 页面切换后重新初始化
 $effect(() => {
 	initFromStorage();
-});
-
-if (typeof document !== "undefined") {
+	if (typeof document === "undefined") return;
 	document.addEventListener("astro:page-load", initFromStorage);
-}
+	return () => {
+		document.removeEventListener("astro:page-load", initFromStorage);
+	};
+});
 </script>
 
 <label class="skull-switch {className}">

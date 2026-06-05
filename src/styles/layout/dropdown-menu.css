@@ -59,7 +59,7 @@
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
-	transition: all 0.2s ease-out;
+	transition: opacity 0.2s ease-out, visibility 0.2s ease-out, transform 0.2s ease-out;
 	transform: translateY(-8px);
 	z-index: 50;
 }

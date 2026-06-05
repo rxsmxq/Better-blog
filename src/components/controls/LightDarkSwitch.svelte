@@ -53,16 +53,18 @@ onMount(() => {
 		}
 	};
 
+	const handleSwupEnable = () => {
+		const w = window as WindowWithSwup;
+		if (w.swup?.hooks) {
+			w.swup.hooks.on("content:replace", handleContentReplace);
+		}
+	};
+
 	const win = window as WindowWithSwup;
 	if (win.swup?.hooks) {
 		win.swup.hooks.on("content:replace", handleContentReplace);
 	} else {
-		document.addEventListener("swup:enable", () => {
-			const w = window as WindowWithSwup;
-			if (w.swup?.hooks) {
-				w.swup.hooks.on("content:replace", handleContentReplace);
-			}
-		});
+		document.addEventListener("swup:enable", handleSwupEnable);
 	}
 
 	// Listen for theme-change events from other components
@@ -76,6 +78,7 @@ onMount(() => {
 
 	return () => {
 		window.removeEventListener("theme-change", handleThemeChange);
+		document.removeEventListener("swup:enable", handleSwupEnable);
 	};
 });
 </script>

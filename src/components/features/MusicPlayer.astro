@@ -720,6 +720,9 @@ const widgetId =
                     Object.keys(handlers).forEach(function (name) {
                         window.removeEventListener(name, handlers[name]);
                     });
+                    if (ui.playlistContainer) {
+                        ui.playlistContainer.removeEventListener('scroll', onPlaylistScroll);
+                    }
                     observer.disconnect();
                     clearTimeout(local.scrollTimeout);
                     return;

@@ -16,7 +16,13 @@
 	opacity: 1;
 }
 
+.lyric-prev,
+.lyric-next {
+	color: #FFC4BB;
+}
+
 .lyric-current {
+	color: #E36F85;
 	cursor: pointer;
 }
 

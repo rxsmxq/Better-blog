@@ -38,6 +38,11 @@ const { filters, activeFilter, sectionId } = Astro.props;
 
 <script is:inline define:vars={{ sectionId }}>
   (function() {
+    // Guard against multiple executions
+    var guardKey = '__filterControlsInitialized_' + sectionId;
+    if (window[guardKey]) return;
+    window[guardKey] = true;
+
     function initFilterControls() {
       var filterButtons = document.querySelectorAll('[data-section="' + sectionId + '"][data-filter]');
 

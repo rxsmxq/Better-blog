@@ -103,14 +103,14 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 	// 键盘导航支持
 	document.addEventListener('DOMContentLoaded', function() {
 		const dropdowns = document.querySelectorAll('[data-dropdown]');
-		
+
 		dropdowns.forEach(dropdown => {
 			const trigger = dropdown.querySelector('[data-dropdown-trigger]') as HTMLElement | null;
 			const menu = dropdown.querySelector('[data-dropdown-menu]');
 			const items = dropdown.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>;
-			
+
 			if (!trigger || !menu) return;
-			
+
 			// 键盘事件处理
 			trigger.addEventListener('keydown', function(e: KeyboardEvent) {
 				if (e.key === 'Enter' || e.key === ' ') {
@@ -126,7 +126,7 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 					closeDropdown(dropdown, trigger, menu);
 				}
 			});
-			
+
 			// 菜单项键盘导航
 			items.forEach((item, index) => {
 				item.addEventListener('keydown', function(e: KeyboardEvent) {
@@ -145,39 +145,42 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 				});
 			});
 		});
-		
-		// 点击外部关闭下拉菜单
-		document.addEventListener('click', function(e) {
-			dropdowns.forEach(dropdown => {
-				if (!dropdown.contains(e.target as Node)) {
-					const trigger = dropdown.querySelector('[data-dropdown-trigger]');
-					const menu = dropdown.querySelector('[data-dropdown-menu]');
-					if (trigger && menu) {
-						closeDropdown(dropdown, trigger, menu);
-					}
-				}
-			});
-		});
 
-		// 处理 action 按钮点击
-		document.addEventListener('click', function(e) {
-			const actionBtn = (e.target as HTMLElement).closest('[data-action]');
-			if (actionBtn) {
-				const action = actionBtn.getAttribute('data-action');
-				if (action) {
-					window.dispatchEvent(new CustomEvent(action));
-					// 关闭下拉菜单
-					const dropdown = actionBtn.closest('[data-dropdown]');
-					if (dropdown) {
+		// Guard: prevent multiple document-level click handlers across DropdownMenu instances
+		if (!(window as any).__dropdownClickAdded) {
+			(window as any).__dropdownClickAdded = true;
+
+			// 点击外部关闭下拉菜单 + 处理 action 按钮点击
+			document.addEventListener('click', function(e) {
+				const dropdowns = document.querySelectorAll('[data-dropdown]');
+				dropdowns.forEach(dropdown => {
+					if (!dropdown.contains(e.target as Node)) {
 						const trigger = dropdown.querySelector('[data-dropdown-trigger]');
 						const menu = dropdown.querySelector('[data-dropdown-menu]');
 						if (trigger && menu) {
 							closeDropdown(dropdown, trigger, menu);
 						}
 					}
+				});
+
+				const actionBtn = (e.target as HTMLElement).closest('[data-action]');
+				if (actionBtn) {
+					const action = actionBtn.getAttribute('data-action');
+					if (action) {
+						window.dispatchEvent(new CustomEvent(action));
+						// 关闭下拉菜单
+						const dropdown = actionBtn.closest('[data-dropdown]');
+						if (dropdown) {
+							const trigger = dropdown.querySelector('[data-dropdown-trigger]');
+							const menu = dropdown.querySelector('[data-dropdown-menu]');
+							if (trigger && menu) {
+								closeDropdown(dropdown, trigger, menu);
+							}
+						}
+					}
 				}
-			}
-		});
+			});
+		}
 	});
 	
 	function toggleDropdown(_dropdown: Element, trigger: Element, menu: Element) {

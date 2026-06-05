@@ -245,9 +245,20 @@ const siteLang = lang.replace("_", "-");
     });
   }
 
+  // 模块作用域存储 timeout ID，避免快速导航时竞态
+  let progressTimeout1: ReturnType<typeof setTimeout> | null = null;
+  let progressTimeout2: ReturnType<typeof setTimeout> | null = null;
+  let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+  let commentTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  function clearAllTransitionTimeouts() {
+    if (progressTimeout1) { clearTimeout(progressTimeout1); progressTimeout1 = null; }
+    if (progressTimeout2) { clearTimeout(progressTimeout2); progressTimeout2 = null; }
+    if (transitionTimeout) { clearTimeout(transitionTimeout); transitionTimeout = null; }
+    if (commentTimeout) { clearTimeout(commentTimeout); commentTimeout = null; }
+  }
+
   function scheduleContentOverflowEnhancements() {
-    initCustomScrollbar();
-    initHorizontalOverflowContainers();
     requestAnimationFrame(() => {
       initCustomScrollbar();
       initHorizontalOverflowContainers();
@@ -295,6 +306,7 @@ const siteLang = lang.replace("_", "-");
     });
 
     window.swup.hooks.on("visit:start", (visit: any) => {
+      clearAllTransitionTimeouts();
       const targetUrl = visit?.to?.url || "";
       const targetPathname = (() => {
         try { return new URL(targetUrl, window.location.href).pathname; } catch { return targetUrl; }
@@ -323,7 +335,7 @@ const siteLang = lang.replace("_", "-");
         document.documentElement.setAttribute("data-theme", expectedTheme);
       }
       updateSidebarWidgetVisibility();
-      setTimeout(() => {
+      commentTimeout = setTimeout(() => {
         if (document.getElementById("tcomment")) {
           document.dispatchEvent(new CustomEvent("firefly:page:loaded", {
             detail: { path: window.location.pathname, timestamp: Date.now() },
@@ -337,15 +349,17 @@ const siteLang = lang.replace("_", "-");
       if (progressBar) {
         progressBar.classList.remove("loading");
         progressBar.classList.add("finishing");
-        setTimeout(() => {
+        progressTimeout1 = setTimeout(() => {
           progressBar.classList.remove("finishing");
           progressBar.classList.add("done");
-          setTimeout(() => progressBar.classList.remove("done"), 300);
+          progressTimeout2 = setTimeout(() => progressBar.classList.remove("done"), 300);
         }, 200);
       }
 
-      setTimeout(() => {
+      transitionTimeout = setTimeout(() => {
         document.documentElement.classList.remove("is-page-transitioning");
+        // 重置 TOC 内部导航标记
+        (window as any).tocInternalNavigation = false;
       }, 400);
     });
   };

@@ -10,11 +10,11 @@ import { i18n } from "@/i18n/translation";
 	aria-label={i18n(I18nKey.musicFloatingLyrics)}
 	role="region"
 >
-	<div class="lyrics-bg absolute inset-0 bg-(--page-bg)/85 backdrop-blur-xl border-t border-white/10 dark:border-white/5"></div>
+	<div class="lyrics-bg absolute inset-0"></div>
 	<div class="lyrics-content relative flex flex-col items-center justify-center py-3 px-4 md:py-4 min-h-[56px] md:min-h-[72px]">
-		<div class="lyric-prev text-xs md:text-sm text-neutral-500/70 dark:text-neutral-400/70 truncate max-w-[90vw] md:max-w-[70vw] text-center leading-relaxed transition-all duration-200"></div>
-		<div class="lyric-current text-sm md:text-base font-semibold text-(--primary) truncate max-w-[90vw] md:max-w-[70vw] text-center leading-relaxed transition-all duration-200 cursor-pointer hover:opacity-85"></div>
-		<div class="lyric-next text-xs md:text-sm text-neutral-500/70 dark:text-neutral-400/70 truncate max-w-[90vw] md:max-w-[70vw] text-center leading-relaxed transition-all duration-200"></div>
+		<div class="lyric-prev text-xs md:text-sm truncate max-w-[90vw] md:max-w-[70vw] text-center leading-relaxed transition-all duration-200"></div>
+		<div class="lyric-current text-sm md:text-base font-semibold truncate max-w-[90vw] md:max-w-[70vw] text-center leading-relaxed transition-all duration-200 cursor-pointer hover:opacity-85"></div>
+		<div class="lyric-next text-xs md:text-sm truncate max-w-[90vw] md:max-w-[70vw] text-center leading-relaxed transition-all duration-200"></div>
 	</div>
 	<button
 		class="btn-close absolute top-1/2 -translate-y-1/2 left-3 md:left-4 p-1.5 rounded-full text-neutral-400 hover:text-(--primary) hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 pointer-events-auto"
@@ -172,11 +172,12 @@ import { i18n } from "@/i18n/translation";
 	});
 
 	// Page visibility: pause updates when hidden
-	document.addEventListener("visibilitychange", function () {
+	var onVisibilityChange = function () {
 		if (!document.hidden) {
 			syncFromManager();
 		}
-	});
+	};
+	document.addEventListener("visibilitychange", onVisibilityChange);
 
 	// Swup page transition: re-sync after navigation
 	document.addEventListener("astro:page-load", syncFromManager);
@@ -198,6 +199,7 @@ import { i18n } from "@/i18n/translation";
 					window.removeEventListener("fm:toggle-floating-lyrics", onToggleFloatingLyrics);
 					document.removeEventListener("astro:page-load", syncFromManager);
 					document.removeEventListener("swup:contentReplaced", syncFromManager);
+					document.removeEventListener("visibilitychange", onVisibilityChange);
 					observer.disconnect();
 					return;
 				}

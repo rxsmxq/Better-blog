@@ -252,18 +252,20 @@ const categories = await getCategoryList();
 
     const colHeights = new Array(colCount).fill(0);
 
+    // 两遍法避免强制重排：第一遍批量写样式，第二遍批量读高度再写位置
+    // Pass 1: 设置 position/width/height（不读 offsetHeight）
     items.forEach((item) => {
-      // 找到最短的列放置
-      const colIndex = colHeights.indexOf(Math.min(...colHeights));
-
       // @ts-ignore
       item.style.position = "absolute";
       // @ts-ignore
       item.style.width = `${itemWidth}px`;
       // @ts-ignore
       item.style.setProperty('height', 'auto', 'important');
+    });
 
-      // 获取高度，优先使用 offsetHeight 避免 transform 影响
+    // Pass 2: 批量读取高度，计算位置，统一写入
+    items.forEach((item) => {
+      const colIndex = colHeights.indexOf(Math.min(...colHeights));
       // @ts-ignore
       const height = item.offsetHeight;
 
@@ -285,16 +287,6 @@ const categories = await getCategoryList();
   document.addEventListener("DOMContentLoaded", function () {
     // 延迟一点确保DOM完全加载
     setTimeout(initLayout, 50);
-
-    // 监听图片加载以重新计算布局
-    const imgs = document.querySelectorAll('#post-list-container img');
-    imgs.forEach(img => {
-        // @ts-ignore
-        if(img.complete) return;
-        img.addEventListener('load', () => {
-            applyMasonryLayout();
-        });
-    });
   });
 
   // 页面显示时也初始化布局（处理页面切换）

@@ -160,6 +160,7 @@ const navLinks = navBarConfig.links.map((item) => {
 	import { isPostPage } from "@/utils/navigation-utils";
 
 	let articleTocManager: TOCManager | null = null;
+	let tocClickHandler: ((e: Event) => void) | null = null;
 
 	function alignTOCCoverImage() {
 		const wrapper = document.getElementById("article-toc-wrapper");
@@ -209,13 +210,14 @@ const navLinks = navBarConfig.links.map((item) => {
 
 			articleTocManager.init();
 
-			tocContent.addEventListener("click", (e) => {
+			tocClickHandler = (e: Event) => {
 				const target = e.target as Element | null;
 				const anchor = target?.closest('a[href^="#"]');
 				if (anchor) {
 					window.tocInternalNavigation = true;
 				}
-			}, { capture: true });
+			};
+			tocContent.addEventListener("click", tocClickHandler, { capture: true });
 
 			alignTOCCoverImage();
 		} catch (error) {
@@ -227,6 +229,11 @@ const navLinks = navBarConfig.links.map((item) => {
 		if (articleTocManager) {
 			articleTocManager.cleanup();
 			articleTocManager = null;
+		}
+		if (tocClickHandler) {
+			const tocContent = document.getElementById("article-toc-content");
+			if (tocContent) tocContent.removeEventListener("click", tocClickHandler);
+			tocClickHandler = null;
 		}
 	}
 

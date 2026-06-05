@@ -75,12 +75,7 @@ const { headings: _headings = [], class: className, style } = Astro.props;
     initSidebarTOC();
   }
 
-  // 页面切换时重新初始化
-  document.addEventListener("swup:contentReplaced", () => {
-    setTimeout(initSidebarTOC, 100);
-  });
-  
-  // Astro 页面切换事件
+  // Astro 页面切换事件（swup:contentReplaced 不再需要，astro:page-load 已覆盖）
   document.addEventListener("astro:page-load", () => {
     setTimeout(initSidebarTOC, 100);
   });

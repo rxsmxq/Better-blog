@@ -57,13 +57,15 @@
 	position: absolute;
 	left: 0;
 	bottom: -2px;
-	width: 0;
+	width: 100%;
 	height: 2px;
 	background: currentColor;
-	transition: width 0.35s ease;
+	transform: scaleX(0);
+	transform-origin: left;
+	transition: transform 0.35s ease;
 }
 .post-card-wrapper:hover .post-card-title::after {
-	width: 100%;
+	transform: scaleX(1);
 }
 
 /* === Accent Bar === */

@@ -111,11 +111,17 @@ const size = config.size || { width: 280, height: 250 };
     canvasElement: null,
     widgetElement: null,
     mobileToolbarVisible: false,
+    abortController: null,
   };
 }
 
 	const g = window[GLOBAL_KEY] || createGlobalState();
 	window[GLOBAL_KEY] = g;
+
+	// 统一管理事件监听器，cleanup 时一次性移除
+	let live2dAbortController = g.abortController || new AbortController();
+	if (!g.abortController) g.abortController = live2dAbortController;
+	else live2dAbortController = g.abortController;
 
 	const allMotionGroups = ["Expression", "TapShort", "TapLong", "Other"];
 	let clickMotionGroups = ["Expression", "TapShort"];
@@ -353,11 +359,12 @@ const size = config.size || { width: 280, height: 250 };
 		let currentGroupIndex = 0;
 
 		const canvas = document.getElementById("live2d-canvas");
+    const interactionsSignal = g.abortController?.signal;
     canvas?.addEventListener("click", () => {
       if (window.innerWidth <= 768) return;
       if (!g.wasDragging) playRandomMotion();
       g.wasDragging = false;
-    });
+    }, { signal: interactionsSignal });
 
 		const switchBtn = document.getElementById("toolbar-switch");
 		const groupIndicator = document.getElementById("live2d-group-indicator");
@@ -393,7 +400,7 @@ const size = config.size || { width: 280, height: 250 };
 						// ignore
 					}
 				}
-			});
+			}, { signal: interactionsSignal });
 		}
 
 		const infoBtn = document.getElementById("toolbar-info");
@@ -404,14 +411,14 @@ const size = config.size || { width: 280, height: 250 };
 				e.stopPropagation();
 				authorPanel.classList.toggle("visible");
 				infoBtn.classList.toggle("active");
-			});
+			}, { signal: interactionsSignal });
 		}
 
 		const dragBtn = document.getElementById("toolbar-drag");
 		if (dragBtn) {
 			dragBtn.addEventListener("click", (e) => {
 				e.stopPropagation();
-			});
+			}, { signal: interactionsSignal });
 		}
 
 		const closeBtn = document.getElementById("toolbar-close");
@@ -419,7 +426,7 @@ const size = config.size || { width: 280, height: 250 };
 			closeBtn.addEventListener("click", (e) => {
 				e.stopPropagation();
 				closeLive2DWidget();
-			});
+			}, { signal: interactionsSignal });
 		}
 
 		setupDrag();
@@ -695,7 +702,7 @@ function initTrigger() {
 
 		trigger.addEventListener("click", () => {
 			showLive2DWidget();
-		});
+		}, { signal: g.abortController?.signal });
 
 		const cachedVisibility = g.stateManager?.getCachedVisibility();
 		if (cachedVisibility === "hidden") {
@@ -721,6 +728,7 @@ function initTrigger() {
 		g.isDragSetup = true;
 
 		const container = document.getElementById("live2d-widget");
+		const dragSignal = g.abortController?.signal;
 		if (!container) return;
 
 		let isDragging = false;
@@ -769,7 +777,7 @@ function initTrigger() {
 			container.style.cursor = "grabbing";
 			container.style.willChange = "left, top";
 			e.preventDefault();
-		});
+		}, { signal: dragSignal });
 
 		document.addEventListener("mousemove", (e) => {
 			if (!isDragging) return;
@@ -787,7 +795,7 @@ function initTrigger() {
 				Math.min(containerStart.y + dy, winHeight - containerH),
 			);
 			scheduleMove(clampedX, clampedY);
-		});
+		}, { signal: dragSignal });
 
 		document.addEventListener("mouseup", () => {
 			if (isDragging) {
@@ -815,7 +823,7 @@ function initTrigger() {
 					// ignore storage errors
 				}
 			}
-		});
+		}, { signal: dragSignal });
 
     container.addEventListener("touchstart", (e) => {
       if (e.touches.length !== 1) return;
@@ -830,7 +838,7 @@ function initTrigger() {
 			containerH = container.offsetHeight;
 			container.style.willChange = "left, top";
 			e.preventDefault();
-		});
+		}, { signal: dragSignal });
 
 		document.addEventListener("touchmove", (e) => {
 			if (!isDragging || e.touches.length !== 1) return;
@@ -850,7 +858,7 @@ function initTrigger() {
 			);
 			scheduleMove(clampedX, clampedY);
 			e.preventDefault();
-		});
+		}, { signal: dragSignal });
 
 		document.addEventListener("touchend", (e) => {
 			if (isDragging) {
@@ -888,7 +896,7 @@ function initTrigger() {
 				}
 			}
 			isDragging = false;
-		});
+		}, { signal: dragSignal });
 
   container.style.cursor = "grab";
 
@@ -898,7 +906,7 @@ function initTrigger() {
     if (!container.contains(e.target) && g.mobileToolbarVisible) {
       toggleMobileToolbar(false);
     }
-  });
+  }, { signal: dragSignal });
 
   window.addEventListener("resize", () => {
 			winWidth = window.innerWidth;
@@ -916,7 +924,7 @@ function initTrigger() {
 				container.style.top = `${maxY}px`;
 				container.style.bottom = "auto";
 			}
-		});
+		}, { signal: dragSignal });
 	}
 
 	// ============================================================
@@ -1101,7 +1109,14 @@ function initTrigger() {
 			g.app = null;
 			g.model = null;
 		}
+		// 移除所有事件监听器
+		if (g.abortController) {
+			g.abortController.abort();
+			g.abortController = null;
+		}
 		g.initialized = false;
+		g.isDragSetup = false;
+		g.isInteractionsSetup = false;
 	}
 
 	// ============================================================
@@ -1109,6 +1124,10 @@ function initTrigger() {
 	// ============================================================
 	async function initialize() {
 		if (g.initialized) return;
+
+		// 创建新的 AbortController 用于管理所有事件监听器
+		g.abortController = new AbortController();
+		const signal = g.abortController.signal;
 
 		g.stateManager = await Live2DStateManager.getInstance();
 		initTrigger();
@@ -1135,8 +1154,10 @@ function initTrigger() {
 	// ============================================================
 	// 启动入口
 	// ============================================================
+	const _sig = live2dAbortController.signal;
+
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", handlePageLoad);
+		document.addEventListener("DOMContentLoaded", handlePageLoad, { signal: _sig });
 	} else {
 		handlePageLoad();
 	}
@@ -1145,17 +1166,17 @@ function initTrigger() {
 	window.addEventListener("resize", () => {
 		clearTimeout(g.resizeTimer);
 		g.resizeTimer = setTimeout(handleResponsive, 150);
-	});
+	}, { signal: _sig });
 
 	// 页面可见性变化（切换浏览器标签）
-	document.addEventListener("visibilitychange", handleVisibilityChange);
+	document.addEventListener("visibilitychange", handleVisibilityChange, { signal: _sig });
 
 	// Swup SPA 导航后恢复状态（核心：跨页面状态保持）
-	document.addEventListener("astro:page-load", handlePageLoad);
-	document.addEventListener("swup:page:view", handlePageLoad);
+	document.addEventListener("astro:page-load", handlePageLoad, { signal: _sig });
+	document.addEventListener("swup:page:view", handlePageLoad, { signal: _sig });
 
 	// 页面卸载时清理
-	window.addEventListener("beforeunload", cleanup);
+	window.addEventListener("beforeunload", cleanup, { signal: _sig });
 
 	function sleep(ms) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
