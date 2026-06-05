@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Umami 配置
 const UMAMI_BASE_URL = "https://stats.mmzhiku.xyz";
 const UMAMI_WEBSITE_ID = "5907656e-d254-4c9e-ad73-5ce40bf184bb";
@@ -143,6 +144,14 @@ async function getStats(env) {
 }
 
 export async function handleCount(_request, env) {
+=======
+function getCookie(cookieString, name) {
+	const match = cookieString.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+	return match ? decodeURIComponent(match[1]) : null;
+}
+
+export async function handleCount(request, env) {
+>>>>>>> parent of 10f04e9 (refactor: 重构站点统计API，改用Umami API获取数据并添加缓存)
 	const headers = {
 		"Access-Control-Allow-Origin": "*",
 		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -150,10 +159,11 @@ export async function handleCount(_request, env) {
 		"Content-Type": "application/json",
 	};
 
-	if (_request.method === "OPTIONS") {
+	if (request.method === "OPTIONS") {
 		return new Response(null, { headers });
 	}
 
+<<<<<<< HEAD
 	try {
 		const stats = await getStats(env);
 		return Response.json(stats, { headers });
@@ -175,5 +185,48 @@ export async function handleCount(_request, env) {
 			{ pv: 0, uv: 0, error: err.message },
 			{ headers }
 		);
+=======
+	if (request.method === "GET") {
+		const pv = (await env.VISITOR_KV.get("pv")) || "0";
+		const uv = (await env.VISITOR_KV.get("uv")) || "0";
+		return Response.json({ pv: Number(pv), uv: Number(uv) }, { headers });
+>>>>>>> parent of 10f04e9 (refactor: 重构站点统计API，改用Umami API获取数据并添加缓存)
 	}
+
+	if (request.method === "POST") {
+		const body = await request.json().catch(() => ({}));
+		const _path = body.path || "/";
+
+		const cookie = request.headers.get("Cookie") || "";
+		let visitorId = getCookie(cookie, "vid");
+
+		if (!visitorId) {
+			visitorId = crypto.randomUUID();
+		}
+
+		const pv = Number((await env.VISITOR_KV.get("pv")) || "0") + 1;
+		await env.VISITOR_KV.put("pv", String(pv));
+
+		const uvKey = `vid:${visitorId}`;
+		const exists = await env.VISITOR_KV.get(uvKey);
+		let uv = Number((await env.VISITOR_KV.get("uv")) || "0");
+
+		if (!exists) {
+			uv += 1;
+			await env.VISITOR_KV.put(uvKey, "1", { expirationTtl: 86400 * 365 });
+			await env.VISITOR_KV.put("uv", String(uv));
+		}
+
+		return Response.json(
+			{ pv, uv },
+			{
+				headers: {
+					...headers,
+					"Set-Cookie": `vid=${visitorId}; Path=/; Max-Age=${86400 * 365}; SameSite=Lax`,
+				},
+			},
+		);
+	}
+
+	return new Response("Method Not Allowed", { status: 405 });
 }

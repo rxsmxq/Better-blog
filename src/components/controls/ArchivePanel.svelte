@@ -553,6 +553,7 @@ onMount(() => {
 }
 .ap-month-node.highlighted {
 	background: var(--nh);
+	transform: translateX(-50%) scale(1.5);
 }
 
 .ap-post-node {
