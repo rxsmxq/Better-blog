@@ -23,6 +23,7 @@ async function getUmamiToken(env) {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ username, password }),
+		redirect: "follow",
 	});
 
 	if (!resp.ok) {
@@ -46,14 +47,45 @@ async function getUmamiToken(env) {
 async function fetchUmamiStats(token) {
 	const endAt = Date.now();
 	const startAt = 0;
-	const url = `${UMAMI_BASE_URL}/api/websites/${UMAMI_WEBSITE_ID}/stats?startAt=${startAt}&endAt=${endAt}&timezone=Asia/Shanghai`;
+	const url = `${UMAMI_BASE_URL}/api/websites/${UMAMI_WEBSITE_ID}/sessions/stats?startAt=${startAt}&endAt=${endAt}&timezone=Asia/Shanghai`;
 
+	// 使用 manual redirect 来诊断问题
 	const resp = await fetch(url, {
 		headers: {
 			Authorization: `Bearer ${token}`,
 			"Content-Type": "application/json",
+			Accept: "application/json",
 		},
+		redirect: "manual",
 	});
+
+	// 检查是否是重定向响应
+	if (resp.status >= 300 && resp.status < 400) {
+		const location = resp.headers.get("location");
+		// 如果重定向到相同 URL，可能是认证问题或服务器配置问题
+		if (location && (location === url || location.replace(/^http:/, "https:") === url)) {
+			throw new Error(`Self-redirect detected (${resp.status}). This usually means: 1) The token is invalid/expired, 2) The API path doesn't exist and server redirects to itself, or 3) Server requires additional headers.`);
+		}
+		// 尝试跟随一次重定向
+		if (location) {
+			const redirectResp = await fetch(location, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				redirect: "manual",
+			});
+			if (redirectResp.ok) {
+				const data = await redirectResp.json();
+				return {
+					pv: data.pageviews?.value || 0,
+					uv: data.visitors?.value || 0,
+				};
+			}
+			throw new Error(`Redirect failed: ${redirectResp.status}`);
+		}
+	}
 
 	if (!resp.ok) {
 		throw new Error(`Umami stats API error: ${resp.status}`);
@@ -78,16 +110,31 @@ async function getStats(env) {
 		return cached;
 	}
 
-	// 2. 缓存未命中 → 登录 → 查询
-	const token = await getUmamiToken(env);
-	const stats = await fetchUmamiStats(token);
+	try {
+		// 2. 缓存未命中 → 登录 → 查询
+		const token = await getUmamiToken(env);
+		const stats = await fetchUmamiStats(token);
 
-	// 3. 写入缓存（fire-and-forget）
-	env.VISITOR_KV.put(CACHE_KEY, JSON.stringify(stats), {
-		expirationTtl: STATS_CACHE_TTL,
-	}).catch(() => {});
+		// 3. 写入缓存（fire-and-forget）
+		env.VISITOR_KV.put(CACHE_KEY, JSON.stringify(stats), {
+			expirationTtl: STATS_CACHE_TTL,
+		}).catch(() => {});
 
-	return stats;
+		return stats;
+	} catch (err) {
+		// 如果是自循环重定向，可能是 token 过期，清除后重试一次
+		if (err.message.includes("Self-redirect detected")) {
+			console.log("Token may be invalid, clearing cache and retrying...");
+			await env.VISITOR_KV.delete("umami:token");
+			const token = await getUmamiToken(env);
+			const stats = await fetchUmamiStats(token);
+			env.VISITOR_KV.put(CACHE_KEY, JSON.stringify(stats), {
+				expirationTtl: STATS_CACHE_TTL,
+			}).catch(() => {});
+			return stats;
+		}
+		throw err;
+	}
 }
 
 export async function handleCount(_request, env) {
@@ -118,6 +165,10 @@ export async function handleCount(_request, env) {
 			}
 		} catch (_) {}
 
-		return Response.json({ pv: 0, uv: 0 }, { headers });
+		// 返回错误信息以便调试（生产环境可移除）
+		return Response.json(
+			{ pv: 0, uv: 0, error: err.message },
+			{ headers }
+		);
 	}
 }
