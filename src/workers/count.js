@@ -21,14 +21,19 @@ async function getUmamiToken(env) {
 
 	const resp = await fetch(`${UMAMI_BASE_URL}/api/auth/login`, {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers: {
+			"Content-Type": "application/json",
+			"Accept": "application/json",
+			"User-Agent": "curl/8.19.0",
+		},
 		body: JSON.stringify({ username, password }),
 		redirect: "manual",
 	});
 
 	// 检查登录是否被重定向（通常是认证失败）
 	if (resp.status >= 300 && resp.status < 400) {
-		throw new Error(`Umami login redirect detected (${resp.status}). This usually means invalid username/password.`);
+		const location = resp.headers.get("location");
+		throw new Error(`Umami login redirect detected (${resp.status}) to: ${location}`);
 	}
 
 	if (!resp.ok) {
@@ -60,6 +65,7 @@ async function fetchUmamiStats(token) {
 			Authorization: `Bearer ${token}`,
 			"Content-Type": "application/json",
 			Accept: "application/json",
+			"User-Agent": "curl/8.19.0",
 		},
 		redirect: "manual",
 	});
