@@ -75,7 +75,7 @@ export default defineConfig({
 			cache: true,
 			preload: true,
 			accessibility: true,
-			updateHead: true,
+			updateHead: false,
 			updateBodyClass: false,
 			globalInstance: true,
 			resolveUrl: (url) => url,
@@ -295,7 +295,7 @@ export default defineConfig({
 				},
 			},
 			// CSS 优化
-			cssCodeSplit: true,
+			cssCodeSplit: false,
 			cssMinify: "esbuild",
 			assetsInlineLimit: 4096,
 		},

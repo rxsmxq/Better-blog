@@ -79,10 +79,10 @@ const description =
       <!-- 标签筛选 -->
       {
         items.length > 0 && (
-          <friend-filter class="friend-filter-tabs flex flex-wrap gap-1 mb-6 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-tags={["all", ...allTags].join(",")}>
+          <div class="friend-filter-tabs flex flex-wrap gap-1 mb-6 p-1 rounded-full border border-neutral-900 dark:border-neutral-100" data-friend-filter>
             <button
               data-tag="all"
-              class="friend-tab-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-neutral-900 dark:text-neutral-100"
+              class="friend-tab-btn relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 text-white dark:text-neutral-900"
             >
               {i18n(I18nKey.all)}
             </button>
@@ -96,7 +96,7 @@ const description =
             ))}
             <!-- 滑动指示器 -->
             <div class="friend-tab-indicator absolute top-1 bottom-1 bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none" style="left: 4px; width: 0px;"></div>
-          </friend-filter>
+          </div>
         )
       }
 
@@ -128,176 +128,76 @@ const description =
   <!-- 友链申请指南弹窗 -->
   <FriendRulesModal applyLink={friendsPageConfig.applyLink} />
 
-  <script slot="head" is:inline>
+  <!-- 样式已迁移至 src/styles/pages/friends.css -->
+
+  <!-- 事件委托：document 级别，只注册一次，swup 导航后自动生效 -->
+  <script is:inline>
     (function() {
-      function initFriendFilter() {
-        const filterEl = document.querySelector("friend-filter");
-        if (!filterEl) return;
+      if (window.__friendFilterReady) return;
+      window.__friendFilterReady = true;
 
-        const allBtn = filterEl.querySelector('button[data-tag="all"]');
-        const indicator = filterEl.querySelector(".friend-tab-indicator");
-        if (!allBtn || !indicator) return;
-
-        // 设置"全部"为选中状态
-        allBtn.classList.remove("text-neutral-900", "dark:text-neutral-100");
-        allBtn.classList.add("text-white", "dark:text-neutral-900");
-
-        // 计算并设置指示器位置
-        const parentRect = filterEl.getBoundingClientRect();
-        const btnRect = allBtn.getBoundingClientRect();
+      function updateIndicator(container, button) {
+        var indicator = container.querySelector(".friend-tab-indicator");
+        if (!indicator || !button) return;
+        var parentRect = container.getBoundingClientRect();
+        var btnRect = button.getBoundingClientRect();
         indicator.style.left = (btnRect.left - parentRect.left) + "px";
         indicator.style.width = btnRect.width + "px";
         indicator.style.opacity = "1";
       }
 
-      // 页面加载完成后初始化
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initFriendFilter);
-      } else {
-        initFriendFilter();
+      // 事件委托：点击 friend-tab-btn 时处理
+      document.addEventListener("click", function(e) {
+        var button = e.target.closest(".friend-tab-btn");
+        if (!button) return;
+        var container = button.closest("[data-friend-filter]");
+        if (!container) return;
+
+        var selectedTag = button.dataset.tag;
+        var cardContainer = container.closest(".card-base");
+        if (!cardContainer) return;
+
+        // 更新指示器
+        updateIndicator(container, button);
+
+        // 更新按钮文字颜色
+        var filters = container.querySelectorAll(".friend-tab-btn");
+        filters.forEach(function(f) {
+          if (f === button) {
+            f.classList.remove("text-neutral-900", "dark:text-neutral-100");
+            f.classList.add("text-white", "dark:text-neutral-900");
+          } else {
+            f.classList.remove("text-white", "dark:text-neutral-900");
+            f.classList.add("text-neutral-900", "dark:text-neutral-100");
+          }
+        });
+
+        // 过滤卡片
+        var cards = cardContainer.querySelectorAll(".friend-card");
+        cards.forEach(function(card) {
+          var tags = (card.dataset.tags || "").split(",");
+          if (selectedTag === "all" || (selectedTag && tags.includes(selectedTag))) {
+            card.style.display = "";
+            card.classList.add("animate-fade-in-up");
+          } else {
+            card.style.display = "none";
+            card.classList.remove("animate-fade-in-up");
+          }
+        });
+      });
+
+      // 初始化指示器位置
+      function initIndicator() {
+        var container = document.querySelector("[data-friend-filter]");
+        if (!container) return;
+        var allBtn = container.querySelector('[data-tag="all"]');
+        if (allBtn) {
+          updateIndicator(container, allBtn);
+        }
       }
 
-      // Astro 页面切换后重新初始化
-      document.addEventListener("astro:page-load", initFriendFilter);
-      document.addEventListener("astro:after-swap", initFriendFilter);
+      initIndicator();
+      document.addEventListener("astro:page-load", initIndicator);
     })();
-
-    if (!customElements.get("friend-filter")) {
-      class FriendFilter extends HTMLElement {
-        constructor() {
-          super();
-        }
-
-        connectedCallback() {
-          this.addEventListener("click", this.handleClick);
-        }
-
-        disconnectedCallback() {
-          this.removeEventListener("click", this.handleClick);
-        }
-
-        updateIndicator(button) {
-          if (!button) return;
-          const indicator = this.querySelector(".friend-tab-indicator");
-          if (!indicator) return;
-
-          const parentRect = this.getBoundingClientRect();
-          const btnRect = button.getBoundingClientRect();
-
-          indicator.style.left = (btnRect.left - parentRect.left) + "px";
-          indicator.style.width = btnRect.width + "px";
-          indicator.style.opacity = "1";
-        }
-
-        handleClick(e) {
-          const target = e.target;
-          const button = target.closest("button");
-          if (!button) return;
-
-          const selectedTag = button.dataset.tag;
-          const filters = this.querySelectorAll(".friend-tab-btn");
-          const container = this.closest(".card-base");
-          if (!container) return;
-
-          const cards = container.querySelectorAll(".friend-card");
-
-          // 更新滑动指示器位置
-          this.updateIndicator(button);
-
-          // 更新按钮文字颜色：选中白字（暗色下黑字），未选中跟随主题
-          filters.forEach((f) => {
-            if (f === button) {
-              f.classList.remove("text-neutral-900", "dark:text-neutral-100");
-              f.classList.add("text-white", "dark:text-neutral-900");
-            } else {
-              f.classList.remove("text-white", "dark:text-neutral-900");
-              f.classList.add("text-neutral-900", "dark:text-neutral-100");
-            }
-          });
-
-          cards.forEach((card) => {
-            const cardEl = card;
-            const tags = (cardEl.dataset.tags || "").split(",");
-            if (
-              selectedTag === "all" ||
-              (selectedTag && tags.includes(selectedTag))
-            ) {
-              cardEl.style.display = "";
-              cardEl.classList.add("animate-fade-in-up");
-            } else {
-              cardEl.style.display = "none";
-              cardEl.classList.remove("animate-fade-in-up");
-            }
-          });
-        }
-      }
-      customElements.define("friend-filter", FriendFilter);
-    }
   </script>
-
-  <style is:global>
-    .friends-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.75rem;
-      padding-top: 0.75rem;
-      padding-bottom: 1rem;
-    }
-
-    @media (max-width: 1024px) {
-      .friends-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 640px) {
-      .friends-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .animate-fade-in-up {
-      animation: fadeInUp 0.4s ease-out both;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .friend-filter-tabs {
-      position: relative;
-      display: inline-flex;
-      flex-wrap: wrap;
-    }
-
-    .friend-tab-indicator {
-      box-shadow: 0 1px 3px oklch(0.5 0 0 / 0.15);
-    }
-
-    :root.dark .friend-tab-indicator {
-      box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
-    }
-
-    .friend-tab-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .friend-tab-btn:hover {
-      opacity: 0.7;
-    }
-
-    .friend-tab-btn:active {
-      transform: scale(0.95);
-    }
-  </style>
 </MainGridLayout>

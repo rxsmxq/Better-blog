@@ -500,19 +500,4 @@ const postUrlPrefix = url("/posts/");
   });
 </script>
 
-<style>
-  :global(.calendar-day) {
-    transition: transform 0.2s ease, background-color 0.2s ease, border-radius 0.2s ease;
-    min-height: 32px;
-  }
-
-  :global(.calendar-day[data-has-post="true"]:hover) {
-    transform: translateY(-2px);
-  }
-
-  /* 自定义选中日期样式 */
-  :global(.calendar-day-selected) {
-    background-color: var(--btn-regular-bg);
-    border-radius: 0.25rem;
-  }
-</style>
+<!-- 样式已迁移至 src/styles/widgets/calendar.css -->

@@ -26,111 +26,6 @@ for (const api of enabledApis) {
 
 <MainGridLayout title={title} description={description}>
 
-<script slot="head" is:inline>
-  (function() {
-    function initToolsTabs() {
-      var tabNav = document.querySelector('[data-tools-tab-nav]');
-      var tabButtons = document.querySelectorAll('[data-tools-tab]');
-      var sections = document.querySelectorAll('[data-tools-section]');
-      var indicator = document.querySelector('[data-tools-tab-indicator]');
-      if (!tabNav || !tabButtons.length || !indicator) return;
-
-      function updateIndicator(targetBtn) {
-        if (!indicator || !targetBtn) return;
-        indicator.style.left = targetBtn.offsetLeft + 'px';
-        indicator.style.top = targetBtn.offsetTop + 'px';
-        indicator.style.width = targetBtn.offsetWidth + 'px';
-        indicator.style.height = targetBtn.offsetHeight + 'px';
-        indicator.style.opacity = '1';
-      }
-
-      function activateTab(targetTab) {
-        if (!targetTab) return;
-        var targetButton = Array.from(tabButtons).find(function(btn) {
-          return btn.dataset.toolsTab === targetTab;
-        });
-        if (!targetButton) return;
-
-        // 切换按钮激活状态
-        tabButtons.forEach(function(btn) {
-          btn.classList.remove('tools-tab-btn-active');
-          btn.classList.add('tools-tab-btn-inactive');
-          btn.disabled = false;
-        });
-        targetButton.classList.remove('tools-tab-btn-inactive');
-        targetButton.classList.add('tools-tab-btn-active');
-        targetButton.disabled = true;
-
-        // 更新指示器
-        requestAnimationFrame(function() { updateIndicator(targetButton); });
-
-        // 切换内容区域并重置卡片动画
-        sections.forEach(function(section) {
-          if (section.dataset.toolsSection === targetTab) {
-            section.classList.remove('hidden');
-            var cards = section.querySelectorAll('.tools-card');
-            cards.forEach(function(card) {
-              card.style.animation = 'none';
-              card.offsetHeight;
-              card.style.animation = '';
-            });
-          } else {
-            section.classList.add('hidden');
-          }
-        });
-
-        var nextHash = '#tools-' + encodeURIComponent(targetTab);
-        if (window.location.hash !== nextHash) {
-          window.history.replaceState(null, '', nextHash);
-        }
-      }
-
-      // 绑定点击事件
-      tabButtons.forEach(function(button) {
-        button.addEventListener('click', function() {
-          var targetTab = button.dataset.toolsTab;
-          if (targetTab) activateTab(targetTab);
-        });
-      });
-
-      // 从 hash 恢复 Tab
-      function getTabFromHash() {
-        var hash = window.location.hash.replace(/^#tools-/, '');
-        if (!hash) return '';
-        try { return decodeURIComponent(hash); } catch(e) { return ''; }
-      }
-
-      var initialTab = getTabFromHash();
-      if (initialTab) {
-        activateTab(initialTab);
-      } else {
-        var activeBtn = tabNav.querySelector('.tools-tab-btn-active');
-        if (activeBtn) {
-          requestAnimationFrame(function() { updateIndicator(activeBtn); });
-        }
-      }
-
-      window.addEventListener('hashchange', function() {
-        var tabFromHash = getTabFromHash();
-        if (tabFromHash) activateTab(tabFromHash);
-      });
-
-      window.addEventListener('resize', function() {
-        var activeBtn = tabNav.querySelector('.tools-tab-btn-active');
-        if (activeBtn) updateIndicator(activeBtn);
-      });
-    }
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initToolsTabs);
-    } else {
-      initToolsTabs();
-    }
-    document.addEventListener("astro:page-load", initToolsTabs);
-    document.addEventListener("astro:after-swap", initToolsTabs);
-  })();
-</script>
-
   <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题 -->
@@ -286,4 +181,103 @@ for (const api of enabledApis) {
       )}
     </div>
   </div>
+
+  <!-- 事件委托：document 级别，只注册一次，swup 导航后自动生效 -->
+  <script is:inline>
+    (function() {
+      if (window.__collectionsReady) return;
+      window.__collectionsReady = true;
+
+      function updateIndicator(targetBtn) {
+        if (!targetBtn) return;
+        var nav = targetBtn.closest("[data-tools-tab-nav]");
+        if (!nav) return;
+        var indicator = nav.querySelector("[data-tools-tab-indicator]");
+        if (!indicator) return;
+        indicator.style.left = targetBtn.offsetLeft + "px";
+        indicator.style.top = targetBtn.offsetTop + "px";
+        indicator.style.width = targetBtn.offsetWidth + "px";
+        indicator.style.height = targetBtn.offsetHeight + "px";
+        indicator.style.opacity = "1";
+      }
+
+      function activateTab(targetTab) {
+        if (!targetTab) return;
+        var tabButtons = document.querySelectorAll("[data-tools-tab]");
+        var sections = document.querySelectorAll("[data-tools-section]");
+        var targetButton = null;
+        tabButtons.forEach(function(btn) {
+          if (btn.dataset.toolsTab === targetTab) targetButton = btn;
+        });
+        if (!targetButton) return;
+
+        tabButtons.forEach(function(btn) {
+          btn.classList.remove("tools-tab-btn-active");
+          btn.classList.add("tools-tab-btn-inactive");
+          btn.disabled = false;
+        });
+        targetButton.classList.remove("tools-tab-btn-inactive");
+        targetButton.classList.add("tools-tab-btn-active");
+        targetButton.disabled = true;
+
+        requestAnimationFrame(function() { updateIndicator(targetButton); });
+
+        sections.forEach(function(section) {
+          if (section.dataset.toolsSection === targetTab) {
+            section.classList.remove("hidden");
+            var cards = section.querySelectorAll(".tools-card");
+            cards.forEach(function(card) {
+              card.style.animation = "none";
+              card.offsetHeight;
+              card.style.animation = "";
+            });
+          } else {
+            section.classList.add("hidden");
+          }
+        });
+
+        var nextHash = "#tools-" + encodeURIComponent(targetTab);
+        if (window.location.hash !== nextHash) {
+          window.history.replaceState(null, "", nextHash);
+        }
+      }
+
+      // 事件委托：tools tab 点击
+      document.addEventListener("click", function(e) {
+        var btn = e.target.closest("[data-tools-tab]");
+        if (btn) activateTab(btn.dataset.toolsTab);
+      });
+
+      // hashchange
+      window.addEventListener("hashchange", function() {
+        var hash = window.location.hash.replace(/^#tools-/, "");
+        if (hash) {
+          try { hash = decodeURIComponent(hash); } catch(e) { return; }
+          activateTab(hash);
+        }
+      });
+
+      // resize
+      window.addEventListener("resize", function() {
+        var activeBtn = document.querySelector(".tools-tab-btn-active");
+        if (activeBtn) updateIndicator(activeBtn);
+      });
+
+      // 初始化
+      function init() {
+        var hash = window.location.hash.replace(/^#tools-/, "");
+        if (hash) {
+          try { hash = decodeURIComponent(hash); } catch(e) { hash = ""; }
+          if (hash) { activateTab(hash); return; }
+        }
+        var activeBtn = document.querySelector(".tools-tab-btn-active");
+        if (activeBtn) {
+          requestAnimationFrame(function() { updateIndicator(activeBtn); });
+        }
+      }
+
+      init();
+      document.addEventListener("astro:page-load", init);
+    })();
+  </script>
 </MainGridLayout>

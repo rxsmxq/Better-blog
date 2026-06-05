@@ -90,10 +90,10 @@ const navLinks = navBarConfig.links.map((item) => {
 <div class="relative w-full" id="main-grid-wrapper">
 	<div class="mx-auto max-w-5xl px-4 md:px-6" data-sidebar-position="none" id="main-grid">
 		{/* Swup 占位：保留 left/right sidebar 容器以满足 swup containers 协议 */}
-		<div id="left-sidebar-dynamic" class="hidden"></div>
-		<div id="right-sidebar-dynamic" class="hidden"></div>
+		<div id="left-sidebar-dynamic" class="hidden transition-swup-main"></div>
+		<div id="right-sidebar-dynamic" class="hidden transition-swup-main"></div>
 
-		<main id="swup-container" data-current-post-category={postCategory || ""}>
+		<main id="swup-container" class="transition-swup-main" data-current-post-category={postCategory || ""}>
 			{isPostPage && (
 				<div id="article-toc-wrapper" class="article-toc-wrapper hidden xl:block">
 					<div id="article-toc-container" class="article-toc-container">
@@ -153,85 +153,7 @@ const navLinks = navBarConfig.links.map((item) => {
 <PrivacyModal />
 
 </Layout>
-
-<style is:global>
-	#main-grid {
-		--page-width: 64rem;
-	}
-	/* 极简 onload 淡入 */
-	.onload-animation {
-		animation: fadeUp 0.5s ease both;
-	}
-	@keyframes fadeUp {
-		from { opacity: 0; transform: translateY(0.5rem); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-
-	/* 文章页外部浮动目录 - 独立于主内容区域 */
-	.article-toc-wrapper {
-		position: absolute;
-		left: calc(50% + 32rem);
-		top: 0;
-		width: 15rem;
-		max-width: 15rem;
-		pointer-events: none;
-		z-index: 10;
-		transition: left 0.3s ease;
-	}
-
-	.article-toc-wrapper:has(.article-toc-container:hover) {
-		left: calc(50% + 31.5rem);
-	}
-
-	.article-toc-container {
-		position: sticky;
-		top: 6rem;
-		pointer-events: auto;
-		max-height: calc(100vh - 7rem);
-		display: flex;
-		flex-direction: column;
-		border-radius: 1rem;
-		overflow: hidden;
-		transition: transform 0.25s ease;
-	}
-
-	.article-toc-container:hover {
-		transform: translateX(-6px);
-	}
-
-	.article-toc-header {
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid color-mix(in oklab, var(--line-divider) 50%, transparent);
-		flex-shrink: 0;
-	}
-
-	.article-toc-title {
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: var(--primary);
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	.article-toc-body {
-		flex: 1;
-		overflow-y: auto;
-		max-height: calc(100vh - 11rem);
-		padding: 0.5rem;
-	}
-
-	@media (max-width: 1280px) {
-		.article-toc-wrapper {
-			display: none !important;
-		}
-	}
-
-	/* 文章页显示外部浮动目录时，隐藏侧边栏中的目录组件避免重复 */
-	:global(#sidebar-toc:has(~ #main-grid-wrapper #article-toc-wrapper)),
-	:global(#article-toc-wrapper ~ * #sidebar-toc) {
-		display: none !important;
-	}
-</style>
+<!-- 样式已迁移至 src/styles/layout/grid.css -->
 
 <script>
 	import { TOCManager } from "@/utils/toc-utils";

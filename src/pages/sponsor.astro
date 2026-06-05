@@ -172,22 +172,5 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
   )}
 </MainGridLayout>
 
-<style>
-  /* 透明模式下使用半透明背景 */
-  :global(body.wallpaper-transparent .usage-info-box) {
-    background-color: rgba(var(--primary-rgb, 70, 130, 180), 0.15) !important;
-  }
-
-  :global(:root.dark body.wallpaper-transparent .usage-info-box) {
-    background-color: oklch(from var(--primary) l c h / 0.15) !important;
-  }
-</style>
-
-<style is:global>
-  .sponsor-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.75rem;
-  }
-</style>
+<!-- 样式已迁移至 src/styles/pages/sponsor.css -->
 

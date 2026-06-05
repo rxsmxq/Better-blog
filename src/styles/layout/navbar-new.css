@@ -1,0 +1,196 @@
+/* ============================================
+   导航栏 — 来自 Navbar.astro
+   pill 容器、Logo、导航菜单、hover 指示器
+   ============================================ */
+
+/* ── pill 容器内边距 ── */
+.navbar-pill {
+	padding: 0.5rem 0.75rem;
+	will-change: max-width, border-radius, padding;
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	transition:
+		max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+		border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+		box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+}
+
+/* 滚动后内边距收紧 */
+#navbar.scrolled .navbar-pill {
+	padding: 0.35rem 0.5rem;
+}
+
+/* 移动端：简化 pill 过渡，减少复合开销 */
+@media (max-width: 1023px) {
+	.navbar-pill {
+		transition:
+			max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+			border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+			box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+		will-change: max-width, border-radius, padding;
+	}
+
+	.navbar-glass-layer {
+		opacity: 0;
+		transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+	}
+
+	#navbar.scrolled .navbar-glass-layer {
+		opacity: 1 !important;
+		transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+	}
+}
+
+/* ── 内层 flex 行 ── */
+.navbar-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	max-width: var(--page-width, 1200px);
+	margin-inline: auto;
+	padding: 0.25rem 0.75rem;
+	position: relative;
+}
+
+/* ── Logo ── */
+.navbar-logo {
+	display: flex;
+	align-items: center;
+	height: 2.75rem;
+	padding: 0 0.5rem;
+	font-weight: 600;
+	position: relative;
+	z-index: 10;
+	flex-shrink: 0;
+	text-decoration: none;
+	color: var(--deep-text);
+}
+.navbar-logo::before {
+	background-color: transparent !important;
+	scale: 0.85;
+}
+.navbar-logo:hover::before {
+	background-color: transparent !important;
+}
+
+/* logo 图片 */
+.navbar-logo img,
+.navbar-logo picture img {
+	transition: filter 0.3s ease;
+}
+
+/* logo 文字：滚动后淡出收缩 */
+.navbar-logo-text {
+	display: inline-block;
+	max-width: 12rem;
+	overflow: hidden;
+	white-space: nowrap;
+	opacity: 1;
+	transform: translateX(0);
+	will-change: opacity, transform;
+	transition:
+		opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+		max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#navbar.scrolled .navbar-logo-text {
+	max-width: 0;
+	opacity: 0;
+	transform: translateX(-8px);
+	margin-left: 0 !important;
+}
+
+/* 移动端：logo 文字使用 GPU 友好的 transform，避免 max-width 布局抖动 */
+@media (max-width: 1023px) {
+	.navbar-logo-text {
+		transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		will-change: transform, opacity;
+	}
+
+	#navbar.scrolled .navbar-logo-text {
+		opacity: 0;
+		transform: translateX(-8px) scale(0.95);
+		max-width: 12rem;
+		margin-left: 0 !important;
+	}
+}
+
+/* ── 中间导航菜单 ── */
+.navbar-nav {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	display: none;
+	align-items: center;
+	gap: 0.25rem;
+	white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+	.navbar-nav {
+		display: flex;
+	}
+}
+
+/* ── 右侧工具栏 ── */
+.navbar-right {
+	position: relative;
+	z-index: 10;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+.navbar-right .btn-plain {
+	background-color: transparent !important;
+}
+.navbar-right .btn-plain::before {
+	background-color: transparent !important;
+	scale: 0.85;
+}
+.navbar-right .btn-plain:hover::before {
+	background-color: transparent !important;
+}
+
+/* ── hover 滑动边框指示器 ── */
+.navbar-hover-border {
+	position: absolute;
+	height: 2.5rem;
+	border-radius: 9999px;
+	border: 1.5px solid oklch(0.35 0 0);
+	background-color: transparent;
+	opacity: 0;
+	transition: left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	pointer-events: none;
+	z-index: 0;
+}
+
+:root.dark .navbar-hover-border {
+	border-color: oklch(0.6 0 0);
+}
+
+.navbar-nav:hover .navbar-hover-border,
+.navbar-nav.nav-has-active .navbar-hover-border {
+	opacity: 1;
+}
+
+/* 禁用各 item 自身的 expand-animation 背景 */
+.navbar-nav .dropdown-container > a::before,
+.navbar-nav .dropdown-container > button::before,
+.navbar-nav .dropdown-container > a:hover::before,
+.navbar-nav .dropdown-container > button:hover::before,
+.navbar-nav .dropdown-container > a:active::before,
+.navbar-nav .dropdown-container > button:active::before {
+	background-color: transparent !important;
+}

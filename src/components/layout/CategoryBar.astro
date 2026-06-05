@@ -14,18 +14,52 @@ interface Props {
 
 const { title, postSlug, postCategory } = Astro.props as Props;
 
-const pathname = Astro.url.pathname.replace(/\/$/, "");
+// 统一去掉尾部斜杠进行比较
+const pathname = Astro.url.pathname.replace(/\/+$/, "");
 const searchParams = Astro.url.searchParams;
 
 const homeUrl = url("/");
-const archiveUrl = url("/archive/");
 const isHome = isHomePage(pathname);
-const isArchivePage = pathname === archiveUrl.replace(/\/$/, "");
 const isPostPage = !!postSlug;
 
-const currentCategory = searchParams.get("category") || "";
+// 归档页匹配：/archive 或 /archive?category=xxx
+const archivePath = url("/archive/").replace(/\/+$/, "");
+const isArchivePage = pathname === archivePath;
 
+const currentCategory = searchParams.get("category") || "";
 const categories = isArchivePage || isPostPage ? await getCategoryList() : [];
+
+// 路径 → 页面配置映射（集中管理，便于扩展）
+const pageMap: Record<string, { label: string; icon: string }> = {
+	"/about": {
+		label: i18n(I18nKey.about),
+		icon: "material-symbols:info-outline-rounded",
+	},
+	"/friends": {
+		label: i18n(I18nKey.friends),
+		icon: "material-symbols:group-rounded",
+	},
+	"/guestbook": {
+		label: i18n(I18nKey.guestbook),
+		icon: "material-symbols:mode-comment-rounded",
+	},
+	"/sponsor": {
+		label: i18n(I18nKey.sponsor),
+		icon: "material-symbols:volunteer-activism-rounded",
+	},
+	"/search": {
+		label: i18n(I18nKey.search),
+		icon: "material-symbols:search-rounded",
+	},
+	"/bangumi": {
+		label: i18n(I18nKey.bangumi),
+		icon: "material-symbols:tv-outline-rounded",
+	},
+	"/calendar": {
+		label: i18n(I18nKey.calendar),
+		icon: "material-symbols:calendar-month-rounded",
+	},
+};
 
 interface BreadcrumbItem {
 	label: string;
@@ -37,355 +71,183 @@ interface BreadcrumbItem {
 
 let items: BreadcrumbItem[] = [];
 
-if (isHome) {
-	items = [];
-} else if (isPostPage) {
-	const categoryLabel = postCategory || i18n(I18nKey.uncategorized);
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: categoryLabel,
-			href: "",
-			icon: "material-symbols:folder-open-rounded",
-			isCurrent: false,
-			isDropdown: true,
-		},
-		{
-			label: title || "",
-			href: "",
-			icon: "material-symbols:article-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (isArchivePage) {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: currentCategory || i18n(I18nKey.archive),
-			href: "",
-			icon: currentCategory
-				? "material-symbols:folder-open-rounded"
-				: "material-symbols:folder-rounded",
-			isCurrent: true,
-			isDropdown: true,
-		},
-	];
-} else if (pathname === "/about") {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: i18n(I18nKey.about),
-			href: "/about/",
-			icon: "material-symbols:info-outline-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (pathname === "/friends") {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: i18n(I18nKey.friends),
-			href: "/friends/",
-			icon: "material-symbols:group-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (pathname === "/guestbook") {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: i18n(I18nKey.guestbook),
-			href: "/guestbook/",
-			icon: "material-symbols:mode-comment-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (pathname === "/gallery" || pathname.startsWith("/gallery/")) {
-	const albumMatch = pathname.match(/^\/gallery\/(.+)$/);
-	if (albumMatch) {
+if (!isHome) {
+	const homeItem: BreadcrumbItem = {
+		label: i18n(I18nKey.home),
+		href: homeUrl,
+		icon: "material-symbols:home-rounded",
+		isCurrent: false,
+	};
+
+	if (isPostPage) {
+		// 文章页：首页 / 分类下拉 / 文章标题
+		const categoryLabel = postCategory || i18n(I18nKey.uncategorized);
 		items = [
+			homeItem,
 			{
-				label: i18n(I18nKey.home),
-				href: homeUrl,
-				icon: "material-symbols:home-rounded",
-				isCurrent: false,
-			},
-			{
-				label: i18n(I18nKey.gallery),
-				href: "/gallery/",
-				icon: "material-symbols:photo-library-outline-rounded",
-				isCurrent: false,
-			},
-			{
-				label: title || decodeURIComponent(albumMatch[1]),
+				label: categoryLabel,
 				href: "",
-				icon: "material-symbols:photo-frame-rounded",
+				icon: "material-symbols:folder-open-rounded",
+				isCurrent: false,
+				isDropdown: true,
+			},
+			{
+				label: title || "",
+				href: "",
+				icon: "material-symbols:article-rounded",
+				isCurrent: true,
+			},
+		];
+	} else if (isArchivePage) {
+		// 归档页：首页 / 分类下拉
+		items = [
+			homeItem,
+			{
+				label: currentCategory || i18n(I18nKey.archive),
+				href: "",
+				icon: currentCategory
+					? "material-symbols:folder-open-rounded"
+					: "material-symbols:folder-rounded",
+				isCurrent: true,
+				isDropdown: true,
+			},
+		];
+	} else if (pathname === "/gallery" || pathname.startsWith("/gallery/")) {
+		// 相册页：首页 / 相册 / [子相册]
+		const albumMatch = pathname.match(/^\/gallery\/(.+)$/);
+		if (albumMatch) {
+			items = [
+				homeItem,
+				{
+					label: i18n(I18nKey.gallery),
+					href: "/gallery/",
+					icon: "material-symbols:photo-library-outline-rounded",
+					isCurrent: false,
+				},
+				{
+					label: title || decodeURIComponent(albumMatch[1]),
+					href: "",
+					icon: "material-symbols:photo-frame-rounded",
+					isCurrent: true,
+				},
+			];
+		} else {
+			items = [
+				homeItem,
+				{
+					label: i18n(I18nKey.gallery),
+					href: "/gallery/",
+					icon: "material-symbols:photo-library-outline-rounded",
+					isCurrent: true,
+				},
+			];
+		}
+	} else if (pageMap[pathname]) {
+		// 普通页面：首页 / 页面名
+		const page = pageMap[pathname];
+		items = [
+			homeItem,
+			{
+				label: title || page.label,
+				href: `${pathname}/`,
+				icon: page.icon,
 				isCurrent: true,
 			},
 		];
 	} else {
+		// 兜底：首页 / 页面标题
 		items = [
+			homeItem,
 			{
-				label: i18n(I18nKey.home),
-				href: homeUrl,
-				icon: "material-symbols:home-rounded",
-				isCurrent: false,
-			},
-			{
-				label: i18n(I18nKey.gallery),
-				href: "/gallery/",
-				icon: "material-symbols:photo-library-outline-rounded",
+				label: title || "",
+				href: "",
+				icon: "material-symbols:description-rounded",
 				isCurrent: true,
 			},
 		];
 	}
-} else if (pathname === "/sponsor") {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: title || i18n(I18nKey.sponsor),
-			href: "/sponsor/",
-			icon: "material-symbols:volunteer-activism-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (pathname === "/search") {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: title || i18n(I18nKey.search),
-			href: "/search/",
-			icon: "material-symbols:search-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (pathname === "/bangumi") {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: title || i18n(I18nKey.bangumi),
-			href: "/bangumi/",
-			icon: "material-symbols:tv-outline-rounded",
-			isCurrent: true,
-		},
-	];
-} else if (items.length === 0 && !isHome) {
-	items = [
-		{
-			label: i18n(I18nKey.home),
-			href: homeUrl,
-			icon: "material-symbols:home-rounded",
-			isCurrent: false,
-		},
-		{
-			label: title || "",
-			href: "",
-			icon: "material-symbols:description-rounded",
-			isCurrent: true,
-		},
-	];
 }
 ---
 
 {items.length > 0 && (
-<nav class="card-base breadcrumb-nav p-3 onload-animation" id="breadcrumb-nav" aria-label="Breadcrumb">
-	<ol class="breadcrumb-list flex items-center flex-wrap gap-1 text-sm">
-		<li class="breadcrumb-item flex items-center gap-1">
-			{items.map((item, idx) => (
-				<>
-					{idx > 0 && <span class="breadcrumb-separator text-(--content-meta) mx-1 select-none" aria-hidden="true">›</span>}
-					{item.isDropdown ? (
-						<span class="breadcrumb-dropdown-outer">
-							<select
-								class="breadcrumb-dropdown"
-								data-has-dropdown="true"
-							>
-								<option value="">{i18n(I18nKey.archive)} · {i18n(I18nKey.all)}</option>
-								{categories.map((c) => {
-									const val = c.name === i18n(I18nKey.uncategorized) ? "__uncategorized__" : c.name;
-									return (
-										<option value={val}>
-											{c.name.trim()} ({c.count})
-										</option>
-									);
-								})}
-							</select>
-						</span>
-					) : item.isCurrent ? (
-						<span class="breadcrumb-current flex items-center gap-1 text-(--deep-text) font-medium">
-							<span class="inline-flex shrink-0" set:html={getIconSvg(item.icon)} />
-							<span>{item.label}</span>
-						</span>
-					) : (
-						<a href={item.href} class="breadcrumb-link flex items-center gap-1 text-(--content-meta) hover:text-(--primary) transition-colors duration-150 rounded px-1 -mx-1">
-							<span class="inline-flex shrink-0" set:html={getIconSvg(item.icon)} />
-							<span>{item.label}</span>
-						</a>
-					)}
-				</>
-			))}
-		</li>
+<nav class="cb" id="breadcrumb-nav" aria-label="Breadcrumb">
+	<ol class="cb__list">
+		{items.map((item, idx) => (
+			<li class="cb__item">
+				{idx > 0 && <span class="cb__sep" aria-hidden="true">›</span>}
+				{item.isDropdown ? (
+					<span class="cb__dropdown-wrap">
+						<select class="cb__dropdown" data-breadcrumb-dropdown>
+							<option value="">{i18n(I18nKey.archive)} · {i18n(I18nKey.all)}</option>
+							{categories.map((c) => {
+								const val = c.name === i18n(I18nKey.uncategorized) ? "__uncategorized__" : c.name;
+								return <option value={val}>{c.name.trim()} ({c.count})</option>;
+							})}
+						</select>
+					</span>
+				) : item.isCurrent ? (
+					<span class="cb__current">
+						<span class="cb__icon" set:html={getIconSvg(item.icon)} />
+						<span>{item.label}</span>
+					</span>
+				) : (
+					<a href={item.href} class="cb__link">
+						<span class="cb__icon" set:html={getIconSvg(item.icon)} />
+						<span>{item.label}</span>
+					</a>
+				)}
+			</li>
+		))}
 	</ol>
 </nav>
 )}
 
-<style>
-	.breadcrumb-nav {
-		margin-bottom: 1rem;
-	}
-	.breadcrumb-link:hover :global(svg) {
-		color: var(--primary);
-	}
-	.breadcrumb-current :global(svg) {
-		color: var(--primary);
-		opacity: 0.8;
-	}
-	.breadcrumb-separator {
-		font-size: 0.875rem;
-		line-height: 1;
-		font-weight: 500;
+<script is:inline>
+(function() {
+	if (window.__breadcrumbInitialized) return;
+	window.__breadcrumbInitialized = true;
+
+	function getCategoryNavigateUrl(value) {
+		var archiveUrl = "/archive/";
+		if (value === "") return archiveUrl;
+		if (value === "__uncategorized__") return archiveUrl + "?uncategorized=true";
+		return archiveUrl + "?category=" + encodeURIComponent(value);
 	}
 
-	.breadcrumb-dropdown-outer {
-		position: relative;
-		display: inline-block;
-	}
-
-	:global(.breadcrumb-dropdown) {
-		appearance: none;
-		-webkit-appearance: none;
-		-moz-appearance: none;
-		background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center / 0.875rem;
-		padding: 0 1.75rem 0 0.5rem;
-		height: 2rem;
-		border: 1px solid black;
-		border-radius: 0.5rem;
-		color: black;
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: opacity 150ms;
-		outline: none;
-		max-width: 16rem;
-	}
-
-	:global(.breadcrumb-dropdown:hover) {
-		opacity: 0.85;
-	}
-
-	:root.dark :global(.breadcrumb-dropdown) {
-		background: black url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center / 0.875rem;
-		border-color: white;
-		color: white;
-	}
-
-	:root.dark :global(.breadcrumb-dropdown:hover) {
-		opacity: 0.85;
-	}
-
-	:global(.breadcrumb-dropdown option) {
-		font-size: 0.875rem;
-		font-weight: 400;
-		color: black;
-		background: white;
-	}
-
-	:root.dark :global(.breadcrumb-dropdown option) {
-		color: white;
-		background: black;
-	}
-</style>
-
-<script>
-	(function() {
-		let installed = false;
-
-		function getCategoryNavigateUrl(value: string): string {
-			const archiveUrl = "/archive/";
-			if (value === "") return archiveUrl;
-			if (value === "__uncategorized__") return `${archiveUrl}?uncategorized=true`;
-			return `${archiveUrl}?category=${encodeURIComponent(value)}`;
+	function navigate(targetUrl) {
+		if (typeof window !== "undefined" && window.navigateToPage) {
+			window.navigateToPage(targetUrl);
+		} else {
+			window.location.href = targetUrl;
 		}
+	}
 
-		function navigate(url: string) {
-			if (typeof window !== "undefined" && window.navigateToPage) {
-				window.navigateToPage(url);
-			} else {
-				window.location.href = url;
-			}
+	function syncDropdown() {
+		var params = new URLSearchParams(window.location.search);
+		var targetValue = "";
+		if (params.has("uncategorized")) {
+			targetValue = "__uncategorized__";
+		} else if (params.has("category")) {
+			targetValue = params.get("category");
+		} else if (window.location.pathname.indexOf("/posts/") !== -1) {
+			var main = document.querySelector("main[data-current-post-category]");
+			targetValue = (main && main.dataset.currentPostCategory) || "__uncategorized__";
 		}
-
-		function syncSelectValue() {
-			const params = new URLSearchParams(window.location.search);
-			let targetValue = "";
-			if (params.has("uncategorized")) {
-				targetValue = "__uncategorized__";
-			} else if (params.has("category")) {
-				targetValue = params.get("category")!;
-			} else if (window.location.pathname.startsWith("/posts/")) {
-				const main = document.querySelector<HTMLElement>("main[data-current-post-category]");
-				targetValue = main?.dataset.currentPostCategory || "__uncategorized__";
-			}
-			document.querySelectorAll<HTMLSelectElement>("select[data-has-dropdown]").forEach((select) => {
-				select.value = targetValue;
-			});
+		var selects = document.querySelectorAll("[data-breadcrumb-dropdown]");
+		for (var i = 0; i < selects.length; i++) {
+			selects[i].value = targetValue;
 		}
+	}
 
-		syncSelectValue();
-		document.addEventListener("astro:page-load", () => setTimeout(syncSelectValue, 50));
-		document.addEventListener("swup:contentReplaced", () => setTimeout(syncSelectValue, 50));
-
-		function install() {
-			if (installed) return;
-			installed = true;
-			document.addEventListener("change", (e) => {
-				const target = e.target;
-				if (target instanceof HTMLSelectElement && target.dataset.hasDropdown === "true") {
-					navigate(getCategoryNavigateUrl(target.value));
-				}
-			});
+	// 事件委托：只注册一次，处理所有 dropdown change
+	document.addEventListener("change", function(e) {
+		if (e.target && e.target.hasAttribute("data-breadcrumb-dropdown")) {
+			navigate(getCategoryNavigateUrl(e.target.value));
 		}
+	});
 
-		install();
-	})();
+	// 初始化 + swup 导航后同步
+	syncDropdown();
+	document.addEventListener("astro:page-load", function() { setTimeout(syncDropdown, 50); });
+})();
 </script>

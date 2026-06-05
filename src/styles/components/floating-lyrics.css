@@ -1,0 +1,31 @@
+/* ============================================
+   浮动歌词 — 来自 FloatingLyrics.astro
+   底部歌词栏样式
+   ============================================ */
+
+.floating-lyrics {
+	--duration: 350ms;
+}
+
+.floating-lyrics .btn-close {
+	opacity: 0.5;
+	transition: opacity 0.2s ease;
+}
+
+.floating-lyrics:hover .btn-close {
+	opacity: 1;
+}
+
+.lyric-current {
+	cursor: pointer;
+}
+
+.lyric-current:hover {
+	opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+	.floating-lyrics .lyrics-content {
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+	}
+}

@@ -81,7 +81,7 @@ const tabs = [
       <div data-gallery-section="local">
         {albums.length > 0 && allTags.length > 0 && (
           <div class="tools-tab-wrapper">
-            <gallery-filter class="tools-tab-pill" data-gallery-filter>
+            <div class="tools-tab-pill" data-gallery-filter>
               <div class="tools-tab-indicator gallery-filter-indicator" style="opacity:0;"></div>
               <button
                 data-tag="all"
@@ -97,7 +97,7 @@ const tabs = [
                   {tag}
                 </button>
               ))}
-            </gallery-filter>
+            </div>
           </div>
         )}
 
@@ -130,276 +130,160 @@ const tabs = [
     </div>
   </div>
 
-  <style>
-    [data-gallery-tab-nav] {
-      position: relative;
-    }
+  <!-- 样式已迁移至 src/styles/pages/gallery.css -->
 
-    .gallery-tab-indicator {
-      position: absolute;
-      bottom: 0;
-      height: 2px;
-      background: black;
-      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    :root.dark .gallery-tab-indicator {
-      background: white;
-    }
-
-    .gallery-tab-btn {
-      position: relative;
-      z-index: 2;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: #6b7280;
-      border-bottom: 2px solid transparent;
-    }
-
-    :root.dark .gallery-tab-btn {
-      color: #9ca3af;
-    }
-
-    .gallery-tab-btn:hover {
-      color: #374151;
-    }
-
-    :root.dark .gallery-tab-btn:hover {
-      color: #d1d5db;
-    }
-
-    .gallery-tab-btn-active {
-      color: black;
-    }
-
-    :root.dark .gallery-tab-btn-active {
-      color: white;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .gallery-card-fade-in {
-      animation: fadeInUp 0.35s ease-out both;
-    }
-  </style>
-
-  <script slot="head" is:inline>
+  <!-- 事件委托：document 级别，只注册一次，swup 导航后自动生效 -->
+  <script is:inline>
     (function() {
-      function initGalleryTabs() {
-        const tabButtons = document.querySelectorAll('[data-gallery-tab]');
-        const sections = document.querySelectorAll('[data-gallery-section]');
-        const indicator = document.querySelector('[data-gallery-tab-indicator]');
+      if (window.__galleryReady) return;
+      window.__galleryReady = true;
 
-        function updateIndicator(targetBtn) {
-          if (!indicator || !targetBtn) return;
-          const nav = targetBtn.closest('[data-gallery-tab-nav]');
-          if (!nav) return;
-          const navRect = nav.getBoundingClientRect();
-          const btnRect = targetBtn.getBoundingClientRect();
-          indicator.style.left = (btnRect.left - navRect.left) + 'px';
-          indicator.style.width = btnRect.width + 'px';
-          indicator.style.opacity = '1';
-        }
-
-        function activateTab(targetTab) {
-          if (!targetTab) return;
-
-          const targetButton = Array.from(tabButtons).find(
-            (btn) => btn.dataset.galleryTab === targetTab
-          );
-          if (!targetButton) return;
-
-          tabButtons.forEach((btn) => {
-            btn.classList.remove('gallery-tab-btn-active');
-            btn.classList.add('gallery-tab-btn-inactive');
-          });
-
-          targetButton.classList.remove('gallery-tab-btn-inactive');
-          targetButton.classList.add('gallery-tab-btn-active');
-
-          updateIndicator(targetButton);
-
-          sections.forEach((section) => {
-            if (section.dataset.gallerySection === targetTab) {
-              section.classList.remove('hidden');
-            } else {
-              section.classList.add('hidden');
-            }
-          });
-
-          const nextHash = '#gallery-' + encodeURIComponent(targetTab);
-          if (window.location.hash !== nextHash) {
-            window.history.replaceState(null, '', nextHash);
-          }
-        }
-
-        tabButtons.forEach((button) => {
-          button.addEventListener('click', (event) => {
-            const currentButton = event.currentTarget;
-            const targetTab = currentButton.dataset.galleryTab;
-            if (targetTab) {
-              activateTab(targetTab);
-            }
-          });
-        });
-
-        function getTabFromHash() {
-          const hash = window.location.hash.replace(/^#gallery-/, '');
-          if (!hash) return '';
-          try {
-            return decodeURIComponent(hash);
-          } catch {
-            return '';
-          }
-        }
-
-        const initialTab = getTabFromHash();
-        if (initialTab) {
-          activateTab(initialTab);
-        } else {
-          const activeBtn = document.querySelector('.gallery-tab-btn-active');
-          if (activeBtn) {
-            requestAnimationFrame(() => {
-              updateIndicator(activeBtn);
-            });
-          }
-        }
-
-        window.addEventListener('hashchange', () => {
-          const tabFromHash = getTabFromHash();
-          if (tabFromHash) {
-            activateTab(tabFromHash);
-          }
-        });
-
-        window.addEventListener('resize', () => {
-          const activeBtn = document.querySelector('.gallery-tab-btn-active');
-          if (activeBtn) {
-            updateIndicator(activeBtn);
-          }
-        });
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initGalleryTabs);
-      } else {
-        initGalleryTabs();
-      }
-
-      document.addEventListener("astro:page-load", initGalleryTabs);
-      document.addEventListener("astro:after-swap", initGalleryTabs);
-    })();
-  </script>
-
-  <script slot="head" is:inline>
-    (function() {
-      function initGalleryFilter() {
-        const filterEl = document.querySelector("gallery-filter");
-        if (!filterEl) return;
-
-        const allBtn = filterEl.querySelector('button[data-tag="all"]');
-        const indicator = filterEl.querySelector(".gallery-filter-indicator");
-        if (!allBtn || !indicator) return;
-
-        // 初始化指示器位置
-        indicator.style.left = allBtn.offsetLeft + "px";
-        indicator.style.top = allBtn.offsetTop + "px";
-        indicator.style.width = allBtn.offsetWidth + "px";
-        indicator.style.height = allBtn.offsetHeight + "px";
+      /* ---- Gallery Tab 切换 ---- */
+      function updateGalleryIndicator(targetBtn) {
+        if (!targetBtn) return;
+        var nav = targetBtn.closest("[data-gallery-tab-nav]");
+        if (!nav) return;
+        var indicator = nav.querySelector("[data-gallery-tab-indicator]");
+        if (!indicator) return;
+        var navRect = nav.getBoundingClientRect();
+        var btnRect = targetBtn.getBoundingClientRect();
+        indicator.style.left = (btnRect.left - navRect.left) + "px";
+        indicator.style.width = btnRect.width + "px";
         indicator.style.opacity = "1";
       }
 
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initGalleryFilter);
-      } else {
-        initGalleryFilter();
+      function activateGalleryTab(targetTab) {
+        if (!targetTab) return;
+        var tabButtons = document.querySelectorAll("[data-gallery-tab]");
+        var sections = document.querySelectorAll("[data-gallery-section]");
+        var targetButton = null;
+        tabButtons.forEach(function(btn) {
+          if (btn.dataset.galleryTab === targetTab) targetButton = btn;
+        });
+        if (!targetButton) return;
+
+        tabButtons.forEach(function(btn) {
+          btn.classList.remove("gallery-tab-btn-active");
+          btn.classList.add("gallery-tab-btn-inactive");
+        });
+        targetButton.classList.remove("gallery-tab-btn-inactive");
+        targetButton.classList.add("gallery-tab-btn-active");
+        updateGalleryIndicator(targetButton);
+
+        sections.forEach(function(section) {
+          if (section.dataset.gallerySection === targetTab) section.classList.remove("hidden");
+          else section.classList.add("hidden");
+        });
+
+        var nextHash = "#gallery-" + encodeURIComponent(targetTab);
+        if (window.location.hash !== nextHash) {
+          window.history.replaceState(null, "", nextHash);
+        }
       }
 
-      document.addEventListener("astro:page-load", initGalleryFilter);
-      document.addEventListener("astro:after-swap", initGalleryFilter);
+      // 事件委托：gallery tab 点击
+      document.addEventListener("click", function(e) {
+        var btn = e.target.closest("[data-gallery-tab]");
+        if (btn) activateGalleryTab(btn.dataset.galleryTab);
+      });
+
+      // hashchange
+      window.addEventListener("hashchange", function() {
+        var hash = window.location.hash.replace(/^#gallery-/, "");
+        if (hash) {
+          try { hash = decodeURIComponent(hash); } catch(e) { return; }
+          activateGalleryTab(hash);
+        }
+      });
+
+      // resize：更新指示器
+      window.addEventListener("resize", function() {
+        var activeBtn = document.querySelector(".gallery-tab-btn-active");
+        if (activeBtn) updateGalleryIndicator(activeBtn);
+      });
+
+      // 初始化 gallery tab 指示器
+      function initGalleryIndicator() {
+        var activeBtn = document.querySelector(".gallery-tab-btn-active");
+        if (activeBtn) {
+          requestAnimationFrame(function() { updateGalleryIndicator(activeBtn); });
+        }
+      }
+
+      // 从 hash 恢复 tab
+      function initGalleryFromHash() {
+        var hash = window.location.hash.replace(/^#gallery-/, "");
+        if (hash) {
+          try { hash = decodeURIComponent(hash); } catch(e) { hash = ""; }
+          if (hash) activateGalleryTab(hash);
+          else initGalleryIndicator();
+        } else {
+          initGalleryIndicator();
+        }
+      }
+
+      initGalleryFromHash();
+      document.addEventListener("astro:page-load", initGalleryFromHash);
+
+      /* ---- Gallery Filter 筛选 ---- */
+      function updateFilterIndicator(container, button) {
+        var indicator = container.querySelector(".gallery-filter-indicator");
+        if (!indicator || !button) return;
+        indicator.style.left = button.offsetLeft + "px";
+        indicator.style.top = button.offsetTop + "px";
+        indicator.style.width = button.offsetWidth + "px";
+        indicator.style.height = button.offsetHeight + "px";
+        indicator.style.opacity = "1";
+      }
+
+      // 事件委托：gallery filter 点击
+      document.addEventListener("click", function(e) {
+        var button = e.target.closest("[data-gallery-filter] .tools-tab-btn");
+        if (!button) return;
+        var container = button.closest("[data-gallery-filter]");
+        if (!container) return;
+        var cardContainer = container.closest(".card-base");
+        if (!cardContainer) return;
+
+        var selectedTag = button.dataset.tag;
+        var filters = container.querySelectorAll(".tools-tab-btn");
+
+        filters.forEach(function(f) {
+          f.classList.remove("tools-tab-btn-active");
+          f.classList.add("tools-tab-btn-inactive");
+          f.disabled = false;
+        });
+        button.classList.remove("tools-tab-btn-inactive");
+        button.classList.add("tools-tab-btn-active");
+        button.disabled = true;
+
+        updateFilterIndicator(container, button);
+
+        var cards = cardContainer.querySelectorAll(".album-card");
+        cards.forEach(function(card) {
+          var tags = (card.dataset.tags || "").split(",");
+          if (selectedTag === "all" || (selectedTag && tags.includes(selectedTag))) {
+            card.style.display = "";
+            card.classList.remove("gallery-card-fade-in");
+            void card.offsetHeight;
+            card.classList.add("gallery-card-fade-in");
+          } else {
+            card.style.display = "none";
+            card.classList.remove("gallery-card-fade-in");
+          }
+        });
+      });
+
+      // 初始化 filter 指示器
+      function initFilterIndicator() {
+        var filterEl = document.querySelector("[data-gallery-filter]");
+        if (!filterEl) return;
+        var allBtn = filterEl.querySelector('[data-tag="all"]');
+        if (allBtn) updateFilterIndicator(filterEl, allBtn);
+      }
+
+      initFilterIndicator();
+      document.addEventListener("astro:page-load", initFilterIndicator);
     })();
-
-    if (!customElements.get("gallery-filter")) {
-      class GalleryFilter extends HTMLElement {
-        constructor() {
-          super();
-        }
-
-        connectedCallback() {
-          this.addEventListener("click", this.handleClick);
-        }
-
-        disconnectedCallback() {
-          this.removeEventListener("click", this.handleClick);
-        }
-
-        updateIndicator(button) {
-          if (!button) return;
-          const indicator = this.querySelector(".gallery-filter-indicator");
-          if (!indicator) return;
-
-          indicator.style.left = button.offsetLeft + "px";
-          indicator.style.top = button.offsetTop + "px";
-          indicator.style.width = button.offsetWidth + "px";
-          indicator.style.height = button.offsetHeight + "px";
-          indicator.style.opacity = "1";
-        }
-
-        handleClick(e) {
-          const target = e.target;
-          const button = target.closest("button");
-          if (!button) return;
-
-          const selectedTag = button.dataset.tag;
-          const filters = this.querySelectorAll("button");
-          const container = this.closest(".card-base");
-          if (!container) return;
-
-          const cards = container.querySelectorAll(".album-card");
-
-          // 切换激活态
-          filters.forEach((f) => {
-            f.classList.remove("tools-tab-btn-active");
-            f.classList.add("tools-tab-btn-inactive");
-            f.disabled = false;
-          });
-          button.classList.remove("tools-tab-btn-inactive");
-          button.classList.add("tools-tab-btn-active");
-          button.disabled = true;
-
-          this.updateIndicator(button);
-
-          // 过滤卡片
-          cards.forEach((card) => {
-            const cardEl = card;
-            const tags = (cardEl.dataset.tags || "").split(",");
-            if (
-              selectedTag === "all" ||
-              (selectedTag && tags.includes(selectedTag))
-            ) {
-              cardEl.style.display = "";
-              cardEl.classList.remove("gallery-card-fade-in");
-              void cardEl.offsetHeight;
-              cardEl.classList.add("gallery-card-fade-in");
-            } else {
-              cardEl.style.display = "none";
-              cardEl.classList.remove("gallery-card-fade-in");
-            }
-          });
-        }
-      }
-      customElements.define("gallery-filter", GalleryFilter);
-    }
   </script>
 </MainGridLayout>

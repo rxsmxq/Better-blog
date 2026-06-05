@@ -43,211 +43,154 @@ const { tabs, activeTab } = Astro.props;
   </div>
 </div>
 
-<style>
-  [data-tab-nav] {
-    position: relative;
-  }
+<!-- 样式已迁移至 src/styles/pages/bangumi.css -->
 
-  .tab-underline-indicator {
-    position: absolute;
-    bottom: 0;
-    height: 2px;
-    background: black;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1;
-    pointer-events: none;
-  }
+<script is:inline>
+  (function() {
+    // 防止 swup 导航时重复注册 window 级监听器
+    if (window.__tabNavInitialized) return;
+    window.__tabNavInitialized = true;
 
-  :root.dark .tab-underline-indicator {
-    background: white;
-  }
+    function initTabNavigation() {
+      var tabButtons = document.querySelectorAll('[data-tab]');
+      var sections = document.querySelectorAll('[data-section]');
+      var indicator = document.querySelector('[data-tab-indicator]');
 
-  .tab-nav-btn {
-    position: relative;
-    z-index: 2;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: #6b7280;
-    border-bottom: 2px solid transparent;
-  }
+      function updateIndicator(targetBtn) {
+        if (!indicator) return;
+        var nav = targetBtn.closest('[data-tab-nav]');
+        if (!nav) return;
+        var navRect = nav.getBoundingClientRect();
+        var btnRect = targetBtn.getBoundingClientRect();
+        indicator.style.left = (btnRect.left - navRect.left) + 'px';
+        indicator.style.width = btnRect.width + 'px';
+        indicator.style.opacity = '1';
+      }
 
-  :root.dark .tab-nav-btn {
-    color: #9ca3af;
-  }
+      function hydrateVisibleImages(targetTab) {
+        var visibleItems = document.querySelectorAll(
+          '[data-section="' + targetTab + '"] [data-item-section="' + targetTab + '"]:not(.hidden)'
+        );
 
-  .tab-nav-btn:hover {
-    color: #374151;
-  }
+        visibleItems.forEach(function(item) {
+          if (item.style.display === 'none') return;
+          var image = item.querySelector('img[data-src]');
+          if (image) {
+            var deferredSrc = image.getAttribute('data-src');
+            if (deferredSrc) {
+              image.setAttribute('src', deferredSrc);
+              image.removeAttribute('data-src');
+            }
+          }
+        });
+      }
 
-  :root.dark .tab-nav-btn:hover {
-    color: #d1d5db;
-  }
+      function activateTab(targetTab, shouldSyncHash) {
+        if (!targetTab) return;
+        if (shouldSyncHash === undefined) shouldSyncHash = true;
 
-  .tab-nav-btn-active {
-    color: black;
-  }
+        var targetButton = null;
+        tabButtons.forEach(function(btn) {
+          if (btn.dataset.tab === targetTab) targetButton = btn;
+        });
+        if (!targetButton) return;
 
-  :root.dark .tab-nav-btn-active {
-    color: white;
-  }
+        tabButtons.forEach(function(btn) {
+          btn.classList.remove('tab-nav-btn-active');
+          btn.classList.add('tab-nav-btn-inactive');
+        });
+        targetButton.classList.remove('tab-nav-btn-inactive');
+        targetButton.classList.add('tab-nav-btn-active');
 
-  .tab-count {
-    color: #6b7280;
-    font-size: 0.75rem;
-  }
+        updateIndicator(targetButton);
 
-  :root.dark .tab-count {
-    color: #9ca3af;
-  }
+        sections.forEach(function(section) {
+          if (section.dataset.section === targetTab) {
+            section.classList.remove('hidden');
+          } else {
+            section.classList.add('hidden');
+          }
+        });
 
-  .tab-nav-btn-active .tab-count {
-    color: inherit;
-  }
-</style>
+        window.dispatchEvent(new CustomEvent('tabSwitched', { detail: { sectionId: targetTab } }));
+        hydrateVisibleImages(targetTab);
 
-<script>
-  function initTabNavigation() {
-    const tabButtons = document.querySelectorAll('[data-tab]');
-    const sections = document.querySelectorAll('[data-section]');
-    const indicator = document.querySelector('[data-tab-indicator]') as HTMLElement | null;
-
-    function updateIndicator(targetBtn: HTMLElement) {
-      if (!indicator) return;
-      const nav = targetBtn.closest('[data-tab-nav]') as HTMLElement | null;
-      if (!nav) return;
-      const navRect = nav.getBoundingClientRect();
-      const btnRect = targetBtn.getBoundingClientRect();
-      indicator.style.left = (btnRect.left - navRect.left) + 'px';
-      indicator.style.width = btnRect.width + 'px';
-      indicator.style.opacity = '1';
-    }
-
-    function hydrateVisibleImages(targetTab: string) {
-      const visibleItems = document.querySelectorAll(
-        `[data-section="${targetTab}"] [data-item-section="${targetTab}"]:not(.hidden)`
-      );
-
-      visibleItems.forEach((item) => {
-        const htmlItem = item as HTMLElement;
-        if (htmlItem.style.display === 'none') {
-          return;
-        }
-
-        const image = htmlItem.querySelector('img[data-src]');
-        if (image) {
-          const deferredSrc = image.getAttribute('data-src');
-          if (deferredSrc) {
-            image.setAttribute('src', deferredSrc);
-            image.removeAttribute('data-src');
+        if (shouldSyncHash) {
+          var nextHash = '#' + encodeURIComponent(targetTab);
+          if (window.location.hash !== nextHash) {
+            window.history.replaceState(null, '', nextHash);
           }
         }
+      }
+
+      function getTabFromHash() {
+        var hash = window.location.hash.replace(/^#/, '');
+        if (!hash) return '';
+        try { return decodeURIComponent(hash); } catch(e) { return ''; }
+      }
+
+      // 绑定点击事件（新 DOM 元素，不会重复）
+      tabButtons.forEach(function(button) {
+        button.addEventListener('click', function(event) {
+          var targetTab = event.currentTarget.dataset.tab;
+          if (targetTab) activateTab(targetTab, true);
+        });
       });
+
+      var initialTab = getTabFromHash();
+      if (initialTab) {
+        activateTab(initialTab, false);
+      } else {
+        var activeBtn = document.querySelector('.tab-nav-btn-active');
+        if (activeBtn) {
+          requestAnimationFrame(function() { updateIndicator(activeBtn); });
+        }
+      }
     }
 
-    function activateTab(targetTab: string, shouldSyncHash = true) {
-      if (!targetTab) {
-        return;
-      }
-
-      const targetButton = Array.from(tabButtons).find(
-        (button) => (button as HTMLButtonElement).dataset.tab === targetTab
-      ) as HTMLButtonElement | undefined;
-
-      if (!targetButton) {
-        return;
-      }
-
-      // Update active tab
-      tabButtons.forEach(btn => {
+    // hashchange 只注册一次
+    window.addEventListener('hashchange', function() {
+      var hash = window.location.hash.replace(/^#/, '');
+      if (!hash) return;
+      try { hash = decodeURIComponent(hash); } catch(e) { return; }
+      var tabButtons = document.querySelectorAll('[data-tab]');
+      var sections = document.querySelectorAll('[data-section]');
+      var targetButton = null;
+      tabButtons.forEach(function(btn) { if (btn.dataset.tab === hash) targetButton = btn; });
+      if (!targetButton) return;
+      tabButtons.forEach(function(btn) {
         btn.classList.remove('tab-nav-btn-active');
         btn.classList.add('tab-nav-btn-inactive');
       });
-
       targetButton.classList.remove('tab-nav-btn-inactive');
       targetButton.classList.add('tab-nav-btn-active');
-
-      // Update indicator position
-      updateIndicator(targetButton);
-
-      // Show/hide sections
-      sections.forEach(section => {
-        const htmlSection = section as HTMLElement;
-        if (htmlSection.dataset.section === targetTab) {
-          htmlSection.classList.remove('hidden');
-        } else {
-          htmlSection.classList.add('hidden');
-        }
-      });
-
-      // Trigger event for FilterControls to re-initialize
-      window.dispatchEvent(new CustomEvent('tabSwitched', { detail: { sectionId: targetTab } }));
-
-      hydrateVisibleImages(targetTab);
-
-      if (shouldSyncHash) {
-        const nextHash = `#${encodeURIComponent(targetTab)}`;
-        if (window.location.hash !== nextHash) {
-          window.history.replaceState(null, '', nextHash);
-        }
-      }
-    }
-
-    function getTabFromHash() {
-      const hash = window.location.hash.replace(/^#/, '');
-      if (!hash) {
-        return '';
-      }
-      try {
-        return decodeURIComponent(hash);
-      } catch {
-        return '';
-      }
-    }
-
-    tabButtons.forEach(button => {
-      button.addEventListener('click', (event) => {
-        const currentButton = event.currentTarget as HTMLButtonElement;
-        const targetTab = currentButton.dataset.tab;
-        if (targetTab) {
-          activateTab(targetTab, true);
-        }
+      sections.forEach(function(section) {
+        if (section.dataset.section === hash) section.classList.remove('hidden');
+        else section.classList.add('hidden');
       });
     });
 
-    const initialTab = getTabFromHash();
-    if (initialTab) {
-      activateTab(initialTab, false);
+    // resize 只注册一次
+    window.addEventListener('resize', function() {
+      var indicator = document.querySelector('[data-tab-indicator]');
+      var activeBtn = document.querySelector('.tab-nav-btn-active');
+      if (indicator && activeBtn) {
+        var nav = activeBtn.closest('[data-tab-nav]');
+        if (nav) {
+          var navRect = nav.getBoundingClientRect();
+          var btnRect = activeBtn.getBoundingClientRect();
+          indicator.style.left = (btnRect.left - navRect.left) + 'px';
+          indicator.style.width = btnRect.width + 'px';
+        }
+      }
+    });
+
+    // 初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTabNavigation);
     } else {
-      // Initialize indicator for the default active tab
-      const activeBtn = document.querySelector('.tab-nav-btn-active') as HTMLElement | null;
-      if (activeBtn) {
-        requestAnimationFrame(() => {
-          updateIndicator(activeBtn);
-        });
-      }
+      initTabNavigation();
     }
-
-    window.addEventListener('hashchange', () => {
-      const tabFromHash = getTabFromHash();
-      if (tabFromHash) {
-        activateTab(tabFromHash, false);
-      }
-    });
-
-    // Update indicator on resize
-    window.addEventListener('resize', () => {
-      const activeBtn = document.querySelector('.tab-nav-btn-active') as HTMLElement | null;
-      if (activeBtn) {
-        updateIndicator(activeBtn);
-      }
-    });
-  }
-
-  // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTabNavigation);
-  } else {
-    initTabNavigation();
-  }
+    document.addEventListener('astro:page-load', initTabNavigation);
+  })();
 </script>

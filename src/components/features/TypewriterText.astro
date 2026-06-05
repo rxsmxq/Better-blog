@@ -175,25 +175,4 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
   document.addEventListener("astro:page-load", runInitWithDelay);
 </script>
 
-<style>
-  .typewriter {
-    position: relative;
-  }
-
-  .typewriter::after {
-    content: "|";
-    animation: blink 1s infinite;
-    margin-left: 2px;
-  }
-
-  @keyframes blink {
-    0%,
-    50% {
-      opacity: 1;
-    }
-    51%,
-    100% {
-      opacity: 0;
-    }
-  }
-</style>
+<!-- 样式已迁移至 src/styles/components/typewriter.css -->

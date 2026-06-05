@@ -1,0 +1,227 @@
+/* ============================================
+   首页个人资料区 — 来自 HomePortal.astro
+   头像魔法环、状态按钮、社交链接、分类按钮
+   ============================================ */
+
+.home-portal {
+	padding-top: 1rem;
+	padding-bottom: 0;
+}
+
+.home-portal .stats-container {
+	padding: 0;
+	width: 100%;
+}
+
+/* === Avatar Magic Rings === */
+.home-portal .avatar-ripple-wrapper {
+	position: relative;
+	width: 11rem;
+	height: 11rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.home-portal .magic-rings-bg {
+	position: absolute;
+	top: -3rem;
+	bottom: -2.5rem;
+	left: -8rem;
+	right: -8rem;
+	pointer-events: none;
+	z-index: 0;
+	overflow: hidden;
+}
+.home-portal .magic-rings-bg canvas {
+	width: 100% !important;
+	height: 100% !important;
+}
+@media (min-width: 768px) {
+	.home-portal .magic-rings-bg {
+		left: -20rem;
+		right: -20rem;
+	}
+}
+.home-portal [data-time-mode="off"] .magic-rings-bg {
+	display: none;
+}
+.home-portal .avatar-core {
+	position: relative;
+	z-index: 2;
+	transition: border 0.3s ease;
+}
+.home-portal [data-time-mode="off"] .avatar-core {
+	border-width: 3px;
+	border-color: #000;
+	box-sizing: border-box;
+}
+:root.dark .home-portal [data-time-mode="off"] .avatar-core {
+	border-color: #fff;
+}
+.home-portal .avatar-img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+/* === 默认隐藏两个头像，等 JS 判断时间后再显示 === */
+.home-portal .avatar-img.avatar-work {
+	display: none;
+}
+.home-portal .avatar-img.avatar-off {
+	display: none;
+}
+.home-portal [data-time-mode="work"] .avatar-img.avatar-work {
+	display: block;
+}
+.home-portal [data-time-mode="off"] .avatar-img.avatar-off {
+	display: block;
+}
+
+/* === Status Button === */
+.home-portal .avatar-status-btn {
+	position: absolute;
+	bottom: -0.5rem;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 10;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.25rem 0.75rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	white-space: nowrap;
+	border: 2px solid #000;
+	color: #000;
+	background: #fff;
+}
+:root.dark .home-portal .avatar-status-btn {
+	border-color: #fff;
+	color: #fff;
+	background: #000;
+}
+/* 上班时间粉色 */
+.home-portal [data-time-mode="work"] .avatar-status-btn {
+	border-color: oklch(0.65 0.2 350);
+	color: oklch(0.65 0.2 350);
+	background: #fff;
+}
+:root.dark .home-portal [data-time-mode="work"] .avatar-status-btn {
+	border-color: oklch(0.65 0.2 350);
+	color: oklch(0.65 0.2 350);
+	background: #000;
+}
+
+.home-portal .status-dot {
+	width: 0.375rem;
+	height: 0.375rem;
+	border-radius: 9999px;
+	background: #000;
+	flex-shrink: 0;
+}
+:root.dark .home-portal .status-dot {
+	background: #fff;
+}
+.home-portal [data-time-mode="work"] .status-dot {
+	background: oklch(0.65 0.2 350);
+	animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.3; }
+}
+
+.home-portal .social-link-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.875rem;
+	border: 1px solid #000;
+	color: #000;
+	background: #fff;
+	border-radius: 9999px;
+	font-size: 0.8125rem;
+	text-decoration: none;
+	transition: color 150ms, background-color 150ms;
+}
+.home-portal .social-link-btn:hover {
+	background-color: #000;
+	color: #fff;
+}
+:root.dark .home-portal .social-link-btn {
+	border-color: #fff;
+	color: #fff;
+	background: #000;
+}
+:root.dark .home-portal .social-link-btn:hover {
+	background-color: #fff;
+	color: #000;
+}
+
+.home-portal .cat-square-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.375rem 1rem;
+	border: 1px solid black;
+	color: black;
+	background: #fff;
+	border-radius: 9999px;
+	transition: color 150ms, background-color 150ms;
+}
+.home-portal .cat-square-btn:hover {
+	background-color: black;
+	color: white;
+}
+:root.dark .home-portal .cat-square-btn {
+	border-color: white;
+	color: white;
+	background: black;
+}
+:root.dark .home-portal .cat-square-btn:hover {
+	background-color: white;
+	color: black;
+}
+
+/* === Profile Info === */
+.home-portal .profile-display-name {
+	font-size: 2rem;
+	font-weight: 700;
+	color: #000;
+	letter-spacing: 0.05em;
+}
+:root.dark .home-portal .profile-display-name {
+	color: #fff;
+}
+.home-portal .profile-occupation {
+	font-size: 1rem;
+	font-weight: 400;
+	color: oklch(0.65 0 0);
+	letter-spacing: 0.05em;
+}
+
+/* === Section Title === */
+.home-portal .section-title-wrapper {
+	width: 100%;
+	max-width: 24rem;
+	margin-left: auto;
+	margin-right: auto;
+}
+.home-portal .section-title-container {
+	text-align: center;
+	padding-top: 1.5rem;
+	padding-bottom: 0.25rem;
+}
+.home-portal .section-title {
+	font-size: 1.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	color: #000;
+	text-transform: uppercase;
+}
+:root.dark .home-portal .section-title {
+	color: #fff;
+}

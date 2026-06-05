@@ -1,0 +1,100 @@
+/* ============================================
+   广告位 — 来自 Advertisement.astro
+   主题感知卡片、悬停效果
+   ============================================ */
+
+.advertisement-widget {
+	background: var(--card-bg);
+	border: 1px solid var(--line-divider);
+	border-radius: var(--radius-large);
+	color: var(--primary-text-color);
+	transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+}
+
+:root.dark .advertisement-widget {
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.advertisement-widget:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--line-divider);
+	transform: translateY(-2px);
+	border-color: oklch(0.75 0.14 var(--hue));
+}
+
+:root.dark .advertisement-widget:hover {
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px oklch(0.75 0.14 var(--hue));
+	background: color-mix(in srgb, var(--card-bg), oklch(0.75 0.14 var(--hue)) 5%);
+}
+
+.close-ad-btn {
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	backdrop-filter: blur(8px);
+}
+
+.advertisement-widget:hover .close-ad-btn {
+	opacity: 1;
+}
+
+.advertisement-widget a[class*="bg-[oklch"] {
+	background: oklch(0.75 0.14 var(--hue));
+	transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.advertisement-widget a[class*="bg-[oklch"]:hover {
+	background: oklch(0.7 0.16 var(--hue));
+	box-shadow: 0 4px 12px color-mix(in srgb, oklch(0.75 0.14 var(--hue)), transparent 70%);
+}
+
+.advertisement-widget img {
+	transition: filter 0.3s ease;
+}
+
+.advertisement-widget:hover img {
+	filter: brightness(1.05) saturate(1.1);
+}
+
+:root.dark .advertisement-widget:hover img {
+	filter: brightness(1.1) saturate(1.15);
+}
+
+@media (max-width: 768px) {
+	.advertisement-widget {
+		margin: 0;
+		border-radius: var(--radius-large);
+		backdrop-filter: blur(8px);
+	}
+
+	.advertisement-widget:hover {
+		transform: none;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--line-divider);
+	}
+
+	:root.dark .advertisement-widget:hover {
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), 0 0 0 1px oklch(0.75 0.14 var(--hue));
+	}
+}
+
+@media (prefers-contrast: high) {
+	.advertisement-widget {
+		border-width: 2px;
+	}
+	.advertisement-widget:hover {
+		border-color: oklch(0.6 0.2 var(--hue));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.advertisement-widget,
+	.close-ad-btn,
+	.advertisement-widget img,
+	.advertisement-widget a {
+		transition: none;
+	}
+	.advertisement-widget:hover {
+		transform: none;
+	}
+}

@@ -27,7 +27,7 @@ const className = Astro.props.class;
     data-is-collapsed={String(isCollapsed)}
     data-use-expanded-button-spacing={String(useExpandedButtonSpacing)}
     class={"pb-4 section " + (className ?? "")}
-    style={style}
+    style={`--collapsedHeight: ${collapsedHeight || '0'}; ${style || ''}`}
 >
     {name && (
         <div class="widget-title font-mono text-xs uppercase tracking-[0.2em] text-(--content-meta) mb-3 mt-4 px-4 flex items-center justify-between">
@@ -56,59 +56,7 @@ const className = Astro.props.class;
     </div>}
 </widget-layout>
 
-<style define:vars={{ collapsedHeight }}>
-    .collapsed {
-        height: var(--collapsedHeight);
-    }
-
-    widget-layout[data-is-collapsed="true"][data-expanded="true"][data-use-expanded-button-spacing="true"] .expand-btn {
-        padding-top: 0.5rem;
-    }
-
-    /* 卡片边框：黑白实线，无背景 */
-    widget-layout {
-        position: relative;
-        border-top: 2px solid oklch(0.15 0 0);
-        border-right: 2px solid oklch(0.15 0 0);
-        border-bottom: 2px solid oklch(0.15 0 0);
-        border-left: 2px solid oklch(0.15 0 0);
-        background: transparent;
-        transition:
-            border-top-style 0.15s ease,
-            border-right-style 0.15s ease,
-            border-bottom-style 0.15s ease,
-            border-left-style 0.15s ease;
-    }
-
-    :global(.dark) widget-layout {
-        border-top-color: oklch(0.85 0 0);
-        border-right-color: oklch(0.85 0 0);
-        border-bottom-color: oklch(0.85 0 0);
-        border-left-color: oklch(0.85 0 0);
-    }
-
-    /* hover 时四条边全部变虚线 */
-    widget-layout:hover {
-        border-top-style: dashed;
-        border-right-style: dashed;
-        border-bottom-style: dashed;
-        border-left-style: dashed;
-    }
-
-    /* 鼠标靠近哪条边，那条边恢复实线 */
-    widget-layout[data-hover-edge="top"]:hover {
-        border-top-style: solid;
-    }
-    widget-layout[data-hover-edge="right"]:hover {
-        border-right-style: solid;
-    }
-    widget-layout[data-hover-edge="bottom"]:hover {
-        border-bottom-style: solid;
-    }
-    widget-layout[data-hover-edge="left"]:hover {
-        border-left-style: solid;
-    }
-</style>
+<!-- 样式已迁移至 src/styles/components/widget-layout.css -->
 
 <script>
     class WidgetLayout extends HTMLElement {
