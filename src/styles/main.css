@@ -47,6 +47,8 @@
 @import './pages/friends.css';
 @import './pages/404.css';
 @import './pages/gallery.css';
+@import './pages/categories.css';
+@import './pages/tags.css';
 
 
 @plugin '@tailwindcss/typography';

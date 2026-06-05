@@ -58,4 +58,14 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/calendar/",
 		icon: "material-symbols:calendar-today",
 	},
+	[LinkPreset.Categories]: {
+		name: i18n(I18nKey.categories),
+		url: "/categories/",
+		icon: "material-symbols:category",
+	},
+	[LinkPreset.Tags]: {
+		name: i18n(I18nKey.tags),
+		url: "/tags/",
+		icon: "material-symbols:label",
+	},
 };

@@ -14,8 +14,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		// 主页
 		LinkPreset.Home,
 
-		// 归档
-		LinkPreset.Archive,
+		// 归档下拉菜单（归档 + 分类 + 标签）
+		{
+			name: "归档",
+			url: "/archive/",
+			icon: "material-symbols:schedule-outline-rounded",
+			children: [LinkPreset.Archive, LinkPreset.Categories, LinkPreset.Tags],
+		},
 
 		// 日历
 		...(siteConfig.pages.calendar ? [LinkPreset.Calendar] : []),

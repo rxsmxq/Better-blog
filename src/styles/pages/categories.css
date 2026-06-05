@@ -1,0 +1,40 @@
+/* ============================================
+   分类页面样式 - 玫瑰图
+   ============================================ */
+
+.categories-page {
+  width: 100%;
+  border-radius: var(--radius-large);
+  overflow: hidden;
+}
+
+.categories-page__header {
+  /* 使用 flex 布局，已在 class 中定义 */
+}
+
+.categories-page__chart-container {
+  width: 100%;
+  min-height: 400px;
+}
+
+.category-rose {
+  width: 100%;
+}
+
+.category-rose__chart {
+  width: 100%;
+  height: 450px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .category-rose__chart {
+    height: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-rose__chart {
+    height: 280px;
+  }
+}
