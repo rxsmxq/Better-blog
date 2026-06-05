@@ -251,7 +251,7 @@
     function dispose() {
       disposed = true;
       cancelAnimationFrame(animationId);
-      canvas.removeEventListener("click", handleClick);
+      canvas?.removeEventListener("click", handleClick);
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", updateScrollRotation);
       mixer?.stopAllAction();
