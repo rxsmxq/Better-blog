@@ -28,31 +28,12 @@ async function fetchSiteStats(env) {
 	const url = `${apiUrl}/api/websites/${websiteId}/stats?${params}`;
 
 	const resp = await fetch(url, {
-		redirect: "manual",
+		redirect: "follow",
 		headers: {
 			Authorization: `Bearer ${token}`,
 			"Content-Type": "application/json",
 		},
 	});
-
-	// 手动处理重定向（Vercel 托管的 Umami 可能触发重定向循环）
-	if (resp.status >= 300 && resp.status < 400) {
-		const location = resp.headers.get("Location");
-		if (location) {
-			const redirectResp = await fetch(location, {
-				redirect: "follow",
-				headers: {
-					Authorization: `Bearer ${token}`,
-					"Content-Type": "application/json",
-				},
-			});
-			if (!redirectResp.ok) {
-				const text = await redirectResp.text();
-				throw new Error(`Umami redirect error ${redirectResp.status}: ${text}`);
-			}
-			return redirectResp.json();
-		}
-	}
 
 	if (!resp.ok) {
 		const text = await resp.text();
