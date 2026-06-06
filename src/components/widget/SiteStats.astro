@@ -307,18 +307,10 @@ const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 		});
 	}
 
-	// 首次加载立即执行
+	// is:inline 脚本在每次 Swup 导航到本页时都会重新执行，无需额外监听
 	initStars();
 	animateStars();
 	initTextReveal();
 	fetchStats();
-
-	// Swup 导航后重新执行（回到首页时组件会被重新渲染）
-	document.addEventListener('astro:page-load', function() {
-		initStars();
-		animateStars();
-		initTextReveal();
-		fetchStats();
-	});
 })();
 </script>
