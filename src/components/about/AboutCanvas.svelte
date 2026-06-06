@@ -474,7 +474,7 @@ onMount(() => {
 	ballImg.onload = () => {
 		imgLoaded = true;
 	};
-	ballImg.src = "/assets/images/about.png";
+	ballImg.src = "/assets/images/about.webp";
 
 	rafId = requestAnimationFrame(render);
 	window.addEventListener("resize", onResize);

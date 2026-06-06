@@ -163,7 +163,7 @@ export const siteConfig: SiteConfig = {
 	// OpenGraph图片功能,注意开启后要渲染很长时间，不建议本地调试的时候开启
 	generateOgImages: false,
 
-	defaultOgImage: "/assets/images/aut.png",
+	defaultOgImage: "/assets/images/aut.webp",
 
 	// 页面开关配置 - 控制特定页面的访问权限，设为false会返回404
 	pages: {

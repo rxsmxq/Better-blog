@@ -364,7 +364,7 @@ onMount(() => {
       <div class="ai-header">
         <div class="flex items-center gap-2">
           <img
-            src="/assets/images/aut.png"
+            src="/assets/images/aut.webp"
             alt="喵墩"
             class="ai-avatar-sm"
           />
@@ -442,7 +442,7 @@ onMount(() => {
               {#if msg.role === "user"}
                 <Icon icon="material-symbols:person-outline" />
               {:else}
-                <img src="/assets/images/aut.png" alt="喵墩" class="ai-msg-avatar-img" />
+                <img src="/assets/images/aut.webp" alt="喵墩" class="ai-msg-avatar-img" />
               {/if}
             </div>
             <div class="ai-msg-body">
