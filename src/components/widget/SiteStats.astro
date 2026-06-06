@@ -307,7 +307,13 @@ const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 		});
 	}
 
-	// astro:page-load 在首次加载和每次导航后触发，无需单独调用
+	// 首次加载立即执行
+	initStars();
+	animateStars();
+	initTextReveal();
+	fetchStats();
+
+	// Swup 导航后重新执行（回到首页时组件会被重新渲染）
 	document.addEventListener('astro:page-load', function() {
 		initStars();
 		animateStars();
