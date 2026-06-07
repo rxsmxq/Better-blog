@@ -56,7 +56,7 @@ let totalHeight = $derived(
 	allMessages.reduce((sum, msg) => sum + getItemHeight(msg), 0),
 );
 
-let visibleRange = $derived(() => {
+let visibleRange = $derived.by(() => {
 	if (!containerRef) return { start: 0, end: allMessages.length };
 
 	let accumulated = 0;
@@ -317,8 +317,8 @@ onDestroy(() => {
 });
 
 // ===== 计算当前可见消息 =====
-let visibleMessages = $derived(() => {
-	const range = visibleRange();
+let visibleMessages = $derived.by(() => {
+	const range = visibleRange;
 	return allMessages.slice(range.start, range.end).map((msg, idx) => ({
 		...msg,
 		_virtualIndex: range.start + idx,
@@ -330,7 +330,7 @@ let visibleMessages = $derived(() => {
 	<!-- 占位高度 -->
 	<div class="list-spacer" style="height: {totalHeight}px;">
 		<!-- 可见项目 -->
-		{#each visibleMessages() as msg (msg.id)}
+		{#each visibleMessages as msg (msg.id)}
 			{@const offset = getItemOffset(msg._virtualIndex)}
 			{@const isExpanded = expandedId === msg.id}
 			{@const isAnimating = msg.id in animatingHeights}
@@ -357,14 +357,14 @@ let visibleMessages = $derived(() => {
 					<div class="item-right">
 						<div class="item-votes-summary">
 							<span class="vote-sum agree" class:voted={getVotedType(msg.id) === "agree"}>
-								<Icon icon="material-symbols:thumb-up" size="sm" /> {msg.votes.agree}
-							</span>
-							<span class="vote-sum neutral" class:voted={getVotedType(msg.id) === "neutral"}>
-								<Icon icon="material-symbols:remove" size="sm" /> {msg.votes.neutral}
-							</span>
-							<span class="vote-sum disagree" class:voted={getVotedType(msg.id) === "disagree"}>
-								<Icon icon="material-symbols:thumb-down" size="sm" /> {msg.votes.disagree}
-							</span>
+											赞同 {msg.votes.agree}
+										</span>
+										<span class="vote-sum neutral" class:voted={getVotedType(msg.id) === "neutral"}>
+											中立 {msg.votes.neutral}
+										</span>
+										<span class="vote-sum disagree" class:voted={getVotedType(msg.id) === "disagree"}>
+											反对 {msg.votes.disagree}
+										</span>
 						</div>
 						<div class="expand-icon" class:rotated={showContent}>
 							<Icon icon="material-symbols:keyboard-arrow-down" size="sm" />
