@@ -33,7 +33,19 @@ export async function postGuestbookMessage(
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ author, content }),
 	});
-	if (!res.ok) throw new Error(`Failed to post message: ${res.status}`);
+	if (!res.ok) {
+		const text = await res.text();
+		let errorMessage = `Failed to post message: ${res.status}`;
+		try {
+			const json = JSON.parse(text);
+			if (json.error) errorMessage = json.error;
+		} catch {
+			// 非 JSON 响应，使用默认错误信息
+		}
+		const error = new Error(errorMessage) as Error & { status: number };
+		error.status = res.status;
+		throw error;
+	}
 	return res.json();
 }
 

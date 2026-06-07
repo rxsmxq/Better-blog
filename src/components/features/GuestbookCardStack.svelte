@@ -42,6 +42,7 @@ let enterTransform = $state<string | null>(null);
 
 // 动画与定时器管理，防止组件卸载时内存泄漏
 let rafId: number | null = null;
+let activeRafs: number[] = [];
 let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 let handleNew: ((e: Event) => void) | null = null;
 let handleDataUpdate: ((e: Event) => void) | null = null;
@@ -55,11 +56,25 @@ function safeSetTimeout(fn: () => void, ms: number) {
 	return id;
 }
 
+function safeRequestAnimationFrame(fn: FrameRequestCallback): number {
+	const id = requestAnimationFrame((time) => {
+		activeRafs = activeRafs.filter((r) => r !== id);
+		fn(time);
+	});
+	activeRafs.push(id);
+	return id;
+}
+
 onDestroy(() => {
 	if (rafId) cancelAnimationFrame(rafId);
-	activeTimeouts.forEach((id) => {
+	for (const id of activeRafs) {
+		cancelAnimationFrame(id);
+	}
+	activeRafs = [];
+	for (const id of activeTimeouts) {
 		clearTimeout(id);
-	});
+	}
+	activeTimeouts = [];
 	if (handleNew) {
 		window.removeEventListener("guestbooknew", handleNew);
 	}
@@ -164,17 +179,17 @@ function getVoteLabel(activeVote: typeof voteType) {
 	const labels = {
 		agree: {
 			text: "赞同 // AGREE",
-			color: "text-emerald-400 border-emerald-500",
+			color: "text-emerald-400",
 			position: "vote-label-top",
 		},
 		disagree: {
 			text: "反对 // DISAGREE",
-			color: "text-rose-400 border-rose-500",
+			color: "text-rose-400",
 			position: "vote-label-top-right",
 		},
 		neutral: {
 			text: "中立 // OBSERVE",
-			color: "text-yellow-400 border-yellow-500",
+			color: "text-yellow-400",
 			position: "vote-label-center",
 		},
 	};
@@ -222,6 +237,31 @@ async function submitVote(
 	}
 }
 
+// 计算飞出目标位置（按拖拽方向直线飞出视窗）
+function calculateFlyOutTarget(
+	cx: number,
+	cy: number,
+): { x: number; y: number } {
+	// 视窗对角线长度，确保能飞出视窗
+	const viewportDiagonal = Math.sqrt(
+		window.innerWidth ** 2 + window.innerHeight ** 2,
+	);
+	// 额外缓冲，确保完全飞出
+	const flyDistance = viewportDiagonal * 0.8;
+
+	// 如果几乎没有拖拽，默认往右飞出
+	if (Math.abs(cx) < 1 && Math.abs(cy) < 1) {
+		return { x: flyDistance, y: 0 };
+	}
+
+	// 按拖拽方向计算角度
+	const angle = Math.atan2(cy, cx);
+	return {
+		x: Math.cos(angle) * flyDistance,
+		y: Math.sin(angle) * flyDistance,
+	};
+}
+
 // 处理触摸/鼠标释放 — 任何拖拽释放都执行飞出动画
 function handlePointerUp() {
 	if (!isDragging) return;
@@ -240,16 +280,20 @@ function handlePointerUp() {
 		submitVote(currentCard.id, voteType);
 	}
 
-	// 判断飞走方向
-	const isHorizontal = Math.abs(currentX) >= Math.abs(currentY);
-	const flyX = isHorizontal ? (currentX > 0 ? 700 : -700) : currentX;
-	const flyY = isHorizontal ? currentY * 0.3 : currentY < 0 ? -600 : 600;
-
-	// 设置飞出变换
+	// 计算飞出目标位置（按拖拽方向直线飞出）
+	const target = calculateFlyOutTarget(currentX, currentY);
 	const rotate = currentX * 0.06;
-	flyOutTransform = `transform: translate3d(${flyX}px, ${flyY}px, 0) rotate(${rotate}deg) scale(0.85); transition: transform 0.45s cubic-bezier(0.22, 0.68, 0.25, 1), opacity 0.45s; opacity: 0;`;
 
-	// 动画结束后移除卡片并重置
+	// 根据飞出距离动态计算动画时长（确保视觉上速度一致）
+	const distance = Math.sqrt(target.x ** 2 + target.y ** 2);
+	const baseDuration = 400;
+	const duration = Math.min(700, baseDuration + distance * 0.15);
+
+	// 设置飞出变换：直线飞出 + 渐隐
+	flyOutTransform = `transform: translate3d(${target.x}px, ${target.y}px, 0) rotate(${rotate}deg) scale(0.85); transition: transform ${duration}ms cubic-bezier(0.22, 0.68, 0.25, 1), opacity ${duration}ms cubic-bezier(0.4, 0, 1, 1); opacity: 0;`;
+
+	// 动画中途（opacity 接近 0 时）就移除卡片，避免用户看到卡片在页面其他元素上方突然消失
+	const removeDelay = Math.max(200, duration - 100);
 	safeSetTimeout(() => {
 		currentIndex++;
 		currentX = 0;
@@ -259,7 +303,7 @@ function handlePointerUp() {
 		if (visibleCards.length === 0) {
 			dealNextBatch();
 		}
-	}, 450);
+	}, removeDelay);
 }
 
 // 发牌动效：从共享数据中获取下一批卡片并逐张飞入
@@ -290,7 +334,7 @@ function dealCards(messages: GuestbookMessage[]) {
 
 			allMessages.push(messages[i]);
 
-			requestAnimationFrame(() => {
+			safeRequestAnimationFrame(() => {
 				enteringCardId = null;
 				enterTransform = null;
 			});
@@ -405,22 +449,26 @@ function handleKeyDown(e: KeyboardEvent) {
 	}
 }
 
-// 程序化滑动卡片
+// 程序化滑动卡片（键盘触发）
 function swipeCard(x: number, y: number) {
 	if (visibleCards.length === 0) return;
 
-	const flyX = x > 0 ? 700 : -700;
-	const flyY = y < 0 ? -600 : 600;
+	const target = calculateFlyOutTarget(x, y);
 	const rotate = x * 0.06;
-	flyOutTransform = `transform: translate3d(${flyX}px, ${flyY}px, 0) rotate(${rotate}deg) scale(0.85); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s; opacity: 0;`;
+	const distance = Math.sqrt(target.x ** 2 + target.y ** 2);
+	const baseDuration = 400;
+	const duration = Math.min(700, baseDuration + distance * 0.15);
 
+	flyOutTransform = `transform: translate3d(${target.x}px, ${target.y}px, 0) rotate(${rotate}deg) scale(0.85); transition: transform ${duration}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${duration}ms cubic-bezier(0.4, 0, 1, 1); opacity: 0;`;
+
+	const removeDelay = Math.max(200, duration - 100);
 	safeSetTimeout(() => {
 		currentIndex++;
 		flyOutTransform = null;
 		if (visibleCards.length === 0) {
 			dealNextBatch();
 		}
-	}, 500);
+	}, removeDelay);
 }
 </script>
 
@@ -489,21 +537,21 @@ function swipeCard(x: number, y: number) {
 					</div>
 
 					<!-- 投票标签 -->
-					{#if card.stackIndex === 0 && isDragging && voteType}
-						{@const label = getVoteLabel(voteType)}
-						{#if label}
-							<div class="vote-label {label.color} {label.position}">
-								{label.text}
-							</div>
-						{/if}
+				{#if card.stackIndex === 0 && isDragging && voteType}
+					{@const label = getVoteLabel(voteType)}
+					{#if label}
+						<div class="vote-label {label.color} {label.position}">
+							{label.text}
+						</div>
 					{/if}
+				{/if}
 
-					<!-- 底层卡片遮罩层 (替代高开销的 filter: brightness) -->
-					{#if card.stackIndex > 0}
-						<div class="card-overlay" style="opacity: {Math.min(0.6, card.stackIndex * 0.15)}"></div>
-					{/if}
-				</div>
+				<!-- 底层卡片遮罩层 (替代高开销的 filter: brightness) -->
+				{#if card.stackIndex > 0}
+					<div class="card-overlay" style="opacity: {Math.min(0.6, card.stackIndex * 0.15)}"></div>
+				{/if}
 			</div>
+		</div>
 		{/each}
 
 		<!-- 空状态 -->
@@ -524,538 +572,3 @@ function swipeCard(x: number, y: number) {
 	</div>
 
 </div>
-
-<style>
-	.card-overlay {
-		position: absolute;
-		inset: 0;
-		background: #000;
-		pointer-events: none;
-		z-index: 25;
-		transition: opacity 0.5s cubic-bezier(0.22, 0.68, 0.25, 1);
-	}
-
-	.guestbook-card-stack {
-		--card-bg: #ffffff;
-		--card-border: #18181b;
-		--card-text: #18181b;
-		--card-text-secondary: #52525b;
-		--card-accent: #18181b;
-		--card-line: #d4d4d8;
-		--card-corner-bg: #f4f4f5;
-		--card-footer-bg: #18181b;
-		--card-footer-text: #ffffff;
-		--card-overlay-bg: rgba(0, 0, 0, 0.6);
-		--card-modal-overlay: rgba(0, 0, 0, 0.5);
-	}
-
-	:root.dark .guestbook-card-stack {
-		--card-bg: #18181b;
-		--card-border: #52525b;
-		--card-text: #fafafa;
-		--card-text-secondary: #a1a1aa;
-		--card-accent: #fafafa;
-		--card-line: #27272a;
-		--card-corner-bg: #27272a;
-		--card-footer-bg: #fafafa;
-		--card-footer-text: #000000;
-		--card-overlay-bg: rgba(0, 0, 0, 0.75);
-		--card-modal-overlay: rgba(0, 0, 0, 0.75);
-	}
-
-	.guestbook-card-stack {
-		position: relative;
-		width: 100%;
-		min-height: 620px;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background: transparent;
-		border: 2px solid var(--card-border);
-		border-radius: 16px;
-		padding: 20px;
-	}
-
-	.stack-bg-decoration {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		background:
-			radial-gradient(ellipse at 50% 50%, rgba(128, 128, 128, 0.05) 0%, transparent 70%);
-	}
-
-	.vote-arrow {
-		font-size: 1rem;
-		font-weight: 700;
-	}
-
-	/* 卡片容器 */
-	.cards-container {
-		position: relative;
-		width: 80%;
-		max-width: 320px;
-		height: 400px;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		perspective: 1200px;
-	}
-
-	/* 卡片 */
-	.message-card {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		touch-action: none;
-		user-select: none;
-		will-change: transform, opacity;
-		transition: transform 0.5s cubic-bezier(0.22, 0.68, 0.25, 1),
-					opacity 0.5s cubic-bezier(0.22, 0.68, 0.25, 1),
-					filter 0.5s cubic-bezier(0.22, 0.68, 0.25, 1),
-					box-shadow 0.3s;
-	}
-
-	.message-card.no-transition {
-		transition: none !important;
-	}
-
-	.message-card.top-card {
-		cursor: grab;
-	}
-
-	.message-card.top-card:active {
-		cursor: grabbing;
-	}
-
-	.card-inner {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		background: var(--card-bg);
-		border: 4px solid var(--card-border);
-		border-radius: 0.5rem;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		transition: border-color 0.3s, box-shadow 0.3s;
-	}
-
-	.card-inner.card-border-default {
-		border-color: var(--card-border);
-	}
-
-	.card-inner.card-border-dim {
-		border-color: var(--card-line);
-	}
-
-	.card-inner.vote-border-agree {
-		border-color: #10b981;
-	}
-
-	.card-inner.vote-border-disagree {
-		border-color: #f43f5e;
-	}
-
-	.card-inner.vote-border-neutral {
-		border-color: #eab308;
-	}
-
-	.card-inner.vote-border-agree .card-footer {
-		background: #10b981;
-	}
-
-	.card-inner.vote-border-disagree .card-footer {
-		background: #f43f5e;
-	}
-
-	.card-inner.vote-border-neutral .card-footer {
-		background: #eab308;
-	}
-
-	.card-inner.vote-border-agree .card-footer .bar,
-	.card-inner.vote-border-disagree .card-footer .bar,
-	.card-inner.vote-border-neutral .card-footer .bar {
-		background: #000;
-	}
-
-	.card-inner.vote-border-agree .card-footer .footer-text,
-	.card-inner.vote-border-disagree .card-footer .footer-text,
-	.card-inner.vote-border-neutral .card-footer .footer-text {
-		color: #000;
-	}
-
-	/* 角标 */
-	.corner-mark {
-		position: absolute;
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 50%;
-		border: 1px solid var(--card-border);
-		background: var(--card-corner-bg);
-		z-index: 20;
-	}
-
-	.corner-mark::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		margin: auto;
-		width: 60%;
-		height: 1px;
-		background: var(--card-border);
-		transform: rotate(45deg);
-	}
-
-	.corner-mark.top-left { top: 0.5rem; left: 0.5rem; }
-	.corner-mark.top-right { top: 0.5rem; right: 0.5rem; }
-	.corner-mark.bottom-left { bottom: 0.5rem; left: 0.5rem; }
-	.corner-mark.bottom-right { bottom: 0.5rem; right: 0.5rem; }
-
-	/* 头部 */
-	.card-header {
-		position: relative;
-		height: 3.5rem;
-		border-bottom: 2px solid;
-		border-color: inherit;
-		padding: 0 1rem;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		overflow: hidden;
-	}
-
-	.header-bg {
-		position: absolute;
-		inset: 0;
-		opacity: 0.06;
-		pointer-events: none;
-		background-image: repeating-linear-gradient(
-			45deg,
-			transparent,
-			transparent 5px,
-			var(--card-text) 5px,
-			var(--card-text) 10px
-		);
-	}
-
-	.header-content {
-		position: relative;
-		z-index: 10;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-	}
-
-	.author-info {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.author-avatar {
-		width: 0.75rem;
-		height: 0.75rem;
-		background: var(--card-accent);
-		border-radius: 0.125rem;
-		animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
-	}
-
-	.author-name {
-		font-size: 0.65rem;
-		font-weight: 700;
-		letter-spacing: 0.15em;
-		text-transform: uppercase;
-		color: var(--card-accent);
-	}
-
-	.message-time {
-		font-size: 0.65rem;
-		font-family: ui-monospace, monospace;
-		opacity: 0.6;
-		color: var(--card-text-secondary);
-	}
-
-	/* 主体 */
-	.card-body {
-		position: relative;
-		flex: 1;
-		padding: 1.5rem;
-		display: flex;
-		overflow: hidden;
-	}
-
-	.body-line {
-		position: absolute;
-		left: 1rem;
-		top: 1.5rem;
-		bottom: 1.5rem;
-		width: 1px;
-		background: var(--card-line);
-	}
-
-	.body-content {
-		padding-left: 1rem;
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.source-tag {
-		display: inline-block;
-		padding: 0.125rem 0.5rem;
-		font-size: 0.6rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		border: 1px solid #06b6d4;
-		color: #06b6d4;
-		width: fit-content;
-		margin-bottom: 0.75rem;
-	}
-
-	.message-title {
-		font-size: 1.125rem;
-		font-weight: 700;
-		line-height: 1.3;
-		margin-bottom: 0.75rem;
-		color: var(--card-text);
-		text-transform: uppercase;
-		letter-spacing: -0.02em;
-	}
-
-	.title-underline {
-		width: 3rem;
-		height: 1px;
-		background: var(--card-accent);
-		margin-bottom: 1rem;
-	}
-
-	.message-text {
-		font-size: 0.85rem;
-		line-height: 1.7;
-		font-family: ui-monospace, monospace;
-		color: var(--card-text-secondary);
-		overflow: hidden;
-		display: -webkit-box;
-		-webkit-line-clamp: 5;
-		-webkit-box-orient: vertical;
-	}
-
-	/* 卡片内投票统计 */
-	.card-votes {
-		padding: 0 1.5rem 0.75rem;
-		display: flex;
-		gap: 1rem;
-	}
-
-	.card-vote {
-		font-size: 0.6rem;
-		font-family: ui-monospace, monospace;
-		letter-spacing: 0.05em;
-	}
-
-	.card-vote.agree { color: #34d399; }
-	.card-vote.neutral { color: #eab308; }
-	.card-vote.disagree { color: #fb7185; }
-
-	/* 底部 */
-	.card-footer {
-		height: 2.5rem;
-		border-top: 2px solid;
-		border-color: inherit;
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		padding: 0 1rem;
-		background: var(--card-footer-bg);
-		cursor: pointer;
-		transition: filter 0.2s;
-	}
-
-	.card-footer:hover {
-		filter: brightness(1.1);
-	}
-
-	.footer-text {
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--card-footer-text);
-	}
-
-	/* 投票标签 */
-	.vote-label {
-		position: absolute;
-		z-index: 30;
-		font-weight: 900;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		background: var(--card-overlay-bg);
-		backdrop-filter: blur(4px);
-		animation: fadeIn 0.2s ease;
-	}
-
-	.vote-label-top {
-		top: 0.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		padding: 0.5rem 1.5rem;
-		border: 2px solid;
-		border-radius: 0.25rem;
-		font-size: 0.9rem;
-	}
-
-	.vote-label-top-right {
-		top: 0.5rem;
-		right: 0.5rem;
-		padding: 0.5rem 1rem;
-		border: 2px solid;
-		border-radius: 0.25rem;
-		font-size: 0.9rem;
-	}
-
-	.vote-label-center {
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		padding: 0.75rem 2rem;
-		border: 2px solid;
-		border-radius: 0.25rem;
-		font-size: 1.1rem;
-	}
-
-	.vote-label.text-emerald-400 { color: #34d399; border-color: #10b981; }
-	.vote-label.text-rose-400 { color: #fb7185; border-color: #f43f5e; }
-	.vote-label.text-yellow-400 { color: #facc15; border-color: #eab308; }
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	/* 空状态 */
-	.empty-state {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		color: #71717a;
-	}
-
-	.empty-icon {
-		font-size: 3rem;
-		opacity: 0.5;
-	}
-
-	.empty-text {
-		font-size: 1.125rem;
-		font-weight: 600;
-	}
-
-	.empty-subtext {
-		font-size: 0.875rem;
-		opacity: 0.7;
-	}
-
-	/* 操作提示 */
-	.swipe-hint {
-		position: absolute;
-		bottom: 1.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		gap: 1.5rem;
-		z-index: 10;
-		opacity: 0.4;
-		transition: opacity 0.3s;
-	}
-
-	.guestbook-card-stack:hover .swipe-hint {
-		opacity: 0.8;
-	}
-
-	.hint-item {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.75rem;
-		color: #71717a;
-	}
-
-	.hint-key {
-		padding: 0.125rem 0.375rem;
-		border: 1px solid #3f3f46;
-		border-radius: 0.25rem;
-		font-family: ui-monospace, monospace;
-		font-size: 0.65rem;
-	}
-
-	/* 响应式 */
-	@media (max-width: 768px) {
-		.guestbook-card-stack {
-			min-height: auto;
-			padding: 8px;
-		}
-
-		.cards-container {
-			width: auto;
-			max-width: 95%;
-			height: 400px;
-			aspect-ratio: 3 / 2;
-		}
-
-		.message-card,
-		.card-inner {
-			max-height: 400px;
-		}
-
-		.card-body {
-			padding: 1rem;
-		}
-
-		.message-title {
-			font-size: 1rem;
-		}
-
-		.message-text {
-			font-size: 0.8rem;
-			-webkit-line-clamp: 4;
-		}
-
-		.detail-modal {
-			max-width: 100%;
-			width: 95%;
-		}
-
-		.detail-body {
-			padding: 1.25rem;
-		}
-
-		.detail-text {
-			font-size: 0.9rem;
-		}
-
-		.detail-header {
-			padding: 0 1.25rem;
-		}
-
-		.swipe-hint {
-			gap: 1rem;
-		}
-	}
-</style>

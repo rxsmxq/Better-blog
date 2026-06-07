@@ -53,36 +53,3 @@ $effect(() => {
 		<GuestbookVirtualList />
 	</div>
 {/if}
-
-<style>
-	.guestbook-container {
-		position: relative;
-		width: 100%;
-		min-height: 560px;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-
-	.guestbook-list-container {
-		position: relative;
-		width: 100%;
-		min-height: 560px;
-	}
-
-	.guestbook-container.hidden,
-	.guestbook-list-container.hidden {
-		display: none;
-	}
-
-	@media (max-width: 768px) {
-		.guestbook-container {
-			min-height: 420px;
-			height: auto;
-		}
-
-		.guestbook-list-container {
-			min-height: 420px;
-		}
-	}
-</style>
