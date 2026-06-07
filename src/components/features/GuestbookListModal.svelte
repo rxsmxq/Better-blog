@@ -1,7 +1,7 @@
 <script lang="ts">
 /**
  * 留言板列表弹窗
- * - 独立数据获取，不依赖 GuestbookDataProvider 的缓存
+ * - 复用 GuestbookDataProvider 的共享缓存
  * - 虚拟列表 + 内部滚动 + 懒加载
  * - 支持展开/折叠、投票
  * - 居中弹窗，移动端全屏
@@ -9,10 +9,7 @@
 import { onDestroy, onMount, tick } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
-import {
-	fetchGuestbookMessages,
-	voteGuestbookMessage,
-} from "@/utils/guestbook-api";
+import { voteGuestbookMessage } from "@/utils/guestbook-api";
 
 // ===== Props =====
 interface Props {
@@ -34,8 +31,6 @@ let isVoting = $state<Record<string, boolean>>({});
 let hasMore = $state(true);
 let isLoading = $state(false);
 let totalMessages = $state(0);
-let listOffset = $state(0);
-let isInitializing = $state(false);
 let dialogRef = $state<HTMLDialogElement | null>(null);
 
 // 已投票记录
@@ -50,7 +45,6 @@ let animatingHeights = $state<Record<string, number>>({});
 const ITEM_HEIGHT = 72;
 const BUFFER_COUNT = 5;
 const EXPANDED_EXTRA_HEIGHT = 160;
-const BATCH_SIZE = 15;
 
 // 展开/折叠动效状态
 let transitioningId = $state<string | null>(null);
@@ -206,10 +200,9 @@ async function handleVote(
 	isVoting[msgId] = true;
 	try {
 		const updated = await voteGuestbookMessage(msgId, type);
-		const idx = allMessages.findIndex((m) => m.id === updated.id);
-		if (idx !== -1) {
-			allMessages[idx] = updated;
-		}
+		window.dispatchEvent(
+			new CustomEvent("guestbook:message-updated", { detail: updated }),
+		);
 		votedMessages[msgId] = type;
 		const votedData = JSON.parse(
 			localStorage.getItem("guestbookVoted") || "{}",
@@ -231,46 +224,20 @@ function getVotedType(msgId: string): "agree" | "disagree" | "neutral" | null {
 	return votedMessages[msgId] || null;
 }
 
-// ===== 数据获取 =====
-async function loadMore() {
-	if (isLoading || !hasMore) return;
-	isLoading = true;
-
-	try {
-		const { messages, total } = await fetchGuestbookMessages(
-			listOffset,
-			BATCH_SIZE,
-		);
-		totalMessages = total;
-		if (messages.length > 0) {
-			allMessages = [...allMessages, ...messages];
-			listOffset += messages.length;
-		}
-		hasMore = listOffset < total;
-	} catch (err) {
-		console.error("Failed to load messages:", err);
-	} finally {
-		isLoading = false;
-	}
-}
-
 function checkLoadMore() {
 	if (!hasMore || isLoading || !containerRef) return;
 	const scrollBottom = containerRef.scrollTop + containerRef.clientHeight;
 	const scrollHeight = containerRef.scrollHeight;
 	if (scrollBottom >= scrollHeight - 200) {
-		loadMore();
+		isLoading = true;
+		window.dispatchEvent(new CustomEvent("guestbook:load-more"));
 	}
 }
 
 // ===== 打开/关闭弹窗 =====
 function handleOpen() {
 	if (!dialogRef) return;
-	// 重置状态
-	allMessages = [];
-	listOffset = 0;
-	hasMore = true;
-	isLoading = false;
+
 	expandedId = null;
 	expandedHeights = {};
 	animatingHeights = {};
@@ -293,8 +260,17 @@ function handleOpen() {
 		if (containerRef) {
 			viewportHeight = containerRef.clientHeight;
 		}
-		loadMore();
+		window.dispatchEvent(new CustomEvent("guestbook:request-data"));
 	});
+}
+
+function handleDataUpdate(e: CustomEvent) {
+	const detail = e.detail;
+	if (!detail?.messages) return;
+	allMessages = detail.messages;
+	totalMessages = detail.total || 0;
+	hasMore = detail.hasMore ?? true;
+	isLoading = detail.isLoading ?? false;
 }
 
 function handleClose() {
@@ -322,10 +298,19 @@ function handleOpenEvent() {
 
 onMount(() => {
 	window.addEventListener("guestbook:open-list", handleOpenEvent);
+	window.addEventListener(
+		"guestbook:data-update",
+		handleDataUpdate as EventListener,
+	);
+	window.dispatchEvent(new CustomEvent("guestbook:request-data"));
 });
 
 onDestroy(() => {
 	window.removeEventListener("guestbook:open-list", handleOpenEvent);
+	window.removeEventListener(
+		"guestbook:data-update",
+		handleDataUpdate as EventListener,
+	);
 });
 
 // ===== 计算当前可见消息 =====

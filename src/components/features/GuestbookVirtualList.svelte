@@ -201,10 +201,9 @@ async function handleVote(
 	isVoting[msgId] = true;
 	try {
 		const updated = await voteGuestbookMessage(msgId, type);
-		const idx = allMessages.findIndex((m) => m.id === updated.id);
-		if (idx !== -1) {
-			allMessages[idx] = updated;
-		}
+		window.dispatchEvent(
+			new CustomEvent("guestbook:message-updated", { detail: updated }),
+		);
 		// 记录已投票
 		votedMessages[msgId] = type;
 		// 持久化到 localStorage
@@ -234,6 +233,7 @@ function getVotedType(msgId: string): "agree" | "disagree" | "neutral" | null {
 function handleNewMessage(e: CustomEvent<GuestbookMessage>) {
 	const msg = e.detail;
 	if (!msg) return;
+	if (allMessages.some((message) => message.id === msg.id)) return;
 	allMessages.unshift(msg);
 }
 
@@ -243,11 +243,13 @@ function handleDataUpdate(e: CustomEvent) {
 	if (!detail?.messages) return;
 	allMessages = detail.messages;
 	hasMore = detail.hasMore ?? true;
+	isLoading = detail.isLoading ?? false;
 }
 
 // ===== 加载更多数据 =====
 function loadMore() {
 	if (isLoading || !hasMore) return;
+	isLoading = true;
 	window.dispatchEvent(new CustomEvent("guestbook:load-more"));
 }
 

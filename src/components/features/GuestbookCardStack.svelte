@@ -3,6 +3,7 @@ import { onDestroy, onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
 import { voteGuestbookMessage } from "@/utils/guestbook-api";
+import { shouldDealGuestbookBatch } from "@/utils/guestbook-card-stack";
 
 /**
  * 留言板卡片堆叠拖拽组件
@@ -39,6 +40,7 @@ let votes = $state<Record<string, "agree" | "disagree" | "neutral">>({});
 // 新卡片入场动画偏移
 let enteringCardId = $state<string | null>(null);
 let enterTransform = $state<string | null>(null);
+let isDealingBatch = $state(false);
 
 // 动画与定时器管理，防止组件卸载时内存泄漏
 let rafId: number | null = null;
@@ -232,6 +234,9 @@ async function submitVote(
 		const updated = await voteGuestbookMessage(cardId, type);
 		const idx = allMessages.findIndex((m) => m.id === updated.id);
 		if (idx !== -1) allMessages[idx] = updated;
+		window.dispatchEvent(
+			new CustomEvent("guestbook:message-updated", { detail: updated }),
+		);
 	} catch (err) {
 		console.error("Failed to submit vote:", err);
 	}
@@ -309,6 +314,7 @@ function handlePointerUp() {
 // 发牌动效：从共享数据中获取下一批卡片并逐张飞入
 function dealCards(messages: GuestbookMessage[]) {
 	if (messages.length === 0) return;
+	isDealingBatch = true;
 
 	// 清空，准备发牌
 	allMessages = [];
@@ -340,6 +346,10 @@ function dealCards(messages: GuestbookMessage[]) {
 			});
 		}, i * 220);
 	}
+
+	safeSetTimeout(() => {
+		isDealingBatch = false;
+	}, messages.length * 220 + 50);
 }
 
 // 从 providerMessages 中取下一批卡片发牌，若本地已耗尽则请求更多数据
@@ -374,7 +384,23 @@ onMount(() => {
 		providerMessages = detail.messages;
 		isLoading = false;
 
-		if (visibleCards.length === 0 && providerMessages.length > 0) {
+		if (allMessages.length > 0) {
+			const updatedById = new Map(
+				providerMessages.map((message: GuestbookMessage) => [message.id, message]),
+			);
+			allMessages = allMessages.map((message) =>
+				updatedById.get(message.id) ?? message,
+			);
+		}
+
+		if (
+			shouldDealGuestbookBatch({
+				visibleCount: visibleCards.length,
+				dealtOffset,
+				providerCount: providerMessages.length,
+				isDealing: isDealingBatch,
+			})
+		) {
 			const messages = providerMessages.slice(dealtOffset, dealtOffset + 5);
 			if (messages.length > 0) {
 				dealtOffset += messages.length;
@@ -409,13 +435,14 @@ function openDetail(card: GuestbookMessage, e: Event) {
 function handleNewMessage(e: CustomEvent<GuestbookMessage>) {
 	const msg = e.detail;
 	if (!msg) return;
+	// Provider 会把新留言插到共享缓存头部；本地已发牌偏移同步后移，避免下一组重复发旧卡片。
+	dealtOffset += 1;
 	// 将新留言插入到当前可见卡片的下一张位置，避免直接unshift导致currentIndex错位引发跳变
 	if (visibleCards.length > 0) {
 		allMessages.splice(currentIndex + 1, 0, msg);
 	} else {
 		allMessages.push(msg);
 	}
-	totalMessages++;
 }
 
 // 键盘支持

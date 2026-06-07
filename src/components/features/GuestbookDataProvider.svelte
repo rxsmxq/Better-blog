@@ -6,6 +6,14 @@
  */
 import { onDestroy, onMount } from "svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
+import {
+	applyGuestbookPage,
+	createGuestbookCacheState,
+	getNextGuestbookOffset,
+	prependGuestbookMessage,
+	type GuestbookCacheState,
+	upsertGuestbookMessage,
+} from "@/utils/guestbook-cache";
 import { fetchGuestbookMessages } from "@/utils/guestbook-api";
 
 // 使用全局状态，避免 Swup 切换时重置
@@ -14,47 +22,26 @@ const GLOBAL_KEY = "__guestbook_data__";
 function getGlobalState() {
 	if (typeof window === "undefined") return null;
 	return (window as Record<string, unknown>)[GLOBAL_KEY] as
-		| {
-				allMessages: GuestbookMessage[];
-				totalMessages: number;
-				listOffset: number;
-				hasMore: boolean;
-				isInitialized: boolean;
-		  }
+		| GuestbookCacheState
 		| undefined;
 }
 
-function setGlobalState(state: {
-	allMessages: GuestbookMessage[];
-	totalMessages: number;
-	listOffset: number;
-	hasMore: boolean;
-	isInitialized: boolean;
-}) {
+function setGlobalState(state: GuestbookCacheState) {
 	if (typeof window === "undefined") return;
 	(window as Record<string, unknown>)[GLOBAL_KEY] = state;
 }
 
 // 初始化状态：优先从全局状态恢复
-let globalState = getGlobalState();
-let allMessages = $state<GuestbookMessage[]>(globalState?.allMessages ?? []);
-let totalMessages = $state(globalState?.totalMessages ?? 0);
+let cacheState = $state<GuestbookCacheState>(
+	getGlobalState() ?? createGuestbookCacheState(),
+);
 let isLoading = $state(false);
-let listOffset = $state(globalState?.listOffset ?? 0);
-let hasMore = $state(globalState?.hasMore ?? true);
-let isInitialized = $state(globalState?.isInitialized ?? false);
 
 const BATCH_SIZE = 20;
 
 // 同步到全局状态
 function syncGlobalState() {
-	setGlobalState({
-		allMessages,
-		totalMessages,
-		listOffset,
-		hasMore,
-		isInitialized,
-	});
+	setGlobalState(cacheState);
 }
 
 // 广播数据更新
@@ -62,9 +49,10 @@ function broadcast() {
 	window.dispatchEvent(
 		new CustomEvent("guestbook:data-update", {
 			detail: {
-				messages: allMessages,
-				total: totalMessages,
-				hasMore,
+				messages: cacheState.messages,
+				total: cacheState.total,
+				hasMore: cacheState.hasMore,
+				isLoading,
 			},
 		}),
 	);
@@ -73,34 +61,29 @@ function broadcast() {
 
 // 加载更多数据
 async function loadMore() {
-	if (isLoading || !hasMore) return;
+	if (isLoading || !cacheState.hasMore) return;
 	isLoading = true;
+	broadcast();
 
 	try {
 		const { messages, total } = await fetchGuestbookMessages(
-			listOffset,
+			getNextGuestbookOffset(cacheState),
 			BATCH_SIZE,
 		);
-		totalMessages = total;
-		if (messages.length > 0) {
-			allMessages = [...allMessages, ...messages];
-			listOffset += messages.length;
-		}
-		hasMore = listOffset < total;
+		applyGuestbookPage(cacheState, messages, total);
 		broadcast();
 	} catch (err) {
 		console.error("Failed to load guestbook messages:", err);
 	} finally {
 		isLoading = false;
+		broadcast();
 	}
 }
 
 // 重新加载
 async function reload() {
-	listOffset = 0;
-	hasMore = true;
-	allMessages = [];
-	isInitialized = false;
+	cacheState = createGuestbookCacheState();
+	syncGlobalState();
 	await loadMore();
 }
 
@@ -108,21 +91,27 @@ async function reload() {
 function handleNewMessage(e: CustomEvent<GuestbookMessage>) {
 	const msg = e.detail;
 	if (!msg) return;
-	allMessages.unshift(msg);
-	totalMessages++;
+	prependGuestbookMessage(cacheState, msg);
+	broadcast();
+}
+
+function handleMessageUpdated(e: CustomEvent<GuestbookMessage>) {
+	const msg = e.detail;
+	if (!msg) return;
+	upsertGuestbookMessage(cacheState, msg);
 	broadcast();
 }
 
 // 处理数据请求
 function handleRequestData() {
-	if (!isInitialized) {
-		isInitialized = true;
+	if (!cacheState.isInitialized) {
+		cacheState.isInitialized = true;
+		syncGlobalState();
 		loadMore();
 	} else {
 		// 数据已存在，直接广播
 		broadcast();
-		// 如果数据量较少，继续加载更多（避免卡片只加载5条后列表显示不全）
-		if (allMessages.length < BATCH_SIZE && hasMore) {
+		if (cacheState.messages.length < BATCH_SIZE && cacheState.hasMore) {
 			loadMore();
 		}
 	}
@@ -135,17 +124,25 @@ function handleLoadMore() {
 
 onMount(() => {
 	window.addEventListener("guestbooknew", handleNewMessage as EventListener);
+	window.addEventListener(
+		"guestbook:message-updated",
+		handleMessageUpdated as EventListener,
+	);
 	window.addEventListener("guestbook:request-data", handleRequestData);
 	window.addEventListener("guestbook:load-more", handleLoadMore);
 
 	// 如果全局状态已有数据，立即广播
-	if (allMessages.length > 0) {
+	if (cacheState.messages.length > 0) {
 		broadcast();
 	}
 });
 
 onDestroy(() => {
 	window.removeEventListener("guestbooknew", handleNewMessage as EventListener);
+	window.removeEventListener(
+		"guestbook:message-updated",
+		handleMessageUpdated as EventListener,
+	);
 	window.removeEventListener("guestbook:request-data", handleRequestData);
 	window.removeEventListener("guestbook:load-more", handleLoadMore);
 });
