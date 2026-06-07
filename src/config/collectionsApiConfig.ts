@@ -261,6 +261,14 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 			enabled: true,
 		},
 		{
+			name: "CodePen",
+			url: "https://codepen.io/",
+			description: "前端演示平台，可实时编写和分享 HTML/CSS/JS 代码片段",
+			category: "UI 组件库",
+			icon: favicon("codepen.io"),
+			enabled: true,
+		},
+		{
 			name: "React Bits",
 			url: "https://www.reactbits.dev/",
 			description: "React 组件与 Hook 精选集合，实用且易集成",
