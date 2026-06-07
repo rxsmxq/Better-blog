@@ -495,62 +495,75 @@ function swipeCard(x: number, y: number) {
 				aria-label={card.stackIndex === 0 ? "留言卡片，拖拽投票" : "留言卡片（不可交互）"}
 			>
 				<!-- 卡片内容 -->
-				<div class="card-inner {getCardBorderColor(card.stackIndex, voteType)}">
-					<!-- 角标装饰 -->
-					<div class="corner-mark top-left"></div>
-					<div class="corner-mark top-right"></div>
-					<div class="corner-mark bottom-left"></div>
-					<div class="corner-mark bottom-right"></div>
+				<div class="card-frame {getCardBorderColor(card.stackIndex, voteType)}">
+					<!-- 外层四角装饰 -->
+					<div class="frame-corner top-left"></div>
+					<div class="frame-corner top-right"></div>
+					<div class="frame-corner bottom-left"></div>
+					<div class="frame-corner bottom-right"></div>
 
-					<!-- 头部 -->
-					<div class="card-header">
-						<div class="header-bg"></div>
-						<div class="header-content">
-							<div class="author-info">
-								<div class="author-avatar"></div>
-								<span class="author-name">{card.author}</span>
-							</div>
-							<span class="message-time">{card.time}</span>
+					<!-- 内层卡片 -->
+					<div class="card-inner">
+						<!-- 内层四角装饰 -->
+						<div class="inner-corner top-left"></div>
+						<div class="inner-corner top-right"></div>
+						<div class="inner-corner bottom-left"></div>
+						<div class="inner-corner bottom-right"></div>
+
+						<!-- 左上角序号 -->
+						<div class="card-index">
+							#{card.id && card.id.includes('_') ? card.id.split("_")[1] : card.id}
 						</div>
-					</div>
 
-					<!-- 主体内容 -->
-					<div class="card-body">
-						<div class="body-line"></div>
-						<div class="body-content">
-							<h3 class="message-title">留言 #{card.id && card.id.includes('_') ? card.id.split("_")[1] : card.id}</h3>
-							<div class="title-underline"></div>
+						<!-- 顶部斜线路障条纹 -->
+						<div class="stripe-bar top-stripe"></div>
+
+						<!-- 主体内容 -->
+						<div class="card-body">
 							<p class="message-text">{card.content}</p>
 						</div>
-					</div>
 
-					<!-- 投票统计 -->
-					<div class="card-votes">
-						<span class="card-vote agree"><Icon icon="material-symbols:thumb-up" size="sm" /> {card.votes.agree}</span>
-						<span class="card-vote neutral"><Icon icon="material-symbols:remove" size="sm" /> {card.votes.neutral}</span>
-						<span class="card-vote disagree"><Icon icon="material-symbols:thumb-down" size="sm" /> {card.votes.disagree}</span>
-					</div>
-
-					<!-- 底部 -->
-					<div class="card-footer" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)} role="button" tabindex="0">
-						<span class="footer-text">读取档案 >></span>
+						<!-- 底部信息区域 - 员工证风格 -->
+						<div class="card-info-section">
+							<!-- 左侧头像 -->
+							<div class="info-avatar">
+								<Icon icon="material-symbols:person" size="lg" />
+							</div>
+							<!-- 右侧信息 -->
+							<div class="info-right">
+								<!-- 第一层：名字 -->
+								<div class="info-name">{card.author}</div>
+								<!-- 第二层：投票统计 -->
+								<div class="info-votes">
+									<span class="info-vote agree">赞同 {card.votes.agree}</span>
+									<span class="vote-divider">|</span>
+									<span class="info-vote neutral">中立 {card.votes.neutral}</span>
+									<span class="vote-divider">|</span>
+									<span class="info-vote disagree">反对 {card.votes.disagree}</span>
+								</div>
+								<!-- 第三层：查看详情按钮 -->
+								<button class="meta-btn" data-no-drag onclick={(e) => openDetail(card, e)} onkeydown={(e) => e.key === "Enter" && openDetail(card, e)}>
+									查看详情
+								</button>
+							</div>
+						</div>
 					</div>
 
 					<!-- 投票标签 -->
-				{#if card.stackIndex === 0 && isDragging && voteType}
-					{@const label = getVoteLabel(voteType)}
-					{#if label}
-						<div class="vote-label {label.color} {label.position}">
-							{label.text}
-						</div>
+					{#if card.stackIndex === 0 && isDragging && voteType}
+						{@const label = getVoteLabel(voteType)}
+						{#if label}
+							<div class="vote-label {label.color} {label.position}">
+								{label.text}
+							</div>
+						{/if}
 					{/if}
-				{/if}
 
-				<!-- 底层卡片遮罩层 (替代高开销的 filter: brightness) -->
-				{#if card.stackIndex > 0}
-					<div class="card-overlay" style="opacity: {Math.min(0.6, card.stackIndex * 0.15)}"></div>
-				{/if}
-			</div>
+					<!-- 底层卡片遮罩层 -->
+					{#if card.stackIndex > 0}
+						<div class="card-overlay" style="opacity: {Math.min(0.6, card.stackIndex * 0.15)}"></div>
+					{/if}
+				</div>
 		</div>
 		{/each}
 
