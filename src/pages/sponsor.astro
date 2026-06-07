@@ -1,7 +1,6 @@
 ---
-import Comment from "@components/comment/index.astro";
 import Icon from "@components/common/Icon.astro";
-import { commentConfig, siteConfig, sponsorConfig } from "@/config";
+import { siteConfig, sponsorConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
@@ -12,12 +11,6 @@ if (!siteConfig.pages.sponsor) {
 	return Astro.redirect("/404/");
 }
 
-// 检查评论系统是否启用
-const isCommentEnabled =
-	commentConfig?.type &&
-	commentConfig.type !== "none" &&
-	sponsorConfig.showComment !== false;
-
 const title = sponsorConfig.title || i18n(I18nKey.sponsorTitle);
 const description =
 	sponsorConfig.description || i18n(I18nKey.sponsorDescription);
@@ -27,13 +20,13 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
 ---
 
 <MainGridLayout title={title} description={description}>
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative">
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题和描述 -->
       <div class="mb-8">
-        <div class="flex items-center gap-3 mb-3">
+      <div class="flex items-center gap-3 mb-3">
             <Icon name="material-symbols:favorite" class="text-[1.875rem]"></Icon>
-          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+        <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
             {title}
           </div>
         </div>
@@ -56,54 +49,73 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
       </div>
 
       <!-- 赞助方式 -->
-      <div class="mb-8">
-        <div class="flex flex-wrap justify-center gap-6">
-                    {enabledMethods.map((method) => (
-                      <div class="flex flex-col items-center card-base p-8 rounded-lg bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 hover:border-(--primary) transition-colors w-full max-w-sm">
-                        <!-- 图标和名称 -->
-                        <div class="flex items-center gap-3 mb-5">
-                          {method.icon && (
-                            <Icon name={method.icon} class="text-3xl text-neutral-900 dark:text-neutral-100 transition-colors" />
-                          )}
-                          <h3 class="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                            {method.name}
-                          </h3>
-                        </div>
+      {enabledMethods.length > 0 && (
+        <div class="sponsor-qr-card__outer">
+        <div class="sponsor-qr-card">
+          <!-- 第一层：扫码赞助标题 -->
+          <div class="sponsor-qr-card__header">
+            <h3 class="sponsor-qr-card__title">{i18n(I18nKey.scanToSponsor)}</h3>
+          </div>
 
-                        <!-- 描述 -->
-                        {method.description && (
-                          <p class="text-base text-neutral-600 dark:text-neutral-400 mb-5 text-center">
-                            {method.description}
-                          </p>
-                        )}
+          <!-- 第二层：选择支付方式 -->
+          <p class="sponsor-qr-card__subtitle">选择你喜欢的支付方式</p>
 
-                        <!-- 二维码或链接 -->
-                        {method.qrCode && (
-                          <div class="relative w-full max-w-[260px] aspect-square bg-white rounded-lg p-4 shadow-md mb-5">
-                            <img
-                              src={url(method.qrCode)}
-                              alt={`${method.name} ${i18n(I18nKey.scanToSponsor)}`}
-                              class="w-full h-full object-contain"
-                              loading="lazy"
-                            />
-                          </div>
-                        )}
+          <!-- 第三层：Tabs 导航 -->
+          <div class="sponsor-qr-card__tabs-wrapper">
+            <div class="sponsor-qr-card__tabs-pill" data-sponsor-tab-nav>
+              <div class="sponsor-qr-card__tabs-indicator" data-sponsor-tab-indicator></div>
+              {enabledMethods.map((method, index) => (
+                <button
+                  class:list={[
+                    "sponsor-qr-card__tab-btn",
+                    {
+                      "sponsor-qr-card__tab-btn--active": index === 0,
+                      "sponsor-qr-card__tab-btn--inactive": index !== 0
+                    }
+                  ]}
+                  data-sponsor-tab={index}
+                  type="button"
+                >
+                  {method.icon && (
+                    <Icon name={method.icon} class="text-[1rem]" />
+                  )}
+                  {method.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                        {method.link && (
-                          <a
-                            href={method.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-(--primary) text-white dark:text-black/70 rounded-lg font-medium hover:bg-(--primary)/90 active:scale-95 transition-all"
-                          >
-                            <span>{i18n(I18nKey.sponsorGoTo)}</span>
-                            <Icon name="fa7-solid:arrow-up-right-from-square" class="text-sm" />
-                          </a>
-                        )}
-                      </div>
-                    ))}
+          <!-- 第四层：二维码图片 -->
+          <div class="sponsor-qr-card__content">
+            {enabledMethods.map((method, index) => (
+              <div
+                class:list={[
+                  "sponsor-qr-card__panel",
+                  { "hidden": index !== 0 }
+                ]}
+                data-sponsor-panel={index}
+              >
+                {method.qrCode ? (
+                  <div class="sponsor-qr-card__image-wrapper">
+                    <img
+                      src={url(method.qrCode)}
+                      alt={`${method.name} ${i18n(I18nKey.scanToSponsor)}`}
+                      class="sponsor-qr-card__image"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : (
+                  <div class="sponsor-qr-card__empty">
+                    <Icon name="material-symbols:qr-code-scanner" class="text-[3rem] mb-2 opacity-40" />
+                    <span class="sponsor-qr-card__empty-text">暂不开通</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   </div>
 
@@ -113,46 +125,36 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
       <div class="card-base z-10 px-9 py-6 relative w-full">
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
-            <div class="h-8 w-8 rounded-lg bg-(--primary)/10 flex items-center justify-center">
-              <Icon name="material-symbols:emoji-people-rounded" class="text-[1.25rem] text-(--primary)" />
-            </div>
             <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-              {i18n(I18nKey.sponsorList)}
+              赞助名单
             </h2>
           </div>
-          {sponsors.length > 0 && (
-            <span class="text-xs text-neutral-400 dark:text-neutral-500">
-              {sponsors.length}
-            </span>
-          )}
         </div>
         {sponsors.length > 0 ? (
-          <div class="sponsor-grid">
+          <div class="sponsor-list">
             {sponsors.map((sponsor) => (
-              <div class="group flex items-center gap-3 p-3 rounded-xl border border-(--line-divider) hover:border-(--primary) transition-all duration-200">
+              <div class="sponsor-row group">
                 {/* 头像占位 */}
-                <div class="w-9 h-9 rounded-full bg-(--primary)/10 flex items-center justify-center shrink-0 group-hover:bg-(--primary)/20 transition-colors">
-                  <span class="text-sm font-bold text-(--primary)">{sponsor.name.charAt(0)}</span>
+                <div class="sponsor-avatar">
+                  <span>{sponsor.name.charAt(0)}</span>
                 </div>
 
                 {/* 信息 */}
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">
-                      {sponsor.name}
-                    </span>
-                    {sponsor.amount && (
-                      <span class="shrink-0 text-xs font-bold text-(--primary)">
-                        {sponsor.amount}
-                      </span>
-                    )}
-                  </div>
+                <div class="sponsor-info">
+                  <span class="sponsor-name">
+                    {sponsor.name}
+                  </span>
                   {sponsor.date && (
-                    <span class="text-[0.65rem] text-neutral-400 dark:text-neutral-500">
+                    <span class="sponsor-date">
                       {new Date(sponsor.date).toLocaleDateString()}
                     </span>
                   )}
                 </div>
+                {sponsor.amount && (
+                  <span class="sponsor-amount">
+                    {sponsor.amount}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -164,13 +166,82 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
       </div>
     </div>
   )}
-  <!-- 评论区 -->
-  {isCommentEnabled && (
-    <div class="mt-4">
-      <Comment customPath="/sponsor/" title="sponsor"  />
-    </div>
-  )}
+
+  <!-- 样式已迁移至 src/styles/pages/sponsor.css -->
+
+  <!-- Sponsor Tabs 交互脚本 -->
+  <script is:inline>
+    (function() {
+      if (window.__sponsorTabsReady) return;
+      window.__sponsorTabsReady = true;
+
+      function updateSponsorIndicator(nav) {
+        if (!nav) return;
+        var indicator = nav.querySelector("[data-sponsor-tab-indicator]");
+        if (!indicator) return;
+        var activeBtn = nav.querySelector(".sponsor-qr-card__tab-btn--active");
+        if (!activeBtn) return;
+        var navRect = nav.getBoundingClientRect();
+        var btnRect = activeBtn.getBoundingClientRect();
+        indicator.style.left = (btnRect.left - navRect.left) + "px";
+        indicator.style.top = (btnRect.top - navRect.top) + "px";
+        indicator.style.width = btnRect.width + "px";
+        indicator.style.height = btnRect.height + "px";
+        indicator.style.opacity = "1";
+      }
+
+      function activateSponsorTab(tabIndex) {
+        var tabIndexStr = String(tabIndex);
+        var tabButtons = document.querySelectorAll("[data-sponsor-tab]");
+        var panels = document.querySelectorAll("[data-sponsor-panel]");
+
+        tabButtons.forEach(function(btn) {
+          if (btn.dataset.sponsorTab === tabIndexStr) {
+            btn.classList.remove("sponsor-qr-card__tab-btn--inactive");
+            btn.classList.add("sponsor-qr-card__tab-btn--active");
+          } else {
+            btn.classList.remove("sponsor-qr-card__tab-btn--active");
+            btn.classList.add("sponsor-qr-card__tab-btn--inactive");
+          }
+        });
+
+        panels.forEach(function(panel) {
+          if (panel.dataset.sponsorPanel === tabIndexStr) {
+            panel.classList.remove("hidden");
+          } else {
+            panel.classList.add("hidden");
+          }
+        });
+
+        var nav = document.querySelector("[data-sponsor-tab-nav]");
+        if (nav) updateSponsorIndicator(nav);
+      }
+
+      // 事件委托：sponsor tab 点击
+      document.addEventListener("click", function(e) {
+        var btn = e.target.closest("[data-sponsor-tab]");
+        if (!btn) return;
+        activateSponsorTab(btn.dataset.sponsorTab);
+      });
+
+      // resize：更新指示器
+      window.addEventListener("resize", function() {
+        var nav = document.querySelector("[data-sponsor-tab-nav]");
+        if (nav) updateSponsorIndicator(nav);
+      });
+
+      // 初始化 sponsor tab 指示器
+      function initSponsorTabs() {
+        var nav = document.querySelector("[data-sponsor-tab-nav]");
+        if (nav) {
+          requestAnimationFrame(function() {
+            updateSponsorIndicator(nav);
+          });
+        }
+      }
+
+      initSponsorTabs();
+      document.addEventListener("astro:page-load", initSponsorTabs);
+    })();
+  </script>
 </MainGridLayout>
-
-<!-- 样式已迁移至 src/styles/pages/sponsor.css -->
-

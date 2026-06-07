@@ -2,14 +2,13 @@ import type { SponsorConfig } from "../types/config";
 
 export const sponsorConfig: SponsorConfig = {
 	// 页面标题，如果留空则使用 i18n 中的翻译
-	title: "",
+	title: "赞助",
 
 	// 页面描述文本，如果留空则使用 i18n 中的翻译
-	description: "",
+	description: "感谢您的支持，您的赞助将帮助我持续创作优质内容",
 
 	// 赞助用途说明
-	usage:
-		"您的赞助将用于服务器维护、内容创作和功能开发，帮助我持续提供优质内容。",
+	usage: "",
 
 	// 是否显示赞助者列表
 	showSponsorsList: true,
@@ -23,30 +22,23 @@ export const sponsorConfig: SponsorConfig = {
 	// 赞助方式列表
 	methods: [
 		{
-			name: "精神资助",
-			icon: "fa7-brands:alipay",
+			name: "菲比啾比支付",
+			icon: "material-symbols:chat-bubble",
 			// 收款码图片路径（需要放在 public 目录下）
-			qrCode: "/assets/images/jszz.webp",
+			qrCode: "/assets/images/wechat-pay.webp",
 			link: "",
-			description: "在 精神层面 赞助",
+			description: "",
 			enabled: true,
 		},
-		// {
-		// 	name: "ko-fi",
-		// 	icon: "simple-icons:kofi",
-		// 	qrCode: "",
-		// 	link: "https://ko-fi.com/cuteleaf",
-		// 	description: "Buy a Coffee for Firefly",
-		// 	enabled: true,
-		// },
-		// {
-		// 	name: "爱发电",
-		// 	icon: "simple-icons:afdian",
-		// 	qrCode: "",
-		// 	link: "https://ifdian.net/a/cuteleaf",
-		// 	description: "通过 爱发电 进行赞助",
-		// 	enabled: true,
-		// },
+		{
+			name: "支付宝支付",
+			icon: "fa7-brands:alipay",
+			// 收款码图片路径（需要放在 public 目录下）/assets/images/alipay.webp
+			qrCode: "",
+			link: "",
+			description: "",
+			enabled: true,
+		},
 	],
 
 	// 赞助者列表（可选）
