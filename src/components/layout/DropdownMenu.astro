@@ -100,107 +100,114 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 <!-- 样式已迁移至 src/styles/layout/dropdown-menu.css -->
 
 <script>
-	// 键盘导航支持
-	document.addEventListener('DOMContentLoaded', function() {
-		const dropdowns = document.querySelectorAll('[data-dropdown]');
+	function getDropdownParts(dropdown: Element) {
+		const trigger = dropdown.querySelector("[data-dropdown-trigger]");
+		const menu = dropdown.querySelector("[data-dropdown-menu]");
+		return { trigger, menu };
+	}
 
-		dropdowns.forEach(dropdown => {
-			const trigger = dropdown.querySelector('[data-dropdown-trigger]') as HTMLElement | null;
-			const menu = dropdown.querySelector('[data-dropdown-menu]');
-			const items = dropdown.querySelectorAll('.dropdown-item') as NodeListOf<HTMLElement>;
-
-			if (!trigger || !menu) return;
-
-			// 键盘事件处理
-			trigger.addEventListener('keydown', function(e: KeyboardEvent) {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					toggleDropdown(dropdown, trigger, menu);
-				} else if (e.key === 'ArrowDown') {
-					e.preventDefault();
-					openDropdown(dropdown, trigger, menu);
-					if (items.length > 0) {
-						items[0].focus();
-					}
-				} else if (e.key === 'Escape') {
-					closeDropdown(dropdown, trigger, menu);
-				}
-			});
-
-			// 菜单项键盘导航
-			items.forEach((item, index) => {
-				item.addEventListener('keydown', function(e: KeyboardEvent) {
-					if (e.key === 'ArrowDown') {
-						e.preventDefault();
-						const nextIndex = (index + 1) % items.length;
-						items[nextIndex].focus();
-					} else if (e.key === 'ArrowUp') {
-						e.preventDefault();
-						const prevIndex = (index - 1 + items.length) % items.length;
-						items[prevIndex].focus();
-					} else if (e.key === 'Escape') {
-						closeDropdown(dropdown, trigger, menu);
-						trigger.focus();
-					}
-				});
-			});
-		});
-
-		// Guard: prevent multiple document-level click handlers across DropdownMenu instances
-		if (!(window as any).__dropdownClickAdded) {
-			(window as any).__dropdownClickAdded = true;
-
-			// 点击外部关闭下拉菜单 + 处理 action 按钮点击
-			document.addEventListener('click', function(e) {
-				const dropdowns = document.querySelectorAll('[data-dropdown]');
-				dropdowns.forEach(dropdown => {
-					if (!dropdown.contains(e.target as Node)) {
-						const trigger = dropdown.querySelector('[data-dropdown-trigger]');
-						const menu = dropdown.querySelector('[data-dropdown-menu]');
-						if (trigger && menu) {
-							closeDropdown(dropdown, trigger, menu);
-						}
-					}
-				});
-
-				const actionBtn = (e.target as HTMLElement).closest('[data-action]');
-				if (actionBtn) {
-					const action = actionBtn.getAttribute('data-action');
-					if (action) {
-						window.dispatchEvent(new CustomEvent(action));
-						// 关闭下拉菜单
-						const dropdown = actionBtn.closest('[data-dropdown]');
-						if (dropdown) {
-							const trigger = dropdown.querySelector('[data-dropdown-trigger]');
-							const menu = dropdown.querySelector('[data-dropdown-menu]');
-							if (trigger && menu) {
-								closeDropdown(dropdown, trigger, menu);
-							}
-						}
-					}
-				}
-			});
-		}
-	});
-	
-	function toggleDropdown(_dropdown: Element, trigger: Element, menu: Element) {
+	function toggleDropdown(dropdown: Element, trigger: Element, menu: Element) {
 		const isOpen = trigger.getAttribute('aria-expanded') === 'true';
 		if (isOpen) {
-			closeDropdown(_dropdown, trigger, menu);
+			closeDropdown(dropdown, trigger, menu);
 		} else {
-			openDropdown(_dropdown, trigger, menu);
+			openDropdown(dropdown, trigger, menu);
 		}
 	}
 	
-	function openDropdown(_dropdown: Element, trigger: Element, menu: Element) {
+	function openDropdown(dropdown: Element, trigger: Element, menu: Element) {
 		trigger.setAttribute('aria-expanded', 'true');
+		dropdown.classList.add("is-dropdown-open");
 		menu.classList.remove('opacity-0', 'invisible', 'pointer-events-none', 'translate-y-[-8px]');
 		menu.classList.add('opacity-100', 'visible', 'pointer-events-auto', 'translate-y-0');
 	}
 	
-	function closeDropdown(_dropdown: Element, trigger: Element, menu: Element) {
+	function closeDropdown(dropdown: Element, trigger: Element, menu: Element) {
 		trigger.setAttribute('aria-expanded', 'false');
+		dropdown.classList.remove("is-dropdown-open");
 		menu.classList.add('opacity-0', 'invisible', 'pointer-events-none', 'translate-y-[-8px]');
 		menu.classList.remove('opacity-100', 'visible', 'pointer-events-auto', 'translate-y-0');
+	}
+
+	function closeAllDropdowns(options: { blurActive?: boolean } = {}) {
+		document.querySelectorAll("[data-dropdown]").forEach((dropdown) => {
+			const { trigger, menu } = getDropdownParts(dropdown);
+			if (trigger && menu) closeDropdown(dropdown, trigger, menu);
+		});
+
+		if (options.blurActive) {
+			const active = document.activeElement as HTMLElement | null;
+			if (active?.closest?.("[data-dropdown]")) active.blur();
+		}
+	}
+
+	function initDropdownMenus() {
+		if ((window as any).__navbarDropdownInitialized) return;
+		(window as any).__navbarDropdownInitialized = true;
+
+		document.addEventListener("keydown", (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const trigger = target?.closest?.("[data-dropdown-trigger]");
+			const item = target?.closest?.(".dropdown-item");
+			const dropdown = (trigger || item)?.closest?.("[data-dropdown]");
+			if (!dropdown) return;
+
+			const { trigger: dropdownTrigger, menu } = getDropdownParts(dropdown);
+			if (!dropdownTrigger || !menu) return;
+
+			const items = Array.from(dropdown.querySelectorAll(".dropdown-item")) as HTMLElement[];
+
+			if (trigger && (e.key === "Enter" || e.key === " ")) {
+				e.preventDefault();
+				toggleDropdown(dropdown, dropdownTrigger, menu);
+			} else if (trigger && e.key === "ArrowDown") {
+				e.preventDefault();
+				openDropdown(dropdown, dropdownTrigger, menu);
+				items[0]?.focus();
+			} else if (item && e.key === "ArrowDown") {
+				e.preventDefault();
+				const index = items.indexOf(item as HTMLElement);
+				items[(index + 1) % items.length]?.focus();
+			} else if (item && e.key === "ArrowUp") {
+				e.preventDefault();
+				const index = items.indexOf(item as HTMLElement);
+				items[(index - 1 + items.length) % items.length]?.focus();
+			} else if (e.key === "Escape") {
+				closeDropdown(dropdown, dropdownTrigger, menu);
+				(dropdownTrigger as HTMLElement).focus();
+			}
+		});
+
+		document.addEventListener("click", (e) => {
+			const target = e.target as HTMLElement;
+			const actionBtn = target.closest("[data-action]");
+			const clickedItem = target.closest(".dropdown-item");
+
+			if (actionBtn) {
+				const action = actionBtn.getAttribute("data-action");
+				if (action) window.dispatchEvent(new CustomEvent(action));
+			}
+
+			if (clickedItem) {
+				const dropdown = clickedItem.closest("[data-dropdown]");
+				if (dropdown) {
+					const { trigger, menu } = getDropdownParts(dropdown);
+					if (trigger && menu) closeDropdown(dropdown, trigger, menu);
+				}
+				(document.activeElement as HTMLElement | null)?.blur?.();
+				return;
+			}
+
+			if (!target.closest("[data-dropdown]")) closeAllDropdowns();
+		});
+
+		document.addEventListener("astro:page-load", () => closeAllDropdowns({ blurActive: true }));
+		window.addEventListener("pageshow", () => closeAllDropdowns({ blurActive: true }));
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", initDropdownMenus, { once: true });
+	} else {
+		initDropdownMenus();
 	}
 </script>

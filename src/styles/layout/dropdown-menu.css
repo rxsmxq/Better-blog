@@ -65,7 +65,8 @@
 }
 
 .dropdown-container:hover .dropdown-menu,
-.dropdown-container:focus-within .dropdown-menu {
+.dropdown-container:focus-within .dropdown-menu,
+.dropdown-container.is-dropdown-open .dropdown-menu {
 	opacity: 1;
 	visibility: visible;
 	pointer-events: auto;
@@ -73,7 +74,8 @@
 }
 
 .dropdown-container:hover .dropdown-arrow,
-.dropdown-container:focus-within .dropdown-arrow {
+.dropdown-container:focus-within .dropdown-arrow,
+.dropdown-container.is-dropdown-open .dropdown-arrow {
 	rotate: 180deg;
 }
 
