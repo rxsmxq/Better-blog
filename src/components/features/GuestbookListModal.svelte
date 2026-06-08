@@ -280,7 +280,8 @@ function handleClose() {
 }
 
 function handleBackdropClick(e: MouseEvent) {
-	if (e.target === dialogRef) {
+	const target = e.target as HTMLElement | null;
+	if (target === dialogRef || target?.classList.contains("gb-list-overlay")) {
 		handleClose();
 	}
 }
@@ -330,8 +331,10 @@ let visibleMessages = $derived.by(() => {
 	onclick={handleBackdropClick}
 	onkeydown={handleKeyDown}
 >
-	<div class="gb-list-overlay"></div>
-	<div class="gb-list-panel">
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="gb-list-overlay" onclick={handleBackdropClick}></div>
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="gb-list-panel" onclick={(e) => e.stopPropagation()}>
 		<!-- 四角装饰 -->
 		<div class="corner-mark top-left"></div>
 		<div class="corner-mark top-right"></div>

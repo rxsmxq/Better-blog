@@ -19,13 +19,14 @@ interface SessionMeta {
 const STORAGE_SESSIONS_KEY = "ai-chat:sessions";
 const STORAGE_SESSION_PREFIX = "ai-chat:session:";
 const MAX_SESSIONS = 20;
+const INPUT_MAX_HEIGHT = 160;
 
 let isOpen = $state(false);
 let inputVal = $state("");
 let messages = $state<Message[]>([]);
 let isLoading = $state(false);
 let messagesEl: HTMLDivElement;
-let inputEl: HTMLInputElement;
+let inputEl: HTMLTextAreaElement;
 let abortCtrl: AbortController | null = null;
 let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 let sessionId = $state("");
@@ -107,7 +108,10 @@ function deleteSession(id: string) {
 	sessionList = sessionList.filter((s) => s.id !== id);
 	saveSessionListToStorage(sessionList);
 	if (id === sessionId) {
-		startNewSession();
+		sessionId = generateSessionId();
+		messages = [];
+		showSessionList = false;
+		scrollToBottom();
 	}
 }
 
@@ -142,7 +146,10 @@ export function toggle() {
 	isOpen = !isOpen;
 	window.__aiSearchOpen = isOpen;
 	if (isOpen) {
-		tick().then(() => inputEl?.focus());
+		tick().then(() => {
+			inputEl?.focus();
+			syncInputHeight();
+		});
 	}
 }
 
@@ -156,6 +163,17 @@ function scrollToBottom() {
 		if (messagesEl) {
 			messagesEl.scrollTop = messagesEl.scrollHeight;
 		}
+	});
+}
+
+function syncInputHeight() {
+	tick().then(() => {
+		if (!inputEl) return;
+		inputEl.style.height = "auto";
+		const height = Math.min(inputEl.scrollHeight, INPUT_MAX_HEIGHT);
+		inputEl.style.height = `${height}px`;
+		inputEl.style.overflowY =
+			inputEl.scrollHeight > INPUT_MAX_HEIGHT ? "auto" : "hidden";
 	});
 }
 
@@ -211,6 +229,7 @@ async function send() {
 	}
 
 	inputVal = "";
+	syncInputHeight();
 	messages = [...messages, { role: "user", content: q }];
 	scrollToBottom();
 
@@ -477,28 +496,41 @@ onMount(() => {
 
       <!-- 输入区域 -->
       <div class="ai-input-area">
-        <input
-          bind:this={inputEl}
-          bind:value={inputVal}
-          onkeydown={handleKeydown}
-          placeholder="输入你的问题..."
-          disabled={isLoading}
-          class="ai-input"
-        />
+        <div class="ai-input-box">
+          <textarea
+            bind:this={inputEl}
+            bind:value={inputVal}
+            oninput={syncInputHeight}
+            onkeydown={handleKeydown}
+            placeholder="输入你的问题..."
+            disabled={isLoading}
+            class="ai-input"
+            rows="1"
+            aria-label="AI 搜索问题"
+          ></textarea>
         {#if isLoading}
-          <button class="ai-send-btn" onclick={stop} title="停止生成">
-            <Icon icon="material-symbols:stop-circle-outline" />
+          <button
+            type="button"
+            class="ai-send-btn"
+            onclick={stop}
+            title="停止生成"
+            aria-label="停止生成"
+          >
+            <Icon icon="material-symbols:stop-circle-outline" size="lg" />
           </button>
         {:else}
           <button
+            type="button"
             class="ai-send-btn"
             onclick={send}
             disabled={!inputVal.trim()}
             title="发送"
+            aria-label="发送"
           >
-            <Icon icon="material-symbols:send-outline" />
+            <Icon icon="material-symbols:arrow-outward-rounded" size="lg" />
           </button>
         {/if}
+        </div>
       </div>
     </div>
   </div>
@@ -889,8 +921,6 @@ onMount(() => {
 
   .ai-input-area {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
     padding: 0.75rem 1rem;
     border-top: 1px solid oklch(0.85 0 0 / 0.2);
     flex-shrink: 0;
@@ -899,51 +929,86 @@ onMount(() => {
     border-top-color: oklch(0.3 0 0 / 0.3);
   }
 
+  .ai-input-box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.65rem;
+    width: 100%;
+    min-height: 3.35rem;
+    max-height: 12rem;
+    padding: 0.55rem 0.6rem 0.55rem 0.85rem;
+    border: 2px solid #111;
+    border-radius: 0.9rem;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .ai-input-box:focus-within {
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+  }
+  :root.dark .ai-input-box {
+    border-color: #fff;
+    background: oklch(0.16 0 0);
+  }
+  :root.dark .ai-input-box:focus-within {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+  }
+
   .ai-input {
-    flex: 1;
-    border: 1px solid oklch(0.8 0 0 / 0.3);
-    border-radius: 0.75rem;
-    padding: 0.5rem 0.8rem;
+    width: 100%;
+    min-height: 2.15rem;
+    max-height: 10rem;
+    border: none;
+    border-radius: 0;
+    padding: 0.4rem 0;
     font-size: 0.9rem;
+    line-height: 1.5;
     background: transparent;
     color: var(--text-90, #222);
     outline: none;
-    transition: border-color 0.15s;
-  }
-  .ai-input:focus {
-    border-color: var(--primary);
+    resize: none;
+    overflow-y: hidden;
+    scrollbar-width: thin;
   }
   .ai-input::placeholder {
     color: var(--text-30, #aaa);
   }
   :root.dark .ai-input {
-    border-color: oklch(0.35 0 0 / 0.4);
     color: var(--text-90, #eee);
   }
 
   .ai-send-btn {
-    width: 2.2rem;
-    height: 2.2rem;
-    border-radius: 0.75rem;
-    border: none;
-    background: var(--primary);
-    color: white;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 0.72rem;
+    border: 2px solid #111;
+    background: #111;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: opacity 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
   }
   .ai-send-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.38;
     cursor: not-allowed;
   }
   .ai-send-btn:not(:disabled):hover {
-    opacity: 0.85;
+    background: #333;
+    border-color: #333;
   }
   :root.dark .ai-send-btn {
-    color: rgba(0, 0, 0, 0.7);
+    border-color: #fff;
+    background: #fff;
+    color: #111;
+  }
+  :root.dark .ai-send-btn:not(:disabled):hover {
+    background: oklch(0.88 0 0);
+    border-color: oklch(0.88 0 0);
   }
 
   @media (max-width: 640px) {
@@ -976,11 +1041,17 @@ onMount(() => {
     }
     .ai-input-area {
       padding: 0.6rem 0.75rem;
-      gap: 0.4rem;
+    }
+    .ai-input-box {
+      min-height: 3.4rem;
+      padding: 0.5rem 0.52rem 0.5rem 0.75rem;
+      gap: 0.5rem;
+      border-radius: 0.8rem;
     }
     .ai-input {
       font-size: 16px; /* 防止 iOS 缩放 */
-      padding: 0.6rem 0.7rem;
+      min-height: 2.35rem;
+      padding: 0.45rem 0;
     }
     .ai-send-btn {
       width: 2.5rem;
