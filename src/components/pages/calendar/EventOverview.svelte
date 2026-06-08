@@ -206,16 +206,8 @@ function updateCountdowns() {
 onMount(() => {
 	updateCountdowns();
 	countdownInterval = setInterval(updateCountdowns, 1000);
-	// Swup 页面切换后重新初始化（样式和倒计时）
-	const handlePageLoad = () => {
-		updateCountdowns();
-		if (countdownInterval) clearInterval(countdownInterval);
-		countdownInterval = setInterval(updateCountdowns, 1000);
-	};
-	document.addEventListener("astro:page-load", handlePageLoad);
 	return () => {
 		clearInterval(countdownInterval);
-		document.removeEventListener("astro:page-load", handlePageLoad);
 	};
 });
 

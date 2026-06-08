@@ -18,6 +18,13 @@ declare global {
 		// biome-ignore lint/suspicious/noExplicitAny: External library (PIXI live2d)
 		_live2dModel?: any;
 		spineModelInitialized?: boolean;
+		__spineAbortController?: AbortController | null;
+		__spineIdleIntervalId?: ReturnType<typeof setInterval> | null;
+		clearModelMessage?: () => void;
+		showModelMessage?: (
+			message: string,
+			options?: Record<string, unknown>,
+		) => void;
 		floatingTOCListenersInitialized?: boolean;
 		__aiSearchOpen?: boolean;
 		_showLive2DWidget?: () => void;

@@ -6,15 +6,15 @@
  */
 import { onDestroy, onMount } from "svelte";
 import type { GuestbookMessage } from "@/types/guestbook";
+import { fetchGuestbookMessages } from "@/utils/guestbook-api";
 import {
 	applyGuestbookPage,
 	createGuestbookCacheState,
+	type GuestbookCacheState,
 	getNextGuestbookOffset,
 	prependGuestbookMessage,
-	type GuestbookCacheState,
 	upsertGuestbookMessage,
 } from "@/utils/guestbook-cache";
-import { fetchGuestbookMessages } from "@/utils/guestbook-api";
 
 // 使用全局状态，避免 Swup 切换时重置
 const GLOBAL_KEY = "__guestbook_data__";

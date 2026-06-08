@@ -25,7 +25,9 @@ function getMessageNumber(message: GuestbookMessage): number {
 	return match ? Number(match[1]) : 0;
 }
 
-function sortGuestbookMessages(messages: GuestbookMessage[]): GuestbookMessage[] {
+function sortGuestbookMessages(
+	messages: GuestbookMessage[],
+): GuestbookMessage[] {
 	return [...messages].sort((a, b) => {
 		const numberDiff = getMessageNumber(b) - getMessageNumber(a);
 		if (numberDiff !== 0) return numberDiff;
@@ -39,7 +41,9 @@ export function applyGuestbookPage(
 	total: number,
 ): void {
 	const existingIds = new Set(state.messages.map((message) => message.id));
-	const newMessages = messages.filter((message) => !existingIds.has(message.id));
+	const newMessages = messages.filter(
+		(message) => !existingIds.has(message.id),
+	);
 
 	state.messages = sortGuestbookMessages([...state.messages, ...newMessages]);
 	state.total = total;
@@ -69,7 +73,9 @@ export function prependGuestbookMessage(
 	state: GuestbookCacheState,
 	message: GuestbookMessage,
 ): void {
-	const existingIndex = state.messages.findIndex((item) => item.id === message.id);
+	const existingIndex = state.messages.findIndex(
+		(item) => item.id === message.id,
+	);
 	if (existingIndex !== -1) {
 		state.messages = sortGuestbookMessages(
 			state.messages.map((item) => (item.id === message.id ? message : item)),

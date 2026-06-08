@@ -56,28 +56,24 @@ const detailProps = { holidays, posts, birthdays, schedules, years, showPosts };
 ---
 
 <MainGridLayout title={title} description={description}>
-	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-		<div class="card-base z-10 px-4 sm:px-6 lg:px-9 py-6 relative w-full">
-			<!-- 页面标题 -->
-			<div class="flex items-center gap-3 mb-6">
-				<Icon name="material-symbols:calendar-today" class="text-[1.875rem]" />
-				<h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h1>
-			</div>
+	<div class="calendar-page">
+		<div class="calendar-page__shell">
+			<header class="calendar-page__header">
+				<Icon name="material-symbols:calendar-today" class="calendar-page__title-icon" />
+				<h1 class="calendar-page__title">{title}</h1>
+			</header>
 
-			<!-- 最近事件概览 -->
-			<div class="mb-6">
+			<aside class="calendar-page__rail calendar-page__rail--left" aria-label={i18n(I18nKey.calendarUpcoming)}>
 				<EventOverview client:load {...overviewProps} />
-			</div>
+			</aside>
 
-			<!-- 日历网格 -->
-			<div class="mb-6">
+			<main class="calendar-page__main" aria-label={title}>
 				<CalendarGrid client:load {...gridProps} />
-			</div>
+			</main>
 
-			<!-- 日期详情面板 -->
-			<div class="mb-4">
+			<aside class="calendar-page__rail calendar-page__rail--right" aria-label={i18n(I18nKey.calendarTodayEvents)}>
 				<EventDetailPanel client:load {...detailProps} />
-			</div>
+			</aside>
 		</div>
 	</div>
 </MainGridLayout>

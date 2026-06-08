@@ -232,6 +232,31 @@ const size = config.size || { width: 280, height: 250 };
 		}
 	}
 
+	function getMobileBreakpoint() {
+		return config.responsive?.mobileBreakpoint || 768;
+	}
+
+	function isMobileViewport() {
+		return window.innerWidth <= getMobileBreakpoint();
+	}
+
+	function shouldHideWidget(cachedVisibility) {
+		return (
+			cachedVisibility === "hidden" ||
+			(cachedVisibility == null && isMobileViewport() && !g.isWidgetVisible)
+		);
+	}
+
+	function applyHiddenWidgetState() {
+		const widget = document.getElementById("live2d-widget");
+		if (widget) {
+			widget.style.visibility = "hidden";
+			widget.style.pointerEvents = "none";
+		}
+		g.isWidgetVisible = false;
+		updateTriggerVisibility(true);
+	}
+
 	// ============================================================
 	// 资源加载
 	// ============================================================
@@ -705,13 +730,8 @@ function initTrigger() {
 		}, { signal: g.abortController?.signal });
 
 		const cachedVisibility = g.stateManager?.getCachedVisibility();
-		if (cachedVisibility === "hidden") {
-			updateTriggerVisibility(true);
-			const widget = document.getElementById("live2d-widget");
-			if (widget) {
-				widget.style.visibility = "hidden";
-				widget.style.pointerEvents = "none";
-			}
+		if (shouldHideWidget(cachedVisibility)) {
+			applyHiddenWidgetState();
 		} else if (cachedVisibility === "visible") {
 			g.isWidgetVisible = true;
 		}
@@ -994,7 +1014,7 @@ function initTrigger() {
 		const cachedVisibility = g.stateManager?.getCachedVisibility();
 
 		// 恢复可见性
-		if (g.isWidgetVisible && cachedVisibility !== "hidden") {
+		if (g.isWidgetVisible && !shouldHideWidget(cachedVisibility)) {
 			widget.style.visibility = "";
 			widget.style.pointerEvents = "";
 			widget.style.opacity = "";
@@ -1070,7 +1090,7 @@ function initTrigger() {
 			g.widgetElement = null;
 			// 重新初始化
 			const cachedVisibility = g.stateManager?.getCachedVisibility();
-			if (cachedVisibility !== "hidden") {
+			if (!shouldHideWidget(cachedVisibility)) {
 				g.isWidgetVisible = true;
 				const success = await initLive2D();
 				if (success) {
@@ -1127,18 +1147,13 @@ function initTrigger() {
 
 		// 创建新的 AbortController 用于管理所有事件监听器
 		g.abortController = new AbortController();
-		const signal = g.abortController.signal;
 
 		g.stateManager = await Live2DStateManager.getInstance();
 		initTrigger();
 
 		const cachedVisibility = g.stateManager.getCachedVisibility();
-		if (cachedVisibility === "hidden") {
-			const widget = document.getElementById("live2d-widget");
-			if (widget) {
-				widget.style.visibility = "hidden";
-				widget.style.pointerEvents = "none";
-			}
+		if (shouldHideWidget(cachedVisibility)) {
+			applyHiddenWidgetState();
 		} else {
 			g.isWidgetVisible = true;
 			const success = await initLive2D();

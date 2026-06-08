@@ -347,9 +347,12 @@ function dealCards(messages: GuestbookMessage[]) {
 		}, i * 220);
 	}
 
-	safeSetTimeout(() => {
-		isDealingBatch = false;
-	}, messages.length * 220 + 50);
+	safeSetTimeout(
+		() => {
+			isDealingBatch = false;
+		},
+		messages.length * 220 + 50,
+	);
 }
 
 // 从 providerMessages 中取下一批卡片发牌，若本地已耗尽则请求更多数据
@@ -386,10 +389,13 @@ onMount(() => {
 
 		if (allMessages.length > 0) {
 			const updatedById = new Map(
-				providerMessages.map((message: GuestbookMessage) => [message.id, message]),
+				providerMessages.map((message: GuestbookMessage) => [
+					message.id,
+					message,
+				]),
 			);
-			allMessages = allMessages.map((message) =>
-				updatedById.get(message.id) ?? message,
+			allMessages = allMessages.map(
+				(message) => updatedById.get(message.id) ?? message,
 			);
 		}
 

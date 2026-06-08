@@ -102,6 +102,19 @@ const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 
 <script is:inline>
 (function() {
+	var cleanupTasks = [];
+	function addCleanup(cleanup) {
+		cleanupTasks.push(cleanup);
+	}
+	function cleanupSiteStats() {
+		cleanupTasks.forEach(function(cleanup) {
+			cleanup();
+		});
+		cleanupTasks = [];
+	}
+	document.addEventListener('swup:willReplaceContent', cleanupSiteStats, { once: true });
+	window.addEventListener('beforeunload', cleanupSiteStats, { once: true });
+
 	// ========== Stars (粒子) ==========
 	var isMobile = window.innerWidth < 1024;
 
@@ -153,6 +166,14 @@ const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 			}
 		}
 		window.addEventListener('resize', updateStarContainer);
+		addCleanup(function() {
+			window.removeEventListener('resize', updateStarContainer);
+			if (starAnimFrameId) {
+				cancelAnimationFrame(starAnimFrameId);
+				starAnimFrameId = 0;
+			}
+			animateStarsRunning = false;
+		});
 		function tick() {
 		if (containerEl) {
 			cw = containerEl.clientWidth;
@@ -210,6 +231,17 @@ const revealLine1 = `${i18n(I18nKey.siteStatsPostCount)} ${postCount}`;
 			}
 			updateRect();
 			window.addEventListener('resize', updateRect);
+			addCleanup(function() {
+				window.removeEventListener('resize', updateRect);
+				card.removeEventListener('mousemove', mouseMoveHandler);
+				card.removeEventListener('mouseleave', mouseLeaveHandler);
+				card.removeEventListener('mouseenter', mouseEnterHandler);
+				if (revealAnimFrameId) {
+					cancelAnimationFrame(revealAnimFrameId);
+					revealAnimFrameId = 0;
+				}
+				isAnimating = false;
+			});
 
 			function animate() {
 				var ease = isMouseOver ? 0.3 : 0.08;
