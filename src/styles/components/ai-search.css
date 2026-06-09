@@ -304,8 +304,8 @@
 	padding: 1rem;
 	display: flex;
 	flex-direction: column;
-	gap: 0;
-	overflow-anchor: none;
+	gap: 0.75rem;
+	overflow-anchor: auto;
 	scrollbar-gutter: stable;
 }
 
@@ -389,26 +389,16 @@
 
 /* --- 消息条目 --- */
 .ai-msg {
-	display: grid;
-	grid-template-columns: 2.25em minmax(0, 1fr);
-	column-gap: 0.75em;
-	align-items: start;
-	margin: 1em 0;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75em;
 	min-height: 2em;
-	overflow-anchor: none;
 	width: 100%;
-}
-
-.ai-msg:last-child {
-	margin-bottom: 2em;
-}
-
-.ai-msg--turn-start {
-	margin-top: 2rem;
+	flex-shrink: 0;
 }
 
 .ai-msg--user {
-	grid-template-columns: minmax(0, 1fr);
+	flex-direction: row-reverse;
 }
 
 /* 加载状态入场动画 */
@@ -447,16 +437,15 @@
 .ai-msg__body {
 	display: flex;
 	flex-direction: column;
-	grid-column: 2;
 	max-width: min(44rem, calc(100% - 3.5em));
 	min-width: 0;
 	position: relative;
+	flex-shrink: 0;
 }
 
 .ai-msg--user .ai-msg__body {
-	grid-column: 1;
-	justify-self: end;
 	max-width: min(42rem, 72%);
+	align-items: flex-end;
 }
 
 /* --- 消息气泡（带入场动画） --- */
@@ -480,6 +469,7 @@
 	border: 1px solid oklch(0 0 0 / 0.06);
 	color: var(--deep-text);
 	transform-origin: 0 0;
+	width: 100%;
 }
 
 :root.dark .ai-msg--assistant .ai-msg__content {
@@ -499,6 +489,9 @@
 	color: oklch(0.97 0 0);
 	transform-origin: calc(100% + 0.75em) 100%;
 	white-space: pre-wrap;
+	word-break: break-word;
+	width: fit-content;
+	max-width: 100%;
 }
 
 :root.dark .ai-msg--user .ai-msg__content {
@@ -512,9 +505,10 @@
 	border-radius: 50%;
 	position: absolute;
 	bottom: 0.25em;
-	inset-inline-end: -0.125em;
+	right: -0.125em;
 	width: 1.25em;
 	height: 1.25em;
+	flex-shrink: 0;
 }
 
 :root.dark .ai-msg__bubble {
@@ -522,7 +516,7 @@
 }
 
 .ai-msg__bubble--small {
-	inset-inline-end: -0.5em;
+	right: -0.5em;
 	bottom: 0;
 	width: 0.5em;
 	height: 0.5em;
@@ -632,12 +626,13 @@
 
 /* --- 参考文章 --- */
 .ai-refs {
-	clear: both;
-	display: block;
+	display: flex;
+	flex-direction: column;
 	margin-top: 0.6rem;
 	padding-top: 0.5rem;
 	position: relative;
 	width: 100%;
+	min-width: 0;
 	border-top: 1px solid oklch(0 0 0 / 0.08);
 }
 
@@ -664,6 +659,7 @@
 	color: var(--primary);
 	text-decoration: none;
 	transition: background 0.15s;
+	width: 100%;
 }
 
 .ai-refs__link span:not(.ai-refs__date) {
@@ -960,6 +956,11 @@
 
 	.ai-msg--user .ai-msg__body {
 		max-width: 86%;
+	}
+
+	.ai-msg--user .ai-msg__content {
+		width: auto;
+		max-width: 100%;
 	}
 
 	.ai-msg__content {
