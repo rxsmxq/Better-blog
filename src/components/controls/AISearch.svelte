@@ -481,6 +481,17 @@ onMount(() => {
 									<span class="ai-msg__text">{msg.content}</span>
 									<span class="ai-msg__bubble"></span>
 									<span class="ai-msg__bubble ai-msg__bubble--small"></span>
+								{:else if msg.streaming && !msg.content.trim()}
+									<svg class="ai-loader" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path class="ai-loader__line" d="m4.9 4.9 2.9 2.9" />
+										<path class="ai-loader__line" d="M2 12h4" />
+										<path class="ai-loader__line" d="m4.9 19.1 2.9-2.9" />
+										<path class="ai-loader__line" d="M12 18v4" />
+										<path class="ai-loader__line" d="m16.2 16.2 2.9 2.9" />
+										<path class="ai-loader__line" d="M18 12h4" />
+										<path class="ai-loader__line" d="m16.2 7.8 2.9-2.9" />
+										<path class="ai-loader__line" d="M12 2v4" />
+									</svg>
 								{:else}
 									<span class="ai-msg__text">{@html renderSimpleMd(msg.content)}</span>
 									{#if msg.streaming}
@@ -505,28 +516,6 @@ onMount(() => {
 						</div>
 					</div>
 				{/each}
-
-				{#if isLoading && messages.length > 0 && messages[messages.length - 1]?.streaming}
-					<div class="ai-msg ai-msg--assistant ai-msg--loading">
-						<div class="ai-msg__avatar">
-							<img src="/assets/images/aut.webp" alt="喵墩" class="ai-msg__avatar-img" />
-						</div>
-						<div class="ai-msg__body">
-							<div class="ai-msg__content">
-								<svg class="ai-loader" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<path class="ai-loader__line" d="m4.9 4.9 2.9 2.9" />
-									<path class="ai-loader__line" d="M2 12h4" />
-									<path class="ai-loader__line" d="m4.9 19.1 2.9-2.9" />
-									<path class="ai-loader__line" d="M12 18v4" />
-									<path class="ai-loader__line" d="m16.2 16.2 2.9 2.9" />
-									<path class="ai-loader__line" d="M18 12h4" />
-									<path class="ai-loader__line" d="m16.2 7.8 2.9-2.9" />
-									<path class="ai-loader__line" d="M12 2v4" />
-								</svg>
-							</div>
-						</div>
-					</div>
-				{/if}
 			</div>
 
 			<!-- 输入区域 -->

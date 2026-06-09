@@ -395,10 +395,6 @@
 	width: 100%;
 }
 
-.ai-msg:first-child {
-	margin-top: auto;
-}
-
 .ai-msg:last-child {
 	margin-bottom: 2em;
 }
