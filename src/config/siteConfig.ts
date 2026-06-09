@@ -285,5 +285,5 @@ export const siteConfig: SiteConfig = {
 	lang: SITE_LANG,
 
 	// 备案号配置，留空则不显示
-	beian: "",
+	beian: "粤ICP备2026073665号-1",
 };

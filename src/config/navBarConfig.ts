@@ -14,15 +14,15 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		// 主页
 		LinkPreset.Home,
 
-		// 文章下拉菜单（归档 + 分类标签）
+		// 文章下拉菜单（归档 + 分类标签 + 文章列表）
 		{
 			name: "文章",
 			url: "/list/",
 			icon: "material-symbols:article",
 			children: [
-				LinkPreset.PostList,
 				LinkPreset.Archive,
 				LinkPreset.Categories,
+				LinkPreset.PostList,
 			],
 		},
 

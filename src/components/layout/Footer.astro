@@ -31,15 +31,15 @@ const todayText = i18n(I18nKey.today);
 <div
 	class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6"
 >
-	<div class="transition text-50 text-sm text-center wrap flex flex-col gap-1">
+	<div class="transition text-50 text-base text-center wrap flex flex-col gap-2">
 		{/* 第一层：社交链接 */}
-		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs flex-wrap">
+		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-sm flex-wrap">
 			<a
 				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
 				target="_blank"
 				href="https://github.com/MmzMing"
 			>
-				<Icon name="fa7-brands:github" is:inline class="text-sm" />
+				<Icon name="fa7-brands:github" is:inline class="text-base" />
 				<span>GitHub</span>
 			</a>
 			<span class="text-neutral-300 dark:text-neutral-600">|</span>
@@ -48,7 +48,7 @@ const todayText = i18n(I18nKey.today);
 				target="_blank"
 				href="https://qm.qq.com/q/2R07cjGTZ0"
 			>
-				<Icon name="fa7-brands:qq" is:inline class="text-sm" />
+				<Icon name="fa7-brands:qq" is:inline class="text-base" />
 				<span>QQ</span>
 			</a>
 			<span class="text-neutral-300 dark:text-neutral-600">|</span>
@@ -57,7 +57,7 @@ const todayText = i18n(I18nKey.today);
 				target="_blank"
 				href="https://space.bilibili.com/15446538"
 			>
-				<Icon name="fa7-brands:bilibili" is:inline class="text-sm" />
+				<Icon name="fa7-brands:bilibili" is:inline class="text-base" />
 				<span>B站</span>
 			</a>
 			<span class="text-neutral-300 dark:text-neutral-600">|</span>
@@ -65,19 +65,19 @@ const todayText = i18n(I18nKey.today);
 				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
 				href="mailto:784774835@qq.com"
 			>
-				<Icon name="material-symbols:mail" is:inline class="text-sm" />
+				<Icon name="material-symbols:mail" is:inline class="text-base" />
 				<span>邮箱</span>
 			</a>
 		</div>
 
 		{/* 第二层：RSS | 隐私政策 */}
-		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-xs">
+		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-sm">
 			<a
 				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
 				target="_blank"
 				href={url("rss.xml")}
 			>
-				<Icon name="material-symbols:rss-feed-rounded" is:inline class="text-sm" />
+				<Icon name="material-symbols:rss-feed-rounded" is:inline class="text-base" />
 				<span>RSS</span>
 			</a>
 			<span class="text-neutral-300 dark:text-neutral-600">|</span>
@@ -86,43 +86,45 @@ const todayText = i18n(I18nKey.today);
 				onclick="window.openPrivacyModal && window.openPrivacyModal()"
 				type="button"
 			>
-				<Icon name="material-symbols:shield-outline" is:inline class="text-sm" />
+				<Icon name="material-symbols:shield-outline" is:inline class="text-base" />
 				<span>隐私政策</span>
 			</button>
 		</div>
 
 		{/* 第三层：站点运行信息 */}
-		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-xs">
+		<div class="flex items-center justify-center gap-3 text-neutral-500 dark:text-neutral-400 text-sm">
 			<span class="flex items-center gap-1">
-				<span class="iconify text-sm" data-icon="material-symbols:calendar-clock-outline"></span>
+				<Icon name="material-symbols:calendar-clock-outline" is:inline class="text-base" />
 				<span id="footer-running-days" data-template={runningDaysText}>--</span>
 			</span>
 			<span class="text-neutral-300 dark:text-neutral-600">|</span>
 			<span class="flex items-center gap-1">
-				<span class="iconify text-sm" data-icon="mingcute:heartbeat-line"></span>
+				<Icon name="mingcute:heartbeat-line" is:inline class="text-base" />
 				<span id="footer-last-update" data-template={lastUpdateText} data-today={todayText}>--</span>
 			</span>
 		</div>
 
-		{/* 第三层：版权 | 备案 */}
-		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-xs flex-wrap">
+		{/* 第四层：版权 */}
+		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-sm flex-wrap">
 			<span>&copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}</span>
-			{beian && (
-				<>
-					<span class="text-neutral-300 dark:text-neutral-600">|</span>
-					<a
-						class="transition text-(--primary) font-bold hover:scale-105"
-						target="_blank"
-						href="https://beian.miit.gov.cn/#/Integrated/index"
-					>
-						{beian}
-					</a>
-				</>
-			)}
 		</div>
 
-		{/* 第四层：Powered by */}
-		<div class="flex items-center justify-center gap-1 text-neutral-500 dark:text-neutral-400 text-xs">
+		{/* 第五层：备案信息 */}
+		{beian && (
+			<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-sm flex-wrap">
+				<a
+					class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+					target="_blank"
+					href="https://beian.miit.gov.cn/#/Integrated/index"
+				>
+					<img src="https://blog.haiyong.site/img/icp.png" alt="ICP备案" class="w-4 h-4 inline-block" />
+					<span>{beian}</span>
+				</a>
+			</div>
+		)}
+
+		{/* 第六层：Powered by */}
+		<div class="flex items-center justify-center gap-1 text-neutral-500 dark:text-neutral-400 text-sm">
 			<span>框架</span>
 			<a
 				class="transition text-(--primary) font-bold hover:scale-105"
