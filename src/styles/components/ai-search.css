@@ -442,6 +442,8 @@
 
 /* --- 消息内容区域 --- */
 .ai-msg__body {
+	display: flex;
+	flex-direction: column;
 	max-width: min(44rem, calc(100% - 3.5em));
 	min-width: 0;
 	position: relative;
@@ -624,8 +626,12 @@
 
 /* --- 参考文章 --- */
 .ai-refs {
+	clear: both;
+	display: block;
 	margin-top: 0.6rem;
 	padding-top: 0.5rem;
+	position: relative;
+	width: 100%;
 	border-top: 1px solid oklch(0 0 0 / 0.08);
 }
 
@@ -645,12 +651,20 @@
 	display: flex;
 	align-items: center;
 	gap: 0.3rem;
+	min-width: 0;
 	padding: 0.25rem 0.4rem;
 	border-radius: 0.4rem;
 	font-size: 0.8rem;
 	color: var(--primary);
 	text-decoration: none;
 	transition: background 0.15s;
+}
+
+.ai-refs__link span:not(.ai-refs__date) {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .ai-refs__link:hover {

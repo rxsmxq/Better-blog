@@ -193,10 +193,12 @@ function close() {
 function scrollToBottom() {
 	tick().then(() => {
 		if (messagesEl) {
-			messagesEl.scrollTo({
-				top: messagesEl.scrollHeight,
-				left: 0,
-				behavior: "smooth",
+			requestAnimationFrame(() => {
+				messagesEl.scrollTo({
+					top: messagesEl.scrollHeight,
+					left: 0,
+					behavior: "auto",
+				});
 			});
 		}
 	});
@@ -308,6 +310,7 @@ async function send(text?: string) {
 					} else if (data.type === "refs") {
 						messages[aiIdx].refs = data.articles;
 						messages = [...messages];
+						scrollToBottom();
 					} else if (data.type === "error") {
 						messages[aiIdx].content += `\n\n> 错误：${data.error}`;
 						messages = [...messages];
@@ -498,21 +501,21 @@ onMount(() => {
 										<span class="ai-cursor"></span>
 									{/if}
 								{/if}
+								{#if msg.role === "assistant" && msg.refs && msg.refs.length > 0}
+									<div class="ai-refs">
+										<div class="ai-refs__title">参考文章</div>
+										{#each msg.refs as ref}
+											<a href={isSafeUrl(ref.path) ? ref.path : '#'} class="ai-refs__link" onclick={() => (isOpen = false)}>
+												<Icon icon="material-symbols:article-outline" size="sm" />
+												<span>{ref.title}</span>
+												{#if ref.published}
+													<span class="ai-refs__date">{ref.published}</span>
+												{/if}
+											</a>
+										{/each}
+									</div>
+								{/if}
 							</div>
-							{#if msg.refs && msg.refs.length > 0}
-								<div class="ai-refs">
-									<div class="ai-refs__title">参考文章</div>
-									{#each msg.refs as ref}
-										<a href={isSafeUrl(ref.path) ? ref.path : '#'} class="ai-refs__link" onclick={() => (isOpen = false)}>
-											<Icon icon="material-symbols:article-outline" size="sm" />
-											<span>{ref.title}</span>
-											{#if ref.published}
-												<span class="ai-refs__date">{ref.published}</span>
-											{/if}
-										</a>
-									{/each}
-								</div>
-							{/if}
 						</div>
 					</div>
 				{/each}
