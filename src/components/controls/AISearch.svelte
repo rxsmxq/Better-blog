@@ -472,7 +472,10 @@ onMount(() => {
 				{/if}
 
 				{#each messages as msg, i}
-					<div class="ai-msg ai-msg--{msg.role}">
+					<div
+						class="ai-msg ai-msg--{msg.role}"
+						class:ai-msg--turn-start={msg.role === "user" && i > 0}
+					>
 						{#if msg.role === "assistant"}
 							<div class="ai-msg__avatar">
 								<img src="/assets/images/aut.webp" alt="喵墩" class="ai-msg__avatar-img" />
