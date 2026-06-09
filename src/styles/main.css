@@ -41,6 +41,7 @@
 @import './components/floating-button.css';
 @import './components/guestbook-modals.css';
 @import './components/about-canvas.css';
+@import './components/ai-search.css';
 
 /* === 侧边栏组件层 === */
 @import './widgets/site-stats.css';
