@@ -22,8 +22,10 @@
 @import './components/category-bubble-menu.css';
 @import './components/page-title.css';
 @import './components/post-list-actions.css';
-@import './components/home-portal.css';
+@import './components/home-section.css';
 @import './components/home-hero.css';
+@import './components/home-status.css';
+@import './components/home-pending.css';
 @import './components/floating-dock.css';
 @import './components/friend-card.css';
 @import './components/widget-layout.css';

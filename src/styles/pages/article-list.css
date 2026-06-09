@@ -432,20 +432,6 @@
 	font-size: 0.95rem;
 }
 
-.home-pending {
-	display: flex;
-	min-height: 12rem;
-	align-items: center;
-	justify-content: center;
-	margin-top: 1rem;
-	border: 2px dashed var(--line-divider);
-	border-radius: var(--radius-large);
-	color: var(--content-meta);
-	font-size: 1.25rem;
-	font-weight: 800;
-	letter-spacing: 0.08em;
-}
-
 /* ============================================
    分页
    ============================================ */

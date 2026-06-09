@@ -1,4 +1,197 @@
 ---
+import type { ImageMetadata } from "astro";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import TypewriterText from "@/components/features/TypewriterText.astro";
+import PostListActions from "@/components/layout/PostListActions.astro";
+import { profileConfig, siteConfig } from "@/config";
+import { getCategoryList } from "@/utils/content-utils";
+import { url } from "@/utils/url-utils";
+
+const workAvatarModules = import.meta.glob<ImageMetadata>(
+	"../../assets/images/avatar_sb/*.webp",
+	{ import: "default" },
+);
+const workAvatarUrls: string[] = [];
+for (const [, loader] of Object.entries(workAvatarModules)) {
+	const meta = await loader();
+	workAvatarUrls.push(meta.src);
+}
+
+if (workAvatarUrls.length === 0 && profileConfig.avatar) {
+	workAvatarUrls.push(profileConfig.avatar);
+}
+
+const actionCategories = (await getCategoryList()).map((category) => ({
+	name: category.name.trim(),
+	count: category.count,
+	url: category.url,
+}));
 ---
 
+<section class="home-hero section onload-animation flex flex-col items-center gap-8 mt-2 magic-rings-container">
+	<div
+		class="avatar-ripple-wrapper" id="avatar-ripple-wrapper"
+		data-work-start={siteConfig.workHours?.start ?? 9}
+		data-work-end={siteConfig.workHours?.end ?? 18}
+		data-work-days={JSON.stringify(siteConfig.workHours?.workDays ?? [1,2,3,4,5])}
+		data-work-avatars={JSON.stringify(workAvatarUrls)}
+	>
+		<div class="magic-rings-bg" id="magic-rings-bg"></div>
+		<a href={url("/about/")} class="group block relative w-44 h-44 overflow-hidden rounded-full border border-(--line-divider) shrink-0 avatar-core">
+			<div class="avatar-img avatar-work">
+				<img
+					id="work-avatar-img"
+					src=""
+					alt="Profile Image of the Author"
+					class="w-full h-full object-cover"
+				/>
+				<noscript>
+					<img
+						data-src={profileConfig.avatar || ""}
+						alt="Profile Image of the Author"
+						class="w-full h-full object-cover"
+					/>
+				</noscript>
+			</div>
+			{profileConfig.avatarOffWork && (
+				<div class="avatar-img avatar-off">
+					<ImageWrapper
+						src={profileConfig.avatarOffWork}
+						alt="Profile Image of the Author"
+						class="w-full h-full"
+						loading="eager"
+						widths={[400]}
+						sizes="400px"
+					/>
+				</div>
+			)}
+		</a>
+		<div class="avatar-status-btn" id="avatar-status-btn">
+			<span class="status-dot"></span>
+			<span class="status-text" id="status-text">下班</span>
+		</div>
+	</div>
+	<div class="text-center w-full flex flex-col items-center">
+		{profileConfig.displayName && (
+			<span class="profile-display-name">{profileConfig.displayName}</span>
+		)}
+		{profileConfig.occupation && (
+			<span class="profile-occupation">{profileConfig.occupation}</span>
+		)}
+		<TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-base text-(--content-meta) mt-3" />
+		<PostListActions
+			links={profileConfig.links}
+			categories={actionCategories}
+			class="home-hero__actions"
+		/>
+	</div>
+</section>
+
 <!-- 样式已迁移至 src/styles/components/home-hero.css -->
+
+<script>
+import { initMagicRings } from '@components/features/MagicRings.ts';
+
+(function() {
+	var ringsInstance: ReturnType<typeof initMagicRings> = null;
+
+	function getIsWork(wrapper: HTMLElement) {
+		var start = parseInt(wrapper.dataset.workStart || '9') || 9;
+		var end = parseInt(wrapper.dataset.workEnd || '18') || 18;
+		var workDays = [1,2,3,4,5];
+		try { workDays = JSON.parse(wrapper.dataset.workDays || '[1,2,3,4,5]'); } catch(e) {}
+		var now = new Date();
+		var day = now.getDay();
+		var hour = now.getHours();
+		var isWorkDay = workDays.indexOf(day) !== -1;
+		return isWorkDay && hour >= start && hour < end;
+	}
+
+	function pickNextWorkAvatar(wrapper: HTMLElement): string {
+		var urls: string[] = [];
+		try { urls = JSON.parse(wrapper.dataset.workAvatars || '[]'); } catch(e) {}
+		if (urls.length === 0) return '';
+		var idx = parseInt(localStorage.getItem('work-avatar-idx') || '-1') || 0;
+		idx = (idx + 1) % urls.length;
+		localStorage.setItem('work-avatar-idx', String(idx));
+		return urls[idx] || urls[0];
+	}
+
+	function applyWorkAvatar(url: string, onReady: () => void) {
+		var img = document.getElementById('work-avatar-img') as HTMLImageElement | null;
+		if (!img || !url) { onReady(); return; }
+		if (img.complete && img.src && img.src.indexOf(url) !== -1) { onReady(); return; }
+		img.onload = function() { onReady(); };
+		img.onerror = function() { onReady(); };
+		img.src = url;
+	}
+
+	function setTimeMode() {
+		var wrapper = document.getElementById('avatar-ripple-wrapper');
+		var statusText = document.getElementById('status-text');
+		if (!wrapper) return;
+		var isWork = getIsWork(wrapper);
+		if (statusText) statusText.textContent = isWork ? '上班中' : '下班';
+
+		if (isWork) {
+			var url = pickNextWorkAvatar(wrapper);
+			applyWorkAvatar(url, function() {
+				if (wrapper) wrapper.setAttribute('data-time-mode', 'work');
+			});
+		} else {
+			wrapper.setAttribute('data-time-mode', 'off');
+		}
+	}
+
+	function initRings() {
+		var container = document.getElementById('magic-rings-bg');
+		var wrapper = document.getElementById('avatar-ripple-wrapper');
+		if (!container || !wrapper) return;
+		if (ringsInstance) {
+			ringsInstance.destroy();
+			ringsInstance = null;
+		}
+		var isWork = getIsWork(wrapper);
+		if (isWork) {
+			ringsInstance = initMagicRings(container, {
+				color: '#E24EA0',
+				colorTwo: '#F97316',
+				ringCount: 6,
+				speed: 1,
+				attenuation: 10,
+				lineThickness: 2,
+				baseRadius: 0.35,
+				radiusStep: 0.1,
+				scaleRate: 0.1,
+				opacity: 1,
+				noiseAmount: 0,
+				rotation: 0,
+				ringGap: 1.5,
+				fadeIn: 0.7,
+				fadeOut: 0.5,
+				followMouse: true,
+				mouseInfluence: 0.2,
+				hoverScale: 1.2,
+				parallax: 0.05,
+				clickBurst: true,
+			});
+		}
+	}
+
+	setTimeMode();
+	initRings();
+	if ((window as any).__homeHeroIntervalId) {
+		clearInterval((window as any).__homeHeroIntervalId);
+	}
+	(window as any).__homeHeroIntervalId = setInterval(setTimeMode, 60000);
+
+	document.addEventListener('astro:page-load', function() {
+		setTimeMode();
+		initRings();
+		if ((window as any).__homeHeroIntervalId) {
+			clearInterval((window as any).__homeHeroIntervalId);
+		}
+		(window as any).__homeHeroIntervalId = setInterval(setTimeMode, 60000);
+	});
+})();
+</script>
