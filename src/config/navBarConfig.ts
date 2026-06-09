@@ -17,9 +17,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		// 文章下拉菜单（归档 + 分类标签）
 		{
 			name: "文章",
-			url: "/archive/",
+			url: "/list/",
 			icon: "material-symbols:article",
-			children: [LinkPreset.Archive, LinkPreset.Categories],
+			children: [
+				LinkPreset.PostList,
+				LinkPreset.Archive,
+				LinkPreset.Categories,
+			],
 		},
 
 		// 日历

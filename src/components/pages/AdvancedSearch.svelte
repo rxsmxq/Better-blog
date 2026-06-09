@@ -114,14 +114,14 @@ const handleInput = () => {
 <div class="card-base px-6 py-6 md:px-9 md:py-6 mb-4 rounded-(--radius-large)">
     <!-- Title Section -->
     <div class="mb-4">
-        <div class="flex items-center gap-3 mb-3">
-            <Icon icon="material-symbols:search" class="text-[1.875rem]"></Icon>
-            <div class="text-3xl font-bold text-90">
-                {title}
+        <div class="page-title page-title--stacked">
+            <div class="page-title__body">
+                <span class="page-title__eyebrow">Search</span>
+                <h1 class="page-title__text">{title}</h1>
             </div>
         </div>
         {#if description}
-            <p class="text-base text-50 leading-relaxed">
+            <p class="text-base text-50 leading-relaxed mt-3">
                 {description}
             </p>
         {/if}

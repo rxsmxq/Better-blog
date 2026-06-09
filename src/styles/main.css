@@ -17,6 +17,11 @@
 /* === 组件层 === */
 @import './components/post-page.css';
 @import './components/post-card.css';
+@import './components/animated-tabs.css';
+@import './components/bubble-menu.css';
+@import './components/category-bubble-menu.css';
+@import './components/page-title.css';
+@import './components/post-list-actions.css';
 @import './components/home-portal.css';
 @import './components/home-hero.css';
 @import './components/floating-dock.css';
@@ -50,6 +55,7 @@
 @import './pages/gallery.css';
 @import './pages/categories.css';
 @import './pages/calendar.css';
+@import './pages/article-list.css';
 
 
 @plugin '@tailwindcss/typography';

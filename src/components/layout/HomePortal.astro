@@ -9,8 +9,10 @@ import type { ImageMetadata } from "astro";
  */
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import TypewriterText from "@/components/features/TypewriterText.astro";
+import PostListActions from "@/components/layout/PostListActions.astro";
 import SiteStats from "@/components/widget/SiteStats.astro";
 import { profileConfig, siteConfig } from "@/config";
+import { getCategoryList } from "@/utils/content-utils";
 import { url } from "@/utils/url-utils";
 
 // 上班头像：从 avatar_sb 文件夹加载所有动态 WebP
@@ -27,6 +29,12 @@ for (const [, loader] of Object.entries(workAvatarModules)) {
 if (workAvatarUrls.length === 0 && profileConfig.avatar) {
 	workAvatarUrls.push(profileConfig.avatar);
 }
+
+const actionCategories = (await getCategoryList()).map((category) => ({
+	name: category.name.trim(),
+	count: category.count,
+	url: category.url,
+}));
 ---
 
 <div class="home-portal">
@@ -83,6 +91,11 @@ if (workAvatarUrls.length === 0 && profileConfig.avatar) {
 				<span class="profile-occupation">{profileConfig.occupation}</span>
 			)}
 			<TypewriterText text={profileConfig.bio || ""} speed={80} pauseTime={3000} class="text-base text-(--content-meta) mt-3" />
+			<PostListActions
+				links={profileConfig.links}
+				categories={actionCategories}
+				class="home-portal__actions"
+			/>
 		</div>
 	</section>
 
@@ -96,10 +109,10 @@ if (workAvatarUrls.length === 0 && profileConfig.avatar) {
 	{/* STATS - Text Reveal Card */}
 	<SiteStats class="onload-animation mt-1 mb-4 stats-container" />
 
-	{/* 文章列表标题 */}
+	{/* 待定区标题 */}
 	<div class="onload-animation section-title-wrapper">
 		<div class="section-title-container">
-			<span class="section-title">博客文章</span>
+			<span class="section-title">待定区</span>
 		</div>
 	</div>
 

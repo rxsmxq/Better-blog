@@ -239,9 +239,7 @@ const navLinks = navBarConfig.links.map((item) => {
 
 	initArticleTOC();
 
-	document.addEventListener("swup:contentReplaced", () => setTimeout(initArticleTOC, 100));
 	document.addEventListener("astro:page-load", () => setTimeout(initArticleTOC, 100));
-	window.addEventListener("popstate", () => setTimeout(initArticleTOC, 200));
 	document.addEventListener("password:decrypted", () => setTimeout(initArticleTOC, 200));
 
 	let resizeTimer: ReturnType<typeof setTimeout>;

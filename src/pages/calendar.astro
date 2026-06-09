@@ -1,8 +1,8 @@
 ---
-import Icon from "@components/common/Icon.astro";
 import CalendarGrid from "@components/pages/calendar/CalendarGrid.svelte";
 import EventDetailPanel from "@components/pages/calendar/EventDetailPanel.svelte";
 import EventOverview from "@components/pages/calendar/EventOverview.svelte";
+import PageTitle from "@/components/common/PageTitle.astro";
 import { calendarConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -59,8 +59,7 @@ const detailProps = { holidays, posts, birthdays, schedules, years, showPosts };
 	<div class="calendar-page">
 		<div class="calendar-page__shell">
 			<header class="calendar-page__header">
-				<Icon name="material-symbols:calendar-today" class="calendar-page__title-icon" />
-				<h1 class="calendar-page__title">{title}</h1>
+				<PageTitle title={title} eyebrow="Calendar" variant="stacked" />
 			</header>
 
 			<aside class="calendar-page__rail calendar-page__rail--left" aria-label={i18n(I18nKey.calendarUpcoming)}>

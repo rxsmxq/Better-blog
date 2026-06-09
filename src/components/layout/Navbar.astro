@@ -195,7 +195,7 @@ function initHoverSlider() {
     }, { signal: _hoverSliderAbortController.signal });
 
     detectActiveItem();
-    document.addEventListener('swup:page:view', detectActiveItem, { signal: _hoverSliderAbortController.signal });
+    document.addEventListener('astro:page-load', detectActiveItem, { signal: _hoverSliderAbortController.signal });
 }
 
 initHoverSlider();
@@ -234,7 +234,7 @@ initHoverSlider();
     handleScroll();
 })();
 
-document.addEventListener("swup:page:view", () => {
+document.addEventListener("astro:page-load", () => {
     initHoverSlider();
 });
 

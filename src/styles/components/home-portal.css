@@ -203,6 +203,11 @@
 	letter-spacing: 0.05em;
 }
 
+.home-portal .home-portal__actions {
+	margin-top: 1rem;
+	justify-content: center;
+}
+
 /* === Section Title === */
 .home-portal .section-title-wrapper {
 	width: 100%;

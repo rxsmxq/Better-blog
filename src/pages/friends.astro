@@ -4,6 +4,7 @@ import Comment from "@components/comment/index.astro";
 import Icon from "@components/common/Icon.astro";
 import FriendCard from "@components/features/FriendCard.astro";
 import FriendRulesModal from "@components/features/FriendRulesModal.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 import {
 	commentConfig,
 	friendsPageConfig,
@@ -48,13 +49,8 @@ const description =
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题和描述 -->
       <div class="mb-4">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3">
-            <Icon name="material-symbols:group" class="text-[1.875rem]" />
-            <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-              {title}
-            </div>
-          </div>
+        <div class="flex items-start justify-between gap-4 mb-3">
+          <PageTitle title={title} eyebrow="Friends" variant="stacked" />
           {
             friendsPageConfig.applyLink && (
               <button

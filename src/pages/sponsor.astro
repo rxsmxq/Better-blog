@@ -1,5 +1,6 @@
 ---
 import Icon from "@components/common/Icon.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 import { siteConfig, sponsorConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -24,14 +25,9 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题和描述 -->
       <div class="mb-8">
-      <div class="flex items-center gap-3 mb-3">
-            <Icon name="material-symbols:favorite" class="text-[1.875rem]"></Icon>
-        <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {title}
-          </div>
-        </div>
+        <PageTitle title={title} eyebrow="Sponsor" variant="stacked" />
         {description && (
-          <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+          <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4 mt-3">
             {description}
           </p>
         )}

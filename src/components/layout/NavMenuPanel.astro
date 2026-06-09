@@ -104,6 +104,8 @@ function initNavDrawer() {
 		document.body.style.overflow = '';
 	}
 
+	closeDrawer();
+
 	if (menuBtn) {
 		menuBtn.onclick = (e) => {
 			e.stopPropagation();
@@ -139,12 +141,6 @@ function initNavDrawer() {
 			closeDrawer();
 		}
 	}, { signal });
-
-	document.addEventListener('swup:page:view', () => {
-		closeDrawer();
-	}, { signal });
-
-
 }
 
 initNavDrawer();

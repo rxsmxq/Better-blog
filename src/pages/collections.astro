@@ -1,5 +1,6 @@
 ---
 import Icon from "@components/common/Icon.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 import { collectionsApiConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -30,14 +31,9 @@ for (const api of enabledApis) {
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题 -->
       <div class="mb-8">
-        <div class="flex items-center gap-3 mb-3">
-          <Icon name="material-symbols:bookmark" class="text-[1.875rem]" />
-          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {title}
-          </div>
-        </div>
+        <PageTitle title={title} eyebrow="Collections" variant="stacked" />
         {description && (
-          <p class="text-base text-neutral-500 dark:text-neutral-400 leading-relaxed">
+          <p class="text-base text-neutral-500 dark:text-neutral-400 leading-relaxed mt-3">
             {description}
           </p>
         )}

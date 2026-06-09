@@ -18,6 +18,11 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/archive/",
 		icon: "material-symbols:schedule-outline-rounded",
 	},
+	[LinkPreset.PostList]: {
+		name: i18n(I18nKey.postList),
+		url: "/list/",
+		icon: "material-symbols:list-alt-outline-rounded",
+	},
 	[LinkPreset.Friends]: {
 		name: i18n(I18nKey.friends),
 		url: "/friends/",

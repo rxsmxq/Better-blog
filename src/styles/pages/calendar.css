@@ -12,23 +12,8 @@
 }
 
 .calendar-page__header {
-	display: flex;
 	grid-area: header;
-	align-items: center;
-	gap: 0.75rem;
 	margin: 0 0 0.5rem;
-}
-
-.calendar-page__title-icon {
-	font-size: 1.875rem;
-	color: var(--deep-text);
-}
-
-.calendar-page__title {
-	font-size: 1.875rem;
-	font-weight: 800;
-	line-height: 1.2;
-	color: var(--deep-text);
 }
 
 .calendar-page__shell {
@@ -385,10 +370,6 @@
 @media (max-width: 768px) {
 	.calendar-page__header {
 		margin-bottom: 1rem;
-	}
-
-	.calendar-page__title {
-		font-size: 1.5rem;
 	}
 
 	.calendar-page__rail,

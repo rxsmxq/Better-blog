@@ -196,6 +196,7 @@ export enum LinkPreset {
 	Calendar = 10,
 	Categories = 11,
 	Tags = 12,
+	PostList = 13,
 }
 
 export type NavBarLink = {
