@@ -1,6 +1,6 @@
 /* ============================================
    首页 Hero 全屏层 — 来自 HomeHero.astro
-   全屏背景 + 三栏布局 + 磨砂玻璃 + 花瓣飘落
+   全屏背景 + 三栏布局 + 磨砂玻璃
    ============================================ */
 
 /* ---------- 全屏容器（突破 MainGridLayout 限制） ---------- */
@@ -25,32 +25,6 @@
 	padding-top: 0;
 }
 
-.home-hero::before {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 8.5rem;
-	z-index: 3;
-	pointer-events: none;
-	background: linear-gradient(
-		180deg,
-		rgba(0, 0, 0, 0.82) 0%,
-		rgba(0, 0, 0, 0.58) 42%,
-		rgba(0, 0, 0, 0) 100%
-	);
-}
-
-[data-theme="light"] .home-hero::before {
-	background: linear-gradient(
-		180deg,
-		rgba(255, 255, 255, 0.72) 0%,
-		rgba(255, 255, 255, 0.38) 45%,
-		rgba(255, 255, 255, 0) 100%
-	);
-}
-
 /* ---------- 背景视频 ---------- */
 .home-hero__video {
 	position: absolute;
@@ -59,63 +33,6 @@
 	height: 100%;
 	object-fit: cover;
 	z-index: 0;
-}
-
-/* ---------- 背景遮罩层 ---------- */
-.home-hero__bg {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-}
-
-/* 暗色主题遮罩：黑白透明渐变 */
-.home-hero__bg::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%);
-}
-
-/* 亮色主题遮罩（通过 CSS 变量切换） */
-[data-theme="light"] .home-hero__bg::after {
-	background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.5) 100%);
-}
-
-/* Vignette 暗角 */
-.home-hero__vignette {
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
-	z-index: 1;
-	pointer-events: none;
-}
-
-[data-theme="light"] .home-hero__vignette {
-	background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.2) 100%);
-}
-
-/* 点状网格 overlay */
-.home-hero__dot-overlay {
-	position: absolute;
-	inset: 0;
-	background-image: radial-gradient(rgba(255, 255, 255, 0.04) 15%, transparent 16%);
-	background-size: 6px 6px;
-	z-index: 2;
-	pointer-events: none;
-}
-
-[data-theme="light"] .home-hero__dot-overlay {
-	background-image: radial-gradient(rgba(0, 0, 0, 0.03) 15%, transparent 16%);
-}
-
-/* ---------- 花瓣 Canvas ---------- */
-.home-hero__petals {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	z-index: 20;
-	pointer-events: none;
 }
 
 /* ---------- 全屏内容容器 ---------- */
@@ -420,12 +337,6 @@
 
 .home-hero__bottom-line {
 	will-change: transform, opacity;
-}
-
-.home-hero--motion-pending .home-hero__bg {
-	opacity: 0.68;
-	transform: scale(1.14);
-	filter: blur(8px);
 }
 
 .home-hero--motion-pending .home-hero__bracket {

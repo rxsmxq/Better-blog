@@ -77,12 +77,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	<video class="home-hero__video" autoplay muted loop playsinline poster="/assets/images/home/home1.webp">
 		<source src="/assets/images/home/home1.mp4" type="video/mp4">
 	</video>
-	<div class="home-hero__bg"></div>
-	<div class="home-hero__vignette"></div>
-	<div class="home-hero__dot-overlay"></div>
-
-	<!-- 花瓣 Canvas -->
-	<canvas class="home-hero__petals" id="petals-canvas"></canvas>
 
 	<!-- 全屏内容容器 -->
 	<div class="home-hero__canvas-container" id="main-canvas">
@@ -228,7 +222,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		const rightPanel = hero.querySelector(".home-hero__right-panel");
 		const brackets = hero.querySelectorAll(".home-hero__bracket");
 		const bottomLine = hero.querySelector(".home-hero__bottom-line");
-		const bg = hero.querySelector(".home-hero__bg");
 
 		hero.classList.add("home-hero--motion-ready");
 
@@ -237,17 +230,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		});
 
 		heroOpeningTimeline
-			.fromTo(bg, {
-				autoAlpha: 0.68,
-				scale: 1.14,
-				filter: "blur(8px)",
-			}, {
-				autoAlpha: 1,
-				scale: 1,
-				filter: "blur(0px)",
-				duration: 2.05,
-				ease: "expo.out",
-			})
 			.fromTo(brackets, {
 				autoAlpha: 0,
 				scale: 0.5,
@@ -504,7 +486,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	let mouseY = 0;
 	let charX = 0;
 	let charY = 0;
-	let petalsParamX = 0;
 	let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 
 	function initParallax() {
@@ -524,7 +505,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 
 			charX += (targetX - charX) * 0.08;
 			charY += (targetY - charY) * 0.08;
-			petalsParamX += (-mouseX * 10 - petalsParamX) * 0.05;
 
 			if (charLayer) {
 				charLayer.style.transform = `translate(${charX}px, ${charY}px)`;
@@ -543,116 +523,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		if (rafId) {
 			cancelAnimationFrame(rafId);
 			rafId = null;
-		}
-	}
-
-	// ============================================
-	// 花瓣飘落 Canvas
-	// ============================================
-	let petalRafId: number | null = null;
-	let petalCleanupFn: (() => void) | null = null;
-
-	function initPetals() {
-		const canvas = document.getElementById("petals-canvas") as HTMLCanvasElement | null;
-		const mainCanvas = document.getElementById("main-canvas");
-		if (!canvas || !mainCanvas) return;
-		const canvasEl = canvas;
-		const mainCanvasEl = mainCanvas;
-
-		const ctx = canvasEl.getContext("2d");
-		if (!ctx) return;
-		const context = ctx;
-
-		const isMobile = window.innerWidth <= 768;
-		const maxPetals = isMobile ? 15 : 30;
-
-		function resize() {
-			const rect = mainCanvasEl.getBoundingClientRect();
-			canvasEl.width = rect.width;
-			canvasEl.height = rect.height;
-		}
-		resize();
-
-		const ro = new ResizeObserver(resize);
-		ro.observe(mainCanvasEl);
-		window.addEventListener("resize", resize);
-
-		const colors = [
-			"rgba(239, 68, 68, 0.25)",
-			"rgba(249, 115, 22, 0.20)",
-			"rgba(254, 205, 211, 0.25)",
-		];
-
-		class Petal {
-			x: number;
-			y: number;
-			size: number;
-			speedY: number;
-			speedX: number;
-			angle: number;
-			spin: number;
-			color: string;
-
-			constructor() {
-				this.x = Math.random() * canvasEl.width;
-				this.y = Math.random() * -canvasEl.height;
-				this.size = Math.random() * 5 + 3;
-				this.speedY = Math.random() * 0.7 + 0.3;
-				this.speedX = Math.random() * 0.4 - 0.2;
-				this.angle = Math.random() * 360;
-				this.spin = Math.random() * 0.8 - 0.4;
-				this.color = colors[Math.floor(Math.random() * colors.length)];
-			}
-
-			update() {
-				this.y += this.speedY;
-				this.x += this.speedX + Math.sin(this.y / 40) * 0.25 + (petalsParamX * 0.02);
-				this.angle += this.spin;
-
-				if (this.y > canvasEl.height + 10) {
-					this.y = -10;
-					this.x = Math.random() * canvasEl.width;
-				}
-			}
-
-			draw() {
-				context.save();
-				context.translate(this.x, this.y);
-				context.rotate((this.angle * Math.PI) / 180);
-				context.fillStyle = this.color;
-				context.beginPath();
-				context.ellipse(0, 0, this.size, this.size / 1.8, 0, 0, 2 * Math.PI);
-				context.fill();
-				context.restore();
-			}
-		}
-
-		const petals: Petal[] = [];
-		for (let i = 0; i < maxPetals; i++) {
-			petals.push(new Petal());
-		}
-
-		function animate() {
-			context.clearRect(0, 0, canvasEl.width, canvasEl.height);
-			for (const petal of petals) {
-				petal.update();
-				petal.draw();
-			}
-			petalRafId = requestAnimationFrame(animate);
-		}
-		animate();
-
-		petalCleanupFn = () => {
-			ro.disconnect();
-			window.removeEventListener("resize", resize);
-			if (petalRafId) cancelAnimationFrame(petalRafId);
-		};
-	}
-
-	function destroyPetals() {
-		if (petalCleanupFn) {
-			petalCleanupFn();
-			petalCleanupFn = null;
 		}
 	}
 
@@ -737,14 +607,12 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		initHeroOpening();
 		initHomeScrollMotion();
 		initParallax();
-		initPetals();
 		initWorkStatus();
 	}
 
 	function cleanup() {
 		killHomeMotion();
 		destroyParallax();
-		destroyPetals();
 		destroyWorkStatus();
 	}
 
