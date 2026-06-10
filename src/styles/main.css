@@ -16,6 +16,7 @@
 
 /* === 组件层 === */
 @import './components/post-page.css';
+@import './components/page-loader.css';
 @import './components/post-card.css';
 @import './components/animated-tabs.css';
 @import './components/bubble-menu.css';

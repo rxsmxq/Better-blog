@@ -7,6 +7,7 @@
 .home-hero {
 	--home-hero-nav-offset: 4.333rem;
 	--home-hero-content-shift: 2rem;
+	--home-hero-profile-lift: clamp(2rem, 6vh, 4.25rem);
 	position: relative;
 	width: 100vw;
 	margin-left: calc(50% - 50vw);
@@ -258,6 +259,7 @@
 	width: max-content;
 	max-width: 100%;
 	contain: layout;
+	transform: translateY(calc(-1 * var(--home-hero-profile-lift)));
 }
 
 .home-hero__identity-row {
@@ -560,19 +562,18 @@
 }
 
 .home-hero__pill {
-	border: 1px solid rgba(255, 255, 255, 0.2);
-	border-radius: 20px;
-	padding: 4px 18px;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
 	font-size: 0.65rem;
 	letter-spacing: 2px;
 	font-weight: bold;
-	background: rgba(255, 255, 255, 0.02);
+	background: transparent;
 	color: #ffffff;
 }
 
 [data-theme="light"] .home-hero__pill {
-	border-color: rgba(0, 0, 0, 0.2);
-	background: rgba(0, 0, 0, 0.02);
+	background: transparent;
 	color: #1a1a2e;
 }
 
@@ -686,6 +687,7 @@
 		text-align: center;
 		width: 100%;
 		max-width: 100%;
+		transform: none;
 	}
 
 	.home-hero__identity-row {
