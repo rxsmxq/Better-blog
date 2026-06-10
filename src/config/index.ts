@@ -61,4 +61,5 @@ export { sakuraConfig } from "./sakuraConfig"; // 樱花特效配置
 // 布局配置
 export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
+export { skillsConfig } from "./skillsConfig"; // 技能标签配置
 export { sponsorConfig } from "./sponsorConfig"; // 赞助配置

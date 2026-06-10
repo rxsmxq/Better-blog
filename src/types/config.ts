@@ -534,6 +534,7 @@ export type SpineModelConfig = {
 // Live2D 看板娘配置
 export type Live2DModelConfig = {
 	enable: boolean; // 是否启用 Live2D 看板娘
+	defaultVisible?: boolean; // 首次访问时是否默认显示并加载模型，默认true
 	model: {
 		path: string; // 模型文件夹路径或model3.json文件路径
 	};

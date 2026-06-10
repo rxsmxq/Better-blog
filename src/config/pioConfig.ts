@@ -86,6 +86,8 @@ export const spineModelConfig: SpineModelConfig = {
 export const live2dModelConfig: Live2DModelConfig = {
 	// Live2D 看板娘开关
 	enable: true,
+	// 首次访问默认不加载模型，点击入口后再加载
+	defaultVisible: false,
 	// Live2D模型配置
 	model: {
 		// Live2D模型文件路径（支持 Cubism 2 .model.json 和 Cubism 3+ .model3.json）

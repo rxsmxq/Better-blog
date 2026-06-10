@@ -5,6 +5,14 @@
 
 /* ── pill 容器内边距 ── */
 .navbar-pill {
+	background: rgba(255, 255, 255, 0.56);
+	border: 1px solid rgba(255, 255, 255, 0.42);
+	border-radius: 9999px;
+	box-shadow:
+		0 10px 30px rgba(15, 23, 42, 0.1),
+		inset 0 1px 0 rgba(255, 255, 255, 0.35);
+	backdrop-filter: blur(16px) saturate(140%);
+	-webkit-backdrop-filter: blur(16px) saturate(140%);
 	padding: 0.5rem 0.75rem;
 	will-change: max-width, border-radius, padding;
 	transform: translateZ(0);
@@ -18,6 +26,34 @@
 		background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
 		border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
 		box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+}
+
+:root.dark .navbar-pill {
+	background: rgba(8, 10, 14, 0.38);
+	border-color: rgba(255, 255, 255, 0.12);
+	box-shadow:
+		0 10px 30px rgba(0, 0, 0, 0.2),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* 覆盖旧导航样式的默认透明态；滚动后仍由 #navbar.scrolled > div 和液态玻璃层接管。 */
+#navbar > .navbar-pill {
+	background: rgba(255, 255, 255, 0.56);
+	border-color: rgba(255, 255, 255, 0.42);
+	border-radius: 9999px;
+	box-shadow:
+		0 10px 30px rgba(15, 23, 42, 0.1),
+		inset 0 1px 0 rgba(255, 255, 255, 0.35);
+	backdrop-filter: blur(16px) saturate(140%);
+	-webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+:root.dark #navbar > .navbar-pill {
+	background: rgba(8, 10, 14, 0.38);
+	border-color: rgba(255, 255, 255, 0.12);
+	box-shadow:
+		0 10px 30px rgba(0, 0, 0, 0.2),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* 滚动后内边距收紧 */

@@ -98,9 +98,10 @@
   }
 }
 
-/* 确保平滑滚动 */
+/* 确保平滑滚动，防止全屏元素溢出 */
 html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 /* 极简模式：顶部高光禁用 */

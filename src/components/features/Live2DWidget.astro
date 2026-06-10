@@ -241,8 +241,11 @@ const size = config.size || { width: 280, height: 250 };
 	}
 
 	function shouldHideWidget(cachedVisibility) {
+		const shouldUseHiddenDefault =
+			cachedVisibility == null && config.defaultVisible === false;
 		return (
 			cachedVisibility === "hidden" ||
+			shouldUseHiddenDefault ||
 			(cachedVisibility == null && isMobileViewport() && !g.isWidgetVisible)
 		);
 	}
