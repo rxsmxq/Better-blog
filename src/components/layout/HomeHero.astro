@@ -90,13 +90,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		<div class="home-hero__bracket home-hero__bracket--tl"></div>
 		<div class="home-hero__bracket home-hero__bracket--br"></div>
 		<div class="home-hero__bottom-line" aria-hidden="true"></div>
-		<div class="home-hero__top-quote" aria-label="Would you like to come by for some juice and take a break? 菲比啾比">
-			<span class="home-hero__top-quote-line"></span>
-			<span class="home-hero__top-quote-copy">
-				<span class="home-hero__top-quote-en">If you feel tired, you might as well have a glass of juice?</span>
-				<span class="home-hero__top-quote-text">菲比啾比？</span>
-			</span>
-		</div>
 
 		<!-- 左侧面板 -->
 		<section class="home-hero__left-panel">
@@ -141,16 +134,34 @@ const heroBioText = Array.isArray(profileConfig.bio)
 
 		<!-- 中央区 -->
 		<section class="home-hero__center-panel">
-			<div class="home-hero__art-window">
-				<!-- 悬浮人物 -->
-				<div class="home-hero__character-root" id="character-layer">
-					<img
-						src="/assets/images/home/home2.webp"
-						alt="character"
-						class="home-hero__character-img"
-						loading="eager"
-					/>
+			<div class="home-hero__art-window"></div>
+			<!-- 悬浮人物 -->
+			<div class="home-hero__character-root" id="character-layer">
+				<div class="home-hero__character-reveal">
+					<div class="home-hero__character-motion">
+						<img
+							src="/assets/images/home/home2.webp"
+							alt="character"
+							class="home-hero__character-img"
+							loading="eager"
+						/>
+					</div>
 				</div>
+			</div>
+			<div class="home-hero__speech" aria-label="Character message">
+				<p class="home-hero__speech-text">
+					<span class="home-hero__speech-type">菲比啾比？</span>
+				</p>
+				<p class="home-hero__speech-en">
+					<span class="home-hero__speech-type">If you feel tired, you might as well have a glass of juice?</span>
+				</p>
+				<img
+					src="/assets/images/home/home2-1.webp"
+					alt=""
+					class="home-hero__speech-accent"
+					loading="eager"
+					aria-hidden="true"
+				/>
 			</div>
 		</section>
 
@@ -205,15 +216,15 @@ const heroBioText = Array.isArray(profileConfig.bio)
 			return;
 		}
 
-		const topQuoteLine = hero.querySelector(".home-hero__top-quote-line");
-		const topQuoteCopy = hero.querySelectorAll(".home-hero__top-quote-copy > span");
 		const occupation = hero.querySelector(".home-hero__occupation");
 		const name = hero.querySelector(".home-hero__name");
 		const badge = hero.querySelector(".home-hero__name-badge");
 		const avatar = hero.querySelector(".home-hero__avatar-group");
 		const motto = hero.querySelector(".home-hero__motto-text");
 		const artWindow = hero.querySelector(".home-hero__art-window");
-		const character = hero.querySelector(".home-hero__character-root");
+		const characterMotion = hero.querySelector(".home-hero__character-motion");
+		const speech = hero.querySelector(".home-hero__speech");
+		const speechLines = hero.querySelectorAll(".home-hero__speech-type");
 		const rightPanel = hero.querySelector(".home-hero__right-panel");
 		const brackets = hero.querySelectorAll(".home-hero__bracket");
 		const bottomLine = hero.querySelector(".home-hero__bottom-line");
@@ -257,26 +268,6 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				duration: 1.2,
 				ease: "expo.out",
 			}, 0.34)
-			.fromTo(topQuoteLine, {
-				scaleY: 0,
-				transformOrigin: "50% 0%",
-			}, {
-				scaleY: 1,
-				duration: 0.85,
-				ease: "expo.out",
-			}, 0.28)
-			.fromTo(topQuoteCopy, {
-				autoAlpha: 0,
-				y: 28,
-				clipPath: "inset(0 0 100% 0)",
-			}, {
-				autoAlpha: 1,
-				y: 0,
-				clipPath: "inset(0 0 0% 0)",
-				duration: 0.9,
-				stagger: 0.12,
-				ease: "expo.out",
-			}, 0.45)
 			.fromTo(occupation, {
 				autoAlpha: 0,
 				y: 48,
@@ -344,16 +335,26 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				ease: "expo.out",
 				clearProps: "clipPath",
 			}, 1.15)
-			.fromTo(character, {
+			.fromTo(characterMotion, {
 				autoAlpha: 0,
-				clipPath: "inset(0 0 18% 100%)",
+				y: 58,
+				rotationX: 68,
+				scaleX: 1.03,
+				scaleY: 0.72,
+				transformPerspective: 900,
+				filter: "blur(10px) saturate(1.1)",
+				transformOrigin: "50% 100%",
 			}, {
 				autoAlpha: 1,
-				clipPath: "inset(0 0 0% 0%)",
-				duration: 1.16,
+				y: 0,
+				rotationX: 0,
+				scaleX: 1,
+				scaleY: 1,
+				filter: "blur(0px) saturate(1)",
+				duration: 1.56,
 				ease: "expo.out",
-				clearProps: "clipPath",
-			}, 1.55)
+				clearProps: "transform,filter,visibility",
+			}, 1.42)
 			.fromTo(rightPanel, {
 				autoAlpha: 0,
 				x: 60,
@@ -375,7 +376,31 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				clipPath: "inset(0 0 0% 0)",
 				duration: 1.15,
 				ease: "expo.out",
-			}, 1.72);
+			}, 1.72)
+			.fromTo(speech, {
+				autoAlpha: 0,
+				xPercent: -50,
+				y: 34,
+				scale: 0.92,
+				filter: "blur(10px)",
+				transformOrigin: "50% 100%",
+			}, {
+				autoAlpha: 1,
+				xPercent: -50,
+				y: 0,
+				scale: 1,
+				filter: "blur(0px)",
+				duration: 0.92,
+				ease: "expo.out",
+				clearProps: "filter",
+			}, 2.62)
+			.fromTo(speechLines, {
+				clipPath: "inset(0 100% 0 0)",
+			}, {
+				clipPath: "inset(0 0% 0 0)",
+				duration: 1.05,
+				ease: "steps(18)",
+			}, 3.08);
 
 		hero.classList.remove("home-hero--motion-pending");
 	}
