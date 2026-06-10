@@ -74,9 +74,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	data-work-hours={JSON.stringify(workHours)}
 >
 	<!-- 背景层 -->
-	<video class="home-hero__video" autoplay muted loop playsinline poster="/assets/images/home/home1.webp">
-		<source src="/assets/images/home/home1.mp4" type="video/mp4">
-	</video>
+	<img class="home-hero__video" src="/assets/images/home/home.webp" alt="" />
 
 	<!-- 全屏内容容器 -->
 	<div class="home-hero__canvas-container" id="main-canvas">
@@ -163,7 +161,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		<aside class="home-hero__right-panel">
 			<div class="home-hero__pill">BLOG</div>
 			<div class="home-hero__vertical-wrap">
-				<span class="home-hero__v-title">{siteConfig.title || "Blog"}</span>
+				<span class="home-hero__v-title">博客</span>
 				<span class="home-hero__v-sub">{profileConfig.name || ""}</span>
 				<span class="home-hero__diamond">✦</span>
 				<span class="home-hero__v-sub">CREATIVE</span>
@@ -179,12 +177,16 @@ const heroBioText = Array.isArray(profileConfig.bio)
 <script>
 	import { gsap } from "gsap";
 	import { ScrollTrigger } from "gsap/ScrollTrigger";
+	import { VFX } from "@vfx-js/core";
 	import { waitForPageLoaderHidden } from "@/utils/page-loader-controller.js";
+	import { HatchEffect } from "@/utils/hatch-effect.ts";
 
 	gsap.registerPlugin(ScrollTrigger);
 
 	let workStatusTimer: number | null = null;
 	let heroOpeningTimeline: ReturnType<typeof gsap.timeline> | null = null;
+	let vfxInstance: VFX | null = null;
+	let heroHatchEffect: HatchEffect | null = null;
 
 	function prefersReducedMotion() {
 		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -598,6 +600,80 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	}
 
 	// ============================================
+	// 标题 Hatching Shader 效果
+	// ============================================
+	async function initHeroHatch() {
+		const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
+		if (!nameEl) {
+			console.log("[Hatch] nameEl not found");
+			return;
+		}
+		if (prefersReducedMotion()) {
+			console.log("[Hatch] reduced motion, skip");
+			return;
+		}
+
+		// 等待 GSAP 标题入场动画大部分完成（约 2.0s）
+		await new Promise((r) => setTimeout(r, 2200));
+
+		// 再次检查元素是否仍在 DOM（Swup 可能已切走页面）
+		if (!document.contains(nameEl)) {
+			console.log("[Hatch] nameEl removed from DOM after delay");
+			return;
+		}
+
+		destroyHeroHatch();
+
+		const vfx = VFX.init({ pixelRatio: Math.min(window.devicePixelRatio, 1.5) });
+		if (!vfx) {
+			console.log("[Hatch] VFX.init returned null");
+			return;
+		}
+		console.log("[Hatch] VFX initialized");
+		vfxInstance = vfx;
+
+		heroHatchEffect = new HatchEffect({
+			color: "#ffffff",
+			angle: 45,
+			spacing: 2.5,
+			lineWidth: 2,
+			angleJitter: 0.5,
+			offsetJitter: 2,
+			spacingJitter: 0.5,
+			seed: 0,
+			speed: 8,
+			roundCap: true,
+			soft: 0,
+			originalColor: false,
+			bypass: false,
+		});
+
+		try {
+			await vfx.addHTML(nameEl, { effect: heroHatchEffect });
+			console.log("[Hatch] name addHTML success");
+		} catch (err) {
+			console.error("[Hatch] name addHTML failed:", err);
+		}
+	}
+
+	function destroyHeroHatch() {
+		if (vfxInstance) {
+			const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
+			if (nameEl) {
+				try { vfxInstance.remove(nameEl); } catch { /* ignore */ }
+			}
+		}
+		if (heroHatchEffect) {
+			heroHatchEffect.dispose();
+			heroHatchEffect = null;
+		}
+		if (vfxInstance) {
+			vfxInstance.destroy();
+			vfxInstance = null;
+		}
+	}
+
+	// ============================================
 	// 初始化与清理（Swup 兼容）
 	// ============================================
 	let initToken = 0;
@@ -608,12 +684,14 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		initHomeScrollMotion();
 		initParallax();
 		initWorkStatus();
+		void initHeroHatch();
 	}
 
 	function cleanup() {
 		killHomeMotion();
 		destroyParallax();
 		destroyWorkStatus();
+		destroyHeroHatch();
 	}
 
 	async function scheduleHomeInit() {

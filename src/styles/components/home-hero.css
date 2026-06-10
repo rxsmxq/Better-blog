@@ -229,16 +229,10 @@
 	letter-spacing: 0;
 	text-transform: none;
 	padding-bottom: 0.05em;
-	text-shadow:
-		0 4px 0 #000000,
-		0 13px 30px rgba(0, 0, 0, 0.62);
 }
 
 [data-theme="light"] .home-hero__name {
 	color: #000000;
-	text-shadow:
-		0 3px 0 #ffffff,
-		0 10px 26px rgba(0, 0, 0, 0.22);
 }
 
 .home-hero__name-badge {
@@ -281,12 +275,10 @@
 	margin: 0 0 0.45rem;
 	letter-spacing: 0;
 	line-height: 1.15;
-	text-shadow: 0 3px 8px rgba(0, 0, 0, 0.75);
 }
 
 [data-theme="light"] .home-hero__occupation {
 	color: rgba(0, 0, 0, 0.68);
-	text-shadow: 0 2px 0 rgba(255, 255, 255, 0.85);
 }
 
 /* ---------- 固定鼓励语 ---------- */
@@ -309,7 +301,6 @@
 	letter-spacing: 0;
 	line-height: 1.15;
 	text-align: left;
-	text-shadow: 0 3px 8px rgba(0, 0, 0, 0.75);
 	transform-origin: center center;
 	will-change: transform, opacity, filter, clip-path;
 }
@@ -320,7 +311,6 @@
 
 [data-theme="light"] .home-hero__motto-text {
 	color: rgba(0, 0, 0, 0.68);
-	text-shadow: 0 2px 0 rgba(255, 255, 255, 0.85);
 }
 
 .home-hero__occupation,
