@@ -4,6 +4,7 @@
 // 类型导出
 export type {
 	AnnouncementConfig,
+	AnnouncementItem,
 	BackgroundWallpaperConfig,
 	BirthdayItem,
 	CalendarConfig,

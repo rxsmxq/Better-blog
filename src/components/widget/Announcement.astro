@@ -6,6 +6,7 @@ import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 
 const config = announcementConfig;
+const items = [...config.items].sort((a, b) => b.sort - a.sort);
 
 interface Props {
 	class?: string;
@@ -22,40 +23,40 @@ const style = Astro.props.style;
   class={className}
   style={style}
 >
-  <div>
-    <!-- 公告栏内容 -->
-    <div class="text-neutral-600 dark:text-neutral-300 leading-relaxed mb-3">
-      {config.content}
-    </div>
-
-    <!-- 可选链接和关闭按钮 -->
-    <div class="flex items-center justify-between gap-3">
-      <div>
-        {
-          config.link && config.link.enable !== false && (
+  <div class="announcement-list">
+    {
+      items.map((item) => (
+        <div class="announcement-item">
+          <div class="announcement-item__header">
+            <span class="announcement-item__tag">{item.tag}</span>
+            <span class="announcement-item__title">{item.title}</span>
+          </div>
+          <time class="announcement-item__time">{item.time}</time>
+          <p class="announcement-item__content">{item.content}</p>
+          {item.link && (
             <a
-              href={config.link.url}
-              target={config.link.external ? "_blank" : "_self"}
-              rel={config.link.external ? "noopener noreferrer" : undefined}
-              class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform"
+              href={item.link}
+              class="announcement-item__link btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform"
             >
-              {config.link.text}
+              查看详情
             </a>
-          )
-        }
-      </div>
-
-      {
-        config.closable && (
-          <button
-            class="btn-regular rounded-lg h-8 w-8 text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-            onclick="this.closest('widget-layout').style.display='none'"
-            aria-label={i18n(I18nKey.announcementClose)}
-          >
-            <Icon name="fa7-solid:xmark" class="text-sm" />
-          </button>
-        )
-      }
-    </div>
+          )}
+        </div>
+      ))
+    }
   </div>
+
+  {
+    config.closable && (
+      <div class="flex justify-end mt-3">
+        <button
+          class="btn-regular rounded-lg h-8 w-8 text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+          onclick="this.closest('widget-layout').style.display='none'"
+          aria-label={i18n(I18nKey.announcementClose)}
+        >
+          <Icon name="fa7-solid:xmark" class="text-sm" />
+        </button>
+      </div>
+    )
+  }
 </WidgetLayout>

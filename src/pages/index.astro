@@ -1,12 +1,14 @@
 ---
 import HomeHero from "@components/layout/HomeHero.astro";
 import HomePending from "@components/layout/HomePending.astro";
+import HomeTicker from "@components/layout/HomeTicker.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 ---
 
 <MainGridLayout>
 	<div class="home-page home-page--motion-pending">
 		<HomeHero />
+		<HomeTicker />
 		<HomePending />
 	</div>
 </MainGridLayout>

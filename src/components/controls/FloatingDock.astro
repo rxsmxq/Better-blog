@@ -38,7 +38,7 @@ const tags = await getTagList();
 
 	<div class="dock-stack" id="dock-stack" data-expanded="false">
 		<div class="dock-buttons">
-			{announcementConfig.content && (
+			{announcementConfig.items.length > 0 && (
 				<button class="dock-btn" id="dock-announcement-btn" aria-label="Announcement" type="button" data-tooltip="公告">
 					<span class="dock-btn-icon"><Icon name="material-symbols:notifications-outline-rounded" class="text-3xl" /></span>
 					<span class="dock-btn-label">公告</span>
@@ -101,24 +101,33 @@ const tags = await getTagList();
 
 {/* 抽屉容器（独立于 dock-stack） */}
 
-{announcementConfig.content && (
+{announcementConfig.items.length > 0 && (
 	<div class="dock-drawer dock-drawer-closed" id="dock-drawer-announcement">
 		<div class="dock-drawer-title">
 			<Icon name="material-symbols:notifications-outline-rounded" class="dock-drawer-title-icon" />
 			<span>{announcementConfig.title || "公告"}</span>
 		</div>
-		<p class="text-(--deep-text) leading-relaxed mb-4 text-sm">{announcementConfig.content}</p>
-		{announcementConfig.link?.enable !== false && announcementConfig.link?.url && (
-			<a
-				href={announcementConfig.link.url}
-				target={announcementConfig.link.external ? "_blank" : "_self"}
-				rel={announcementConfig.link.external ? "noopener noreferrer" : undefined}
-				class="btn-line text-sm"
-			>
-				{announcementConfig.link.text}
-				<Icon name="fa7-solid:arrow-right" class="ml-2 text-xs" />
-			</a>
-		)}
+		<div class="dock-announcement-list">
+			{announcementConfig.items
+				.slice()
+				.sort((a, b) => b.sort - a.sort)
+				.map((item) => (
+					<div class="dock-announcement-card">
+						<div class="dock-announcement-card__header">
+							<span class="dock-announcement-card__tag">{item.tag}</span>
+							<span class="dock-announcement-card__title">{item.title}</span>
+						</div>
+						<time class="dock-announcement-card__time">{item.time}</time>
+						<p class="dock-announcement-card__content">{item.content}</p>
+						{item.link && (
+							<a href={item.link} class="dock-announcement-card__link btn-line text-sm">
+								查看详情
+								<Icon name="fa7-solid:arrow-right" class="ml-2 text-xs" />
+							</a>
+						)}
+					</div>
+				))}
+		</div>
 	</div>
 )}
 

@@ -1,4 +1,4 @@
-const DEFAULT_HIDE_DELAY = 220;
+const DEFAULT_HIDE_DELAY = 0;
 const DEFAULT_MAX_WAIT = 8000;
 export const LOADER_READY_EVENT = "firefly:page-loader-ready";
 export const LOADER_HIDDEN_EVENT = "firefly:page-loader-hidden";

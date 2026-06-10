@@ -4,21 +4,44 @@ export const announcementConfig: AnnouncementConfig = {
 	// 公告标题
 	title: "公告",
 
-	// 公告内容
-	content:
-		"欢迎来到我的博客，我是深耕java、python和react技术开发。热爱技术、持续学习，欢迎同好交流探讨，也欢迎大佬互换友链。",
+	// 公告列表
+	items: [
+		{
+			tag: "欢迎",
+			title: "站点公告",
+			content:
+				"欢迎来到我的博客，我是深耕java、python和react技术开发。热爱技术、持续学习，欢迎同好交流探讨，也欢迎大佬互换友链。",
+			time: "2025-06-01",
+			link: "/about/",
+			sort: 1,
+		},
+		{
+			tag: "维护",
+			title: "服务器升级",
+			content:
+				"本周日凌晨 2:00-4:00 进行服务器维护，期间站点可能短暂无法访问。",
+			time: "2025-06-10",
+			sort: 2,
+		},
+		{
+			tag: "上新",
+			title: "新文章发布",
+			content:
+				"《Astro 5.0 深度实践：从 0 搭建高性能博客》已发布，欢迎阅读交流。",
+			time: "2025-06-08",
+			link: "/posts/astro-5-practice/",
+			sort: 3,
+		},
+		{
+			tag: "友链",
+			title: "互换友链",
+			content: "正在招募技术类博客友链，要求原创、稳定更新。点击了解更多。",
+			time: "2025-06-05",
+			link: "/friends/",
+			sort: 4,
+		},
+	],
 
 	// 是否允许用户关闭公告
 	closable: true,
-
-	link: {
-		// 启用链接
-		enable: true,
-		// 链接文本
-		text: "了解更多",
-		// 链接 URL
-		url: "/about/",
-		// 内部链接
-		external: false,
-	},
 };

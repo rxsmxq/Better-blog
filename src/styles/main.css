@@ -25,6 +25,7 @@
 @import './components/post-list-actions.css';
 @import './components/home-section.css';
 @import './components/home-hero.css';
+@import './components/home-ticker.css';
 @import './components/home-status.css';
 @import './components/home-pending.css';
 @import './components/floating-dock.css';
@@ -51,6 +52,7 @@
 @import './widgets/archive-heatmap.css';
 @import './widgets/advertisement.css';
 @import './widgets/terrarium-model.css';
+@import './widgets/announcement.css';
 
 /* === 页面层 === */
 @import './pages/sponsor.css';

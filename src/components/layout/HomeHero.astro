@@ -681,10 +681,14 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	function init() {
 		cleanup();
 		initHeroOpening();
-		initHomeScrollMotion();
 		initParallax();
 		initWorkStatus();
 		void initHeroHatch();
+
+		// 推迟 ScrollTrigger 初始化，避免阻塞 Hero 入场动画的首次渲染
+		requestAnimationFrame(() => {
+			initHomeScrollMotion();
+		});
 	}
 
 	function cleanup() {
