@@ -82,6 +82,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		<div class="home-hero__bracket home-hero__bracket--tl"></div>
 		<div class="home-hero__bracket home-hero__bracket--br"></div>
 		<div class="home-hero__bottom-line" aria-hidden="true"></div>
+		<div class="home-hero__left-line" aria-hidden="true"></div>
 
 		<!-- 左侧面板 -->
 		<section class="home-hero__left-panel">
@@ -224,6 +225,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		const rightPanel = hero.querySelector(".home-hero__right-panel");
 		const brackets = hero.querySelectorAll(".home-hero__bracket");
 		const bottomLine = hero.querySelector(".home-hero__bottom-line");
+		const leftLine = hero.querySelector(".home-hero__left-line");
 
 		hero.classList.add("home-hero--motion-ready");
 
@@ -249,6 +251,16 @@ const heroBioText = Array.isArray(profileConfig.bio)
 			}, {
 				autoAlpha: 1,
 				scaleX: 1,
+				duration: 1.2,
+				ease: "expo.out",
+			}, 0.34)
+			.fromTo(leftLine, {
+				autoAlpha: 0,
+				scaleY: 0,
+				transformOrigin: "50% 100%",
+			}, {
+				autoAlpha: 1,
+				scaleY: 1,
 				duration: 1.2,
 				ease: "expo.out",
 			}, 0.34)
