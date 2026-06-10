@@ -1,6 +1,7 @@
 const DEFAULT_HIDE_DELAY = 220;
 const DEFAULT_MAX_WAIT = 8000;
-const LOADER_READY_EVENT = "firefly:page-loader-ready";
+export const LOADER_READY_EVENT = "firefly:page-loader-ready";
+export const LOADER_HIDDEN_EVENT = "firefly:page-loader-hidden";
 
 function delay(ms) {
 	if (ms <= 0) return Promise.resolve();
@@ -8,7 +9,28 @@ function delay(ms) {
 }
 
 function withTimeout(promise, timeout) {
-	return Promise.race([promise, delay(timeout)]);
+	return new Promise((resolve, reject) => {
+		const timeoutId = setTimeout(resolve, timeout);
+		promise.then(
+			(value) => {
+				clearTimeout(timeoutId);
+				resolve(value);
+			},
+			(error) => {
+				clearTimeout(timeoutId);
+				reject(error);
+			},
+		);
+	});
+}
+
+function dispatchDomEvent(documentRef, type, detail) {
+	const CustomEventCtor = globalThis.CustomEvent;
+	const event =
+		typeof CustomEventCtor === "function"
+			? new CustomEventCtor(type, { detail })
+			: { type, detail };
+	documentRef.dispatchEvent?.(event);
 }
 
 export function createPageLoaderController({
@@ -76,6 +98,24 @@ function waitForImage(image) {
 	});
 }
 
+export function isPageLoaderVisible({ document: documentRef = document } = {}) {
+	const loader = documentRef.getElementById("page-loader");
+	return Boolean(
+		loader &&
+			!loader.hidden &&
+			!loader.classList.contains("page-loader--hidden"),
+	);
+}
+
+export function waitForPageLoaderHidden({
+	document: documentRef = document,
+} = {}) {
+	if (!isPageLoaderVisible({ document: documentRef })) return Promise.resolve();
+	return new Promise((resolve) => {
+		documentRef.addEventListener(LOADER_HIDDEN_EVENT, resolve, { once: true });
+	});
+}
+
 export function waitForBrowserPageReady({
 	document: documentRef = document,
 	maxWait = DEFAULT_MAX_WAIT,
@@ -104,7 +144,12 @@ function applyDomState({ document: documentRef, loader }, state) {
 	root.classList.remove("is-page-loading");
 	body?.removeAttribute("aria-busy");
 	window.setTimeout(() => {
-		if (loader.classList.contains("page-loader--hidden")) loader.hidden = true;
+		if (loader.classList.contains("page-loader--hidden")) {
+			loader.hidden = true;
+			dispatchDomEvent(documentRef, LOADER_HIDDEN_EVENT, {
+				timestamp: Date.now(),
+			});
+		}
 	}, DEFAULT_HIDE_DELAY);
 }
 

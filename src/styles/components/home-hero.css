@@ -478,6 +478,97 @@
 	will-change: transform, opacity;
 }
 
+.home-hero--motion-pending .home-hero__bg {
+	opacity: 0.68;
+	transform: scale(1.14);
+	filter: blur(8px);
+}
+
+.home-hero--motion-pending .home-hero__bracket {
+	opacity: 0;
+	transform: scale(0.5);
+}
+
+.home-hero--motion-pending .home-hero__bottom-line {
+	opacity: 0;
+	transform: scaleX(0);
+}
+
+.home-hero--motion-pending .home-hero__top-quote-line {
+	transform: scaleY(0);
+	transform-origin: 50% 0%;
+}
+
+.home-hero--motion-pending .home-hero__top-quote-copy > span,
+.home-hero--motion-pending .home-hero__occupation,
+.home-hero--motion-pending .home-hero__motto-text {
+	opacity: 0;
+	transform: translateY(48px);
+	clip-path: inset(0 0 100% 0);
+}
+
+.home-hero--motion-pending .home-hero__top-quote-copy > span {
+	transform: translateY(28px);
+}
+
+.home-hero--motion-pending .home-hero__motto-text {
+	transform: translateY(68px);
+	filter: blur(14px);
+}
+
+.home-hero--motion-pending .home-hero__name {
+	opacity: 0;
+	transform: translateX(-78px) scaleX(0.78);
+	transform-origin: 0% 50%;
+	clip-path: inset(0 100% 0 0);
+}
+
+.home-hero--motion-pending .home-hero__name-badge {
+	opacity: 0;
+	transform: translate(-42px, 14px) scaleX(0.7);
+	transform-origin: 0% 50%;
+}
+
+.home-hero--motion-pending .home-hero__avatar-group {
+	opacity: 0;
+	transform: translate(54px, 12px) scale(0.82);
+	clip-path: circle(0% at 50% 50%);
+}
+
+.home-hero--motion-pending .home-hero__art-window {
+	opacity: 0;
+	transform: translateX(7vw);
+	clip-path: inset(0 0 0 100%);
+}
+
+.home-hero--motion-pending .home-hero__character-root {
+	opacity: 0;
+	clip-path: inset(0 0 18% 100%);
+}
+
+.home-hero--motion-pending .home-hero__right-panel {
+	opacity: 0;
+	transform: translateX(60px);
+}
+
+.home-page--motion-pending > :not(#home-hero) .home-section-title,
+.home-page--motion-pending > :not(#home-hero) [data-motion-title],
+.home-page--motion-pending > :not(#home-hero) .card-base,
+.home-page--motion-pending > :not(#home-hero) .post-card-wrapper,
+.home-page--motion-pending > :not(#home-hero) .home-pending,
+.home-page--motion-pending > :not(#home-hero) .stats-container,
+.home-page--motion-pending > :not(#home-hero) [data-motion-card] {
+	opacity: 0;
+	transform: translateY(86px);
+	filter: blur(12px);
+}
+
+.home-page--motion-pending > :not(#home-hero) img,
+.home-page--motion-pending > :not(#home-hero) [data-motion-image] {
+	clip-path: inset(0 0 100% 0);
+	transform: scale(1.1);
+}
+
 /* ---------- 中央区 ---------- */
 .home-hero__center-panel {
 	position: relative;

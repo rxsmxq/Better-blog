@@ -67,7 +67,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	: profileConfig.bio || "";
 ---
 
-<section class="home-hero" id="home-hero"
+<section class="home-hero home-hero--motion-pending" id="home-hero"
 	data-avatar={avatarUrl}
 	data-avatar-pool={JSON.stringify(workAvatarUrls)}
 	data-avatar-off={avatarOffUrl}
@@ -174,6 +174,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 <script>
 	import { gsap } from "gsap";
 	import { ScrollTrigger } from "gsap/ScrollTrigger";
+	import { waitForPageLoaderHidden } from "@/utils/page-loader-controller.js";
 
 	gsap.registerPlugin(ScrollTrigger);
 
@@ -199,6 +200,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		const hero = document.getElementById("home-hero");
 		if (!hero) return;
 		if (prefersReducedMotion()) {
+			hero.classList.remove("home-hero--motion-pending");
 			hero.classList.add("home-hero--motion-ready");
 			return;
 		}
@@ -374,10 +376,15 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				duration: 1.15,
 				ease: "expo.out",
 			}, 1.72);
+
+		hero.classList.remove("home-hero--motion-pending");
 	}
 
 	function initHomeScrollMotion() {
-		if (prefersReducedMotion()) return;
+		if (prefersReducedMotion()) {
+			document.querySelector(".home-page--motion-pending")?.classList.remove("home-page--motion-pending");
+			return;
+		}
 
 		const sections = Array.from(document.querySelectorAll<HTMLElement>(
 			".home-page > :not(#home-hero), .home-status, .home-pending-layer",
@@ -460,6 +467,8 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				});
 			}
 		});
+
+		document.querySelector(".home-page--motion-pending")?.classList.remove("home-page--motion-pending");
 	}
 
 	// ============================================
@@ -696,6 +705,8 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	// ============================================
 	// 初始化与清理（Swup 兼容）
 	// ============================================
+	let initToken = 0;
+
 	function init() {
 		cleanup();
 		initHeroOpening();
@@ -712,15 +723,27 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		destroyWorkStatus();
 	}
 
-	// 首次初始化
-	init();
+	async function scheduleHomeInit() {
+		const token = ++initToken;
+		cleanup();
+		if (!document.getElementById("home-hero")) return;
+
+		await waitForPageLoaderHidden();
+		if (token !== initToken || !document.getElementById("home-hero")) return;
+
+		init();
+	}
+
+	// 首次初始化：等页面加载遮罩完全撤掉后再播放首页入场
+	void scheduleHomeInit();
 
 	// Swup 兼容：使用 astro:page-load（每次导航完成触发）
 	document.addEventListener("astro:page-load", () => {
 		const hero = document.getElementById("home-hero");
 		if (hero) {
-			init();
+			void scheduleHomeInit();
 		} else {
+			initToken += 1;
 			cleanup();
 		}
 	});
