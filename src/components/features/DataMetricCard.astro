@@ -18,6 +18,7 @@ interface Props {
 	pills: Pill[];
 	class?: string;
 	statKind?: "visits" | "articles";
+	visualImage?: string;
 }
 
 const {
@@ -31,6 +32,7 @@ const {
 	pills,
 	class: className = "",
 	statKind,
+	visualImage,
 } = Astro.props;
 ---
 
@@ -45,15 +47,18 @@ const {
 	data-stat-kind={statKind}
 >
 	<div class="data-card__frame"></div>
-	<div class="data-card__visual" aria-hidden="true">
-		<svg viewBox="0 0 400 260" class="data-card__svg">
-			<path class="data-card__svg-path" d="M20 210 C 90 120, 150 260, 230 146 S 340 90, 382 38" />
-			<circle class="data-card__svg-dot data-card__svg-dot--a" cx="92" cy="78" r="34" />
-			<circle class="data-card__svg-dot data-card__svg-dot--b" cx="306" cy="172" r="52" />
-		</svg>
+	<div class:list={["data-card__visual", visualImage && "data-card__visual--image"]} aria-hidden="true">
+		{visualImage ? (
+			<img src={visualImage} alt="" class="data-card__visual-img" loading="lazy" decoding="async" />
+		) : (
+			<svg viewBox="0 0 400 260" class="data-card__svg">
+				<path class="data-card__svg-path" d="M20 210 C 90 120, 150 260, 230 146 S 340 90, 382 38" />
+				<circle class="data-card__svg-dot data-card__svg-dot--a" cx="92" cy="78" r="34" />
+				<circle class="data-card__svg-dot data-card__svg-dot--b" cx="306" cy="172" r="52" />
+			</svg>
+		)}
 	</div>
 	<div class="data-card__content">
-		<span class="data-card__icon"><Icon name={icon} is:inline /></span>
 		<p class="data-card__eyebrow">{eyebrow}</p>
 		<h3 class="data-card__title">{title}</h3>
 		<p class="data-card__detail">{detail}</p>

@@ -68,6 +68,7 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 					variant="square"
 					pills={visitPills}
 					statKind="visits"
+					visualImage="/assets/images/home/home-data-1.webp"
 				/>
 				<DataMetricCard
 					title="文章档案"
@@ -79,6 +80,7 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 					variant="wide"
 					pills={articlePills}
 					statKind="articles"
+					visualImage="/assets/images/home/home-data-2.webp"
 				/>
 			</div>
 
@@ -86,7 +88,9 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 				<section class="data-band data-band--contact" aria-labelledby="home-contact-title">
 					<div class="data-band__intro">
 						<div class="data-band__frame"></div>
-						<div class="data-band__visual" aria-hidden="true"></div>
+						<div class="data-band__visual" aria-hidden="true">
+							<img src="/assets/images/home/home-data-3.webp" alt="" class="data-band__visual-img" loading="lazy" decoding="async" />
+						</div>
 						<div class="data-band__content">
 							<p class="data-band__eyebrow">CONTACT</p>
 							<h3 id="home-contact-title">社交联系</h3>
@@ -114,7 +118,9 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 				<section class="data-band data-band--skills" aria-labelledby="home-skills-title">
 					<div class="data-band__intro">
 						<div class="data-band__frame"></div>
-						<div class="data-band__visual" aria-hidden="true"></div>
+						<div class="data-band__visual" aria-hidden="true">
+							<img src="/assets/images/home/home-data-4.webp" alt="" class="data-band__visual-img" loading="lazy" decoding="async" />
+						</div>
 						<div class="data-band__content">
 							<p class="data-band__eyebrow">SKILLS</p>
 							<h3 id="home-skills-title">技能图标</h3>
@@ -200,12 +206,12 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 			timeline
 				.set(hover, { autoAlpha: 1 })
 				.fromTo(orb, {
-					yPercent: 58,
 					xPercent: -50,
+					yPercent: -50,
 					scale: 0.18,
 				}, {
-					yPercent: 0,
 					xPercent: -50,
+					yPercent: -50,
 					scale: 1,
 					duration: 0.58,
 					ease: "expo.out",
