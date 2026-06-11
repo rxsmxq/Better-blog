@@ -1,15 +1,13 @@
 # Firefly-Mod
 
-> 基于 [Firefly](https://github.com/CuteLeaf/Firefly) 的个人博客魔改版 `V2.1.0`
+> 基于 [Firefly](https://github.com/CuteLeaf/Firefly) 的个人博客魔改版 `V2.2.0`
 
 ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen)
 ![pnpm >= 9](https://img.shields.io/badge/pnpm-%3E%3D9-blue)
 ![Astro](https://img.shields.io/badge/Astro-6.x-orange)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 
-<img alt="博客预览" src="./docs/images/ZS.png" />
-
-<img alt="Lighthouse 评分" src="./docs/images/CS.png" />
+<img alt="博客预览" src="./docs/images/image.webp" />
 
 ## 项目概述
 

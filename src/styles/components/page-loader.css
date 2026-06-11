@@ -16,6 +16,21 @@
 		visibility 220ms ease;
 }
 
+.page-loader::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background: rgba(0, 0, 0, 0.42);
+	opacity: 0;
+	transition: opacity 220ms ease;
+	pointer-events: none;
+}
+
+:root.dark .page-loader::after {
+	opacity: 1;
+}
+
 .page-loader--hidden {
 	opacity: 0;
 	visibility: hidden;
@@ -36,6 +51,7 @@
 
 .page-loader__animation {
 	position: relative;
+	z-index: 1;
 	width: var(--page-loader-size);
 	height: auto;
 	aspect-ratio: 480 / 270;
