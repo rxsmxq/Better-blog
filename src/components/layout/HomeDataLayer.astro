@@ -149,15 +149,32 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 
 <script>
 	import { gsap } from "gsap";
+	import { ScrollTrigger } from "gsap/ScrollTrigger";
 	import { formatCompactNumber } from "@/utils/home-data-layer.js";
+
+	gsap.registerPlugin(ScrollTrigger);
 
 	type Cleanup = () => void;
 
 	let cleanups: Cleanup[] = [];
+	let dataLayerTimelines: gsap.core.Timeline[] = [];
+	let dataLayerSTs: ScrollTrigger[] = [];
+
+	function prefersReducedMotion() {
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	}
+
+	function killDataLayerMotion() {
+		dataLayerTimelines.forEach((tl) => tl.kill());
+		dataLayerTimelines = [];
+		dataLayerSTs.forEach((st) => st.kill());
+		dataLayerSTs = [];
+	}
 
 	function cleanupHomeDataLayer() {
 		cleanups.forEach((cleanup) => cleanup());
 		cleanups = [];
+		killDataLayerMotion();
 	}
 
 	function initVisitStats() {
@@ -250,10 +267,296 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 		});
 	}
 
+	function initDataLayerScrollMotion() {
+		const layer = document.getElementById("home-data-layer");
+		if (!layer) return;
+		if (prefersReducedMotion()) return;
+
+		killDataLayerMotion();
+
+		// ========== Heading Opening ==========
+		const heading = layer.querySelector(".home-data-layer__heading");
+		const kicker = heading?.querySelector(".home-data-layer__kicker");
+		const titleMain = heading?.querySelector(".home-data-layer__title-main");
+		const titleMatrix = heading?.querySelector(".home-data-layer__title-matrix");
+
+		const headingTl = gsap.timeline({
+			scrollTrigger: {
+				id: "data-layer-heading",
+				trigger: heading,
+				start: "top 85%",
+				once: true,
+			},
+			defaults: { ease: "expo.out" },
+		});
+
+		if (kicker) {
+			headingTl.fromTo(kicker, {
+				autoAlpha: 0,
+				y: 40,
+				clipPath: "inset(100% 0 0 0)",
+			}, {
+				autoAlpha: 1,
+				y: 0,
+				clipPath: "inset(0% 0 0 0)",
+				duration: 0.9,
+			}, 0);
+		}
+
+		if (titleMain) {
+			headingTl.fromTo(titleMain, {
+				autoAlpha: 0,
+				y: 70,
+				scaleX: 0.88,
+				clipPath: "inset(0 100% 0 0)",
+				transformOrigin: "0% 50%",
+			}, {
+				autoAlpha: 1,
+				y: 0,
+				scaleX: 1,
+				clipPath: "inset(0 0% 0 0)",
+				duration: 1.1,
+			}, 0.12);
+		}
+
+		if (titleMatrix) {
+			headingTl.fromTo(titleMatrix, {
+				autoAlpha: 0,
+				y: 120,
+				scaleY: 0.8,
+				clipPath: "inset(0 0 100% 0)",
+				transformOrigin: "50% 0%",
+			}, {
+				autoAlpha: 1,
+				y: 0,
+				scaleY: 1,
+				clipPath: "inset(0 0 0% 0)",
+				duration: 1.2,
+			}, 0.28);
+		}
+
+		dataLayerTimelines.push(headingTl);
+
+		// ========== Top Row Cards ==========
+		const topRow = layer.querySelector(".home-data-layer__row--top");
+		if (topRow) {
+			const cards = Array.from(topRow.querySelectorAll<HTMLElement>(".data-card"));
+
+			const cardTl = gsap.timeline({
+				scrollTrigger: {
+					id: "data-layer-top-row",
+					trigger: topRow,
+					start: "top 82%",
+					once: true,
+				},
+				defaults: { ease: "expo.out" },
+			});
+
+			cardTl.fromTo(cards, {
+				autoAlpha: 0,
+				y: 90,
+				rotateX: 10,
+				filter: "blur(10px)",
+				transformOrigin: "50% 100%",
+			}, {
+				autoAlpha: 1,
+				y: 0,
+				rotateX: 0,
+				filter: "blur(0px)",
+				duration: 1.15,
+				stagger: 0.18,
+			}, 0);
+
+			cards.forEach((card, index) => {
+				const eyebrow = card.querySelector(".data-card__eyebrow");
+				const title = card.querySelector(".data-card__title");
+				const detail = card.querySelector(".data-card__detail");
+				const visual = card.querySelector<HTMLElement>(".data-card__visual");
+
+				const innerDelay = 0.35 + index * 0.18;
+
+				if (eyebrow) {
+					cardTl.fromTo(eyebrow, {
+						autoAlpha: 0,
+						y: 24,
+						clipPath: "inset(0 0 100% 0)",
+					}, {
+						autoAlpha: 1,
+						y: 0,
+						clipPath: "inset(0 0 0% 0)",
+						duration: 0.75,
+					}, innerDelay);
+				}
+
+				if (title) {
+					cardTl.fromTo(title, {
+						autoAlpha: 0,
+						y: 30,
+						scaleX: 0.94,
+						clipPath: "inset(0 100% 0 0)",
+						transformOrigin: "0% 50%",
+					}, {
+						autoAlpha: 1,
+						y: 0,
+						scaleX: 1,
+						clipPath: "inset(0 0% 0 0)",
+						duration: 0.85,
+					}, innerDelay + 0.08);
+				}
+
+				if (detail) {
+					cardTl.fromTo(detail, {
+						autoAlpha: 0,
+						y: 20,
+					}, {
+						autoAlpha: 1,
+						y: 0,
+						duration: 0.7,
+					}, innerDelay + 0.18);
+				}
+
+				if (visual) {
+					cardTl.fromTo(visual, {
+						clipPath: "inset(100% 0 0 0)",
+						scale: 1.06,
+					}, {
+						clipPath: "inset(0% 0 0 0)",
+						scale: 1,
+						duration: 1.05,
+						ease: "power3.inOut",
+					}, innerDelay - 0.1);
+				}
+			});
+
+			dataLayerTimelines.push(cardTl);
+
+			// Card image parallax
+			cards.forEach((card) => {
+				const img = card.querySelector<HTMLElement>(".data-card__visual-img");
+				if (!img) return;
+				const st = ScrollTrigger.create({
+					id: `data-layer-card-img-${card.getAttribute("data-stat-kind") || Math.random().toString(36).slice(2, 7)}`,
+					trigger: card,
+					start: "top bottom",
+					end: "bottom top",
+					scrub: 1.2,
+					onUpdate: (self) => {
+						gsap.set(img, { yPercent: -8 + self.progress * 16 });
+					},
+				});
+				dataLayerSTs.push(st);
+			});
+		}
+
+		// ========== Bands ==========
+		const bands = Array.from(layer.querySelectorAll<HTMLElement>(".data-band"));
+		bands.forEach((band, bandIndex) => {
+			const bandTl = gsap.timeline({
+				scrollTrigger: {
+					id: `data-layer-band-${bandIndex}`,
+					trigger: band,
+					start: "top 82%",
+					once: true,
+				},
+				defaults: { ease: "expo.out" },
+			});
+
+			const eyebrow = band.querySelector(".data-band__eyebrow");
+			const title = band.querySelector(".data-band__content h3");
+			const desc = band.querySelector(".data-band__content p:not(.data-band__eyebrow)");
+			const visual = band.querySelector<HTMLElement>(".data-band__visual");
+			const visualImg = band.querySelector<HTMLElement>(".data-band__visual-img");
+			const loop = band.querySelector<HTMLElement>(".data-band__loop");
+
+			if (eyebrow) {
+				bandTl.fromTo(eyebrow, {
+					autoAlpha: 0,
+					y: 60,
+					scaleX: 0.92,
+					clipPath: "inset(0 0 100% 0)",
+					transformOrigin: "50% 100%",
+				}, {
+					autoAlpha: 1,
+					y: 0,
+					scaleX: 1,
+					clipPath: "inset(0 0 0% 0)",
+					duration: 1.05,
+				}, 0);
+			}
+
+			if (title) {
+				bandTl.fromTo(title, {
+					autoAlpha: 0,
+					y: 45,
+					clipPath: "inset(0 100% 0 0)",
+					transformOrigin: "0% 50%",
+				}, {
+					autoAlpha: 1,
+					y: 0,
+					clipPath: "inset(0 0% 0 0)",
+					duration: 0.95,
+				}, 0.14);
+			}
+
+			if (desc) {
+				bandTl.fromTo(desc, {
+					autoAlpha: 0,
+					y: 30,
+				}, {
+					autoAlpha: 1,
+					y: 0,
+					duration: 0.8,
+				}, 0.28);
+			}
+
+			if (visual) {
+				bandTl.fromTo(visual, {
+					clipPath: "inset(100% 0 0 0)",
+					scale: 1.08,
+				}, {
+					clipPath: "inset(0% 0 0 0)",
+					scale: 1,
+					duration: 1.2,
+					ease: "power3.inOut",
+				}, 0.1);
+			}
+
+			if (loop) {
+				bandTl.fromTo(loop, {
+					autoAlpha: 0,
+					y: 40,
+					filter: "blur(8px)",
+				}, {
+					autoAlpha: 1,
+					y: 0,
+					filter: "blur(0px)",
+					duration: 0.95,
+				}, 0.45);
+			}
+
+			dataLayerTimelines.push(bandTl);
+
+			if (visualImg) {
+				const st = ScrollTrigger.create({
+					id: `data-layer-band-img-${bandIndex}`,
+					trigger: band,
+					start: "top bottom",
+					end: "bottom top",
+					scrub: 1.2,
+					onUpdate: (self) => {
+						gsap.set(visualImg, { yPercent: -6 + self.progress * 12 });
+					},
+				});
+				dataLayerSTs.push(st);
+			}
+		});
+	}
+
 	function initHomeDataLayer() {
 		cleanupHomeDataLayer();
 		initVisitStats();
 		initMetricCards();
+		initDataLayerScrollMotion();
 	}
 
 	initHomeDataLayer();
