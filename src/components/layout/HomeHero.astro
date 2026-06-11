@@ -193,6 +193,10 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	}
 
+	function isMobile() {
+		return window.matchMedia("(max-width: 768px)").matches;
+	}
+
 	function killHomeMotion() {
 		if (heroOpeningTimeline) {
 			heroOpeningTimeline.kill();
@@ -207,7 +211,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	function initHeroOpening() {
 		const hero = document.getElementById("home-hero");
 		if (!hero) return;
-		if (prefersReducedMotion()) {
+		if (prefersReducedMotion() || isMobile()) {
 			hero.classList.remove("home-hero--motion-pending");
 			hero.classList.add("home-hero--motion-ready");
 			return;
@@ -402,7 +406,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	}
 
 	function initHomeScrollMotion() {
-		if (prefersReducedMotion()) {
+		if (prefersReducedMotion() || isMobile()) {
 			document.querySelector(".home-page--motion-pending")?.classList.remove("home-page--motion-pending");
 			return;
 		}
@@ -503,6 +507,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 
 	function initParallax() {
+		if (isMobile()) return;
 		const charLayer = document.getElementById("character-layer");
 		if (!charLayer) return;
 
@@ -620,8 +625,8 @@ const heroBioText = Array.isArray(profileConfig.bio)
 			console.log("[Hatch] nameEl not found");
 			return;
 		}
-		if (prefersReducedMotion()) {
-			console.log("[Hatch] reduced motion, skip");
+		if (prefersReducedMotion() || isMobile()) {
+			console.log("[Hatch] reduced motion or mobile, skip");
 			return;
 		}
 

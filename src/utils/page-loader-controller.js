@@ -196,6 +196,10 @@ function bindSwup({ controller, document: documentRef, window: windowRef }) {
 	documentRef.addEventListener("swup:enable", bind, { once: true });
 }
 
+function isMobile(windowRef) {
+	return windowRef.matchMedia("(max-width: 768px)").matches;
+}
+
 export function initPageLoader({
 	document: documentRef = document,
 	window: windowRef = window,
@@ -204,6 +208,20 @@ export function initPageLoader({
 
 	const loader = documentRef.getElementById("page-loader");
 	if (!loader) return null;
+
+	// Mobile: skip page loader entirely
+	if (isMobile(windowRef)) {
+		loader.hidden = true;
+		loader.classList.add("page-loader--hidden");
+		loader.classList.remove("page-loader--visible");
+		documentRef.documentElement.classList.remove("is-page-loading");
+		documentRef.body?.removeAttribute("aria-busy");
+		// Dispatch hidden event so any waiting code can proceed
+		dispatchDomEvent(documentRef, LOADER_HIDDEN_EVENT, {
+			timestamp: Date.now(),
+		});
+		return null;
+	}
 
 	const controller = createPageLoaderController({
 		onStateChange: (state) =>

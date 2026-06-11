@@ -824,6 +824,20 @@
 		min-height: calc(var(--logo-loop-logo-height) + 0.65rem);
 		padding: 0.48rem 0.75rem;
 	}
+
+	/* 移动端：静态平铺布局，禁用跑马灯动画 */
+	.logo-loop__track {
+		width: 100%;
+		flex-wrap: wrap;
+		justify-content: center;
+		will-change: auto;
+	}
+
+	.logo-loop__sequence {
+		flex-wrap: wrap;
+		justify-content: center;
+		padding-inline-end: 0;
+	}
 }
 
 @media (max-width: 480px) {

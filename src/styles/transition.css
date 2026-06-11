@@ -154,3 +154,14 @@ html.is-rendering .transition-swup-main {
     }
 }
 
+/* --------------------------------------------------------------------------
+   6. Mobile: disable all entrance animations
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .onload-animation {
+        opacity: 1;
+        animation: none;
+    }
+}
+

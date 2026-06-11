@@ -61,6 +61,7 @@ let offset = 0;
 let velocity = 0;
 let resizeObserver: ResizeObserver | null = null;
 let tooltip = $state({ visible: false, name: "", x: 0, y: 0 });
+let isMobileDevice = $state(false);
 
 const isVertical = $derived(direction === "up" || direction === "down");
 const cssVars = $derived(
@@ -69,6 +70,11 @@ const cssVars = $derived(
 
 function measure() {
 	if (!containerEl || !sequenceEl) return;
+	// Mobile: render only one copy, no loop needed
+	if (isMobileDevice) {
+		copyCount = 1;
+		return;
+	}
 	const rect = sequenceEl.getBoundingClientRect();
 	seqWidth = Math.ceil(rect.width);
 	seqHeight = Math.ceil(rect.height);
@@ -104,7 +110,10 @@ function tick(timestamp: number) {
 }
 
 function start() {
-	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+	if (
+		isMobileDevice ||
+		window.matchMedia("(prefers-reduced-motion: reduce)").matches
+	) {
 		offset = 0;
 		applyTransform();
 		return;
@@ -209,11 +218,14 @@ function portal(node: HTMLElement) {
 }
 
 onMount(() => {
+	isMobileDevice = window.matchMedia("(max-width: 768px)").matches;
 	measure();
-	resizeObserver = new ResizeObserver(measure);
-	if (containerEl) resizeObserver.observe(containerEl);
-	if (sequenceEl) resizeObserver.observe(sequenceEl);
-	start();
+	if (!isMobileDevice) {
+		resizeObserver = new ResizeObserver(measure);
+		if (containerEl) resizeObserver.observe(containerEl);
+		if (sequenceEl) resizeObserver.observe(sequenceEl);
+		start();
+	}
 
 	return () => {
 		stop();

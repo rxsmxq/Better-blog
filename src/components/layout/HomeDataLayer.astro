@@ -164,6 +164,10 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	}
 
+	function isMobile() {
+		return window.matchMedia("(max-width: 768px)").matches;
+	}
+
 	function killDataLayerMotion() {
 		dataLayerTimelines.forEach((tl) => tl.kill());
 		dataLayerTimelines = [];
@@ -270,7 +274,7 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 	function initDataLayerScrollMotion() {
 		const layer = document.getElementById("home-data-layer");
 		if (!layer) return;
-		if (prefersReducedMotion()) return;
+		if (prefersReducedMotion() || isMobile()) return;
 
 		killDataLayerMotion();
 

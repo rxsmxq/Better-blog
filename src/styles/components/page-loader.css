@@ -72,3 +72,10 @@
 		transition: none !important;
 	}
 }
+
+/* Mobile: hide page loader completely */
+@media (max-width: 768px) {
+	.page-loader {
+		display: none !important;
+	}
+}
