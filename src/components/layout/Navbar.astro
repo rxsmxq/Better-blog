@@ -67,6 +67,9 @@ if (isLocalSrcLogo) {
                 {siteConfig.navbar.logo?.type === "icon" ? (
                     <Icon name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} is:inline class="text-[1.5rem] mr-2 flex-shrink-0" />
                 ) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
+                    logoImg.src.endsWith(".svg") ? (
+                        <img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mr-2 object-contain flex-shrink-0" fetchpriority="high" />
+                    ) : (
                     <Picture
                         src={logoImg}
                         alt={siteConfig.navbar.logo.alt || siteConfig.title}
@@ -77,6 +80,7 @@ if (isLocalSrcLogo) {
                         loading="eager"
                         fetchpriority="high"
                     />
+                    )
                 ) : siteConfig.navbar.logo?.type === "image" ? (
                     <img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mr-2 object-contain flex-shrink-0" fetchpriority="high" />
                 ) : siteConfig.navbar.logo?.type === "url" ? (
