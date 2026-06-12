@@ -184,6 +184,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "抚七kilroy",
+		imgurl: "https://bu.dusays.com/2025/09/03/68b7fc642c8da.jpg",
+		desc: "记录与分享技术的每一刻,同时享受生活的点滴",
+		siteurl: "https://fuqikilroy.github.io/HEXO/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
