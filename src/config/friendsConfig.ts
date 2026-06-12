@@ -186,7 +186,7 @@ export const friendsConfig: FriendLink[] = [
 	},
 	{
 		title: "抚七kilroy",
-		imgurl: "https://bu.dusays.com/2025/09/03/68b7fc642c8da.jpg",
+		imgurl: "https://bu.dusays.com/2025/09/03/68b82f0be7fb7.webp",
 		desc: "记录与分享技术的每一刻,同时享受生活的点滴",
 		siteurl: "https://fuqikilroy.github.io/HEXO/",
 		tags: ["Blog"],
