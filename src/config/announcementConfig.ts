@@ -8,7 +8,7 @@ export const announcementConfig: AnnouncementConfig = {
 	items: [
 		{
 			tag: "欢迎",
-			title: "站点公告",
+			title: "关于我的介绍",
 			content:
 				"欢迎来到我的博客，我是深耕java、python和react技术开发。热爱技术、持续学习，欢迎同好交流探讨，也欢迎大佬互换友链。",
 			time: "2025-06-01",
@@ -22,15 +22,6 @@ export const announcementConfig: AnnouncementConfig = {
 				"本周日凌晨 2:00-4:00 进行服务器维护，期间站点可能短暂无法访问。",
 			time: "2025-06-10",
 			sort: 2,
-		},
-		{
-			tag: "上新",
-			title: "新文章发布",
-			content:
-				"《Astro 5.0 深度实践：从 0 搭建高性能博客》已发布，欢迎阅读交流。",
-			time: "2025-06-08",
-			link: "/posts/astro-5-practice/",
-			sort: 3,
 		},
 		{
 			tag: "友链",
