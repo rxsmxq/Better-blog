@@ -230,8 +230,19 @@ const tags = await getTagList();
 			}
 		}, { signal: dockSignal });
 
+		// 音乐按钮播放旋转
+		const musicBtn = document.getElementById("dock-music-btn");
+		function updateMusicIconSpin() {
+			if (!musicBtn) return;
+			const mgr = window.__fireflyMusic;
+			const isPlaying = mgr?.getState().isPlaying ?? false;
+			musicBtn.classList.toggle("is-playing", isPlaying);
+		}
+		updateMusicIconSpin();
+		window.addEventListener("fm:play-state", updateMusicIconSpin, { signal: dockSignal });
+
 		// 音乐抽屉懒加载：首次打开时触发 MusicManager 初始化
-		const musicDrawerBtn = document.getElementById("dock-music-btn");
+		const musicDrawerBtn = musicBtn;
 		const musicDrawerEl = document.getElementById("dock-drawer-music");
 		if (musicDrawerBtn && musicDrawerEl) {
 			musicDrawerBtn.addEventListener("click", () => {

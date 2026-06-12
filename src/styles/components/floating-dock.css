@@ -158,3 +158,10 @@
 	margin-top: 0.25rem;
 	align-self: flex-start;
 }
+
+/* ============================================
+   音乐按钮播放时旋转
+   ============================================ */
+.dock-btn-music.is-playing .dock-btn-icon {
+	animation: spin-slow 3s linear infinite;
+}
