@@ -34,11 +34,9 @@ export const DEFAULT_PARAMS: HatchParams = {
 
 const hexToRgb = (hex: string): [number, number, number] => {
 	const h = hex.replace("#", "");
-	return [0, 2, 4].map((i) => Number.parseInt(h.substr(i, 2), 16) / 255) as [
-		number,
-		number,
-		number,
-	];
+	return [0, 2, 4].map(
+		(i) => Number.parseInt(h.substring(i, i + 2), 16) / 255,
+	) as [number, number, number];
 };
 
 const FRAG = `#version 300 es
