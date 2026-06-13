@@ -88,7 +88,11 @@ function collectPendingImages(documentRef) {
 	const images = scope.flatMap((container) => [
 		...container.querySelectorAll("img"),
 	]);
-	return images.filter((image) => !image.complete);
+	return images.filter((image) => {
+		// 跳过尚未进入视口的懒加载图片，避免它们阻塞加载页隐藏
+		if (image.loading === "lazy" && !image.complete) return false;
+		return !image.complete;
+	});
 }
 
 function waitForImage(image) {
