@@ -7,6 +7,11 @@
 	min-height: 150px;
 }
 
+/* 远程图片容器预设宽高比，防止加载前高度塌陷导致 CLS */
+.cover-image-container img[data-remote="true"] {
+	aspect-ratio: 3 / 2;
+}
+
 @media (min-width: 768px) {
 	.cover-image-container {
 		min-height: 0;

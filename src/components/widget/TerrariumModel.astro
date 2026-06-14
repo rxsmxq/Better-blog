@@ -113,6 +113,20 @@
     let lastTime = 0;
     let animationId = 0;
     let disposed = false;
+    let isVisible = true;
+
+    // ── IntersectionObserver: 暂停不可见时的渲染循环 ──
+    const visibilityObserver = new IntersectionObserver(
+      (entries) => {
+        isVisible = entries[0]?.isIntersecting ?? true;
+        if (isVisible && !disposed) {
+          lastTime = 0; // 重置时间避免大 delta
+          animate();
+        }
+      },
+      { threshold: 0 },
+    );
+    visibilityObserver.observe(container);
 
     // ── Scroll-driven rotation ───────────────────────
     // Initial: tilted to the left (negative Y rotation)
@@ -148,6 +162,10 @@
     // ── Animation loop ──────────────────────────────
     function animate() {
       if (disposed) return;
+
+      // 不可见时暂停渲染循环，由 IntersectionObserver 重新启动
+      if (!isVisible) return;
+
       animationId = requestAnimationFrame(animate);
 
       const now = performance.now();
@@ -254,6 +272,7 @@
       canvas?.removeEventListener("click", handleClick);
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", updateScrollRotation);
+      visibilityObserver.disconnect();
       mixer?.stopAllAction();
       audio?.pause();
       renderer.dispose();

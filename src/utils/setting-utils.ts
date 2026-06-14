@@ -328,23 +328,6 @@ export function getStoredTheme(): LIGHT_DARK_MODE {
 	);
 }
 
-// 初始化主题监听器（用于页面加载后）
-export function initThemeListener(): void {
-	if (
-		typeof localStorage === "undefined" ||
-		typeof localStorage.getItem !== "function"
-	) {
-		return;
-	}
-
-	const theme = getStoredTheme();
-
-	// 如果主题是 system 模式，需要监听系统主题变化
-	if (theme === SYSTEM_MODE) {
-		setupSystemThemeListener();
-	}
-}
-
 // Waves animation functions
 export function getDefaultWavesEnabled(): boolean {
 	const wavesConfig = backgroundWallpaper.banner?.waves?.enable;

@@ -505,6 +505,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	let charX = 0;
 	let charY = 0;
 	let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
+	let parallaxRunning = false;
 
 	function initParallax() {
 		if (isMobile()) return;
@@ -514,6 +515,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		mouseMoveHandler = (e: MouseEvent) => {
 			mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
 			mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+			// 鼠标移动时重新启动 rAF 循环
+			if (!parallaxRunning) {
+				parallaxRunning = true;
+				rafId = requestAnimationFrame(update);
+			}
 		};
 
 		document.addEventListener("mousemove", mouseMoveHandler);
@@ -528,9 +534,18 @@ const heroBioText = Array.isArray(profileConfig.bio)
 			if (charLayer) {
 				charLayer.style.transform = `translate(${charX}px, ${charY}px)`;
 			}
+
+			// 收敛检测：差值足够小时暂停循环，鼠标移动时重新启动
+			if (Math.abs(targetX - charX) < 0.01 && Math.abs(targetY - charY) < 0.01) {
+				parallaxRunning = false;
+				rafId = null;
+				return;
+			}
+
 			rafId = requestAnimationFrame(update);
 		}
 
+		parallaxRunning = true;
 		rafId = requestAnimationFrame(update);
 	}
 
@@ -621,32 +636,19 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	// ============================================
 	async function initHeroHatch() {
 		const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
-		if (!nameEl) {
-			console.log("[Hatch] nameEl not found");
-			return;
-		}
-		if (prefersReducedMotion() || isMobile()) {
-			console.log("[Hatch] reduced motion or mobile, skip");
-			return;
-		}
+		if (!nameEl) return;
+		if (prefersReducedMotion() || isMobile()) return;
 
 		// 等待 GSAP 标题入场动画大部分完成（约 2.0s）
 		await new Promise((r) => setTimeout(r, 2200));
 
 		// 再次检查元素是否仍在 DOM（Swup 可能已切走页面）
-		if (!document.contains(nameEl)) {
-			console.log("[Hatch] nameEl removed from DOM after delay");
-			return;
-		}
+		if (!document.contains(nameEl)) return;
 
 		destroyHeroHatch();
 
 		const vfx = VFX.init({ pixelRatio: Math.min(window.devicePixelRatio, 1.5) });
-		if (!vfx) {
-			console.log("[Hatch] VFX.init returned null");
-			return;
-		}
-		console.log("[Hatch] VFX initialized");
+		if (!vfx) return;
 		vfxInstance = vfx;
 
 		heroHatchEffect = new HatchEffect({
@@ -667,10 +669,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 
 		try {
 			await vfx.addHTML(nameEl, { effect: heroHatchEffect });
-			console.log("[Hatch] name addHTML success");
-		} catch (err) {
-			console.error("[Hatch] name addHTML failed:", err);
-		}
+		} catch { /* ignore */ }
 	}
 
 	function destroyHeroHatch() {

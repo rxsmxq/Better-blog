@@ -79,8 +79,6 @@ export function initIconLoader(): void {
 			// 设置超时，避免无限等待
 			setTimeout(() => {
 				observer.disconnect();
-				if (!checkIconLoaded()) {
-				}
 			}, 5000);
 		}
 

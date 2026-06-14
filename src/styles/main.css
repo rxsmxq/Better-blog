@@ -2,7 +2,6 @@
 
 /* === 布局层 === */
 @import './layout-styles.css';
-@import './navbar.css';
 @import './banner-title.css';
 @import './waves.css';
 @import './transition.css';
@@ -28,7 +27,6 @@
 @import './components/home-data-layer.css';
 @import './components/home-portfolio-shutter.css';
 @import './components/home-ticker.css';
-@import './components/home-pending.css';
 @import './components/floating-dock.css';
 @import './components/friend-card.css';
 @import './components/widget-layout.css';
@@ -482,10 +480,6 @@ html {
     .toc-not-ready {
         @apply opacity-0 pointer-events-none
     }
-
-    /* #toc-inner-wrapper {
-        mask-image: linear-gradient(to bottom, transparent 0%, black 2rem, black calc(100% - 2rem), transparent 100%);
-    } */
 
     .hide-scrollbar {
         scrollbar-width: none;

@@ -64,30 +64,24 @@ async function doSearch(kw: string) {
 	if (!initialized) return;
 
 	isSearching = true;
-	clearTimeout(debounceTimer);
 
-	return new Promise<void>((resolve) => {
-		debounceTimer = setTimeout(async () => {
-			try {
-				let searchResults: SearchResult[] = [];
-				if (import.meta.env.PROD && window.pagefind) {
-					const response = await window.pagefind.search(kw);
-					searchResults = await Promise.all(
-						response.results.map((item) => item.data()),
-					);
-				} else if (import.meta.env.DEV) {
-					searchResults = fakeResult;
-				}
-				result = searchResults;
-			} catch (error) {
-				console.error("Search error:", error);
-				result = [];
-			} finally {
-				isSearching = false;
-				resolve();
-			}
-		}, 300);
-	});
+	try {
+		let searchResults: SearchResult[] = [];
+		if (import.meta.env.PROD && window.pagefind) {
+			const response = await window.pagefind.search(kw);
+			searchResults = await Promise.all(
+				response.results.map((item) => item.data()),
+			);
+		} else if (import.meta.env.DEV) {
+			searchResults = fakeResult;
+		}
+		result = searchResults;
+	} catch (error) {
+		console.error("Search error:", error);
+		result = [];
+	} finally {
+		isSearching = false;
+	}
 }
 
 // --- Vanish animation (canvas pixel particles) ---
@@ -303,7 +297,7 @@ onMount(() => {
 	};
 });
 
-// --- Reactive search on input ---
+// --- Reactive search on input (with debounce) ---
 let lastSearched = "";
 $effect(() => {
 	if (initialized && keyword !== lastSearched) {
@@ -314,7 +308,8 @@ $effect(() => {
 			return;
 		}
 		if (keyword) {
-			doSearch(keyword);
+			clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => doSearch(keyword), 300);
 		} else {
 			result = [];
 		}

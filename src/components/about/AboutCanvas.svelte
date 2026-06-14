@@ -278,6 +278,13 @@ function render() {
 		rafId = requestAnimationFrame(render);
 		return;
 	}
+
+	// 不可见时暂停渲染循环，由 IntersectionObserver 重新启动
+	if (!isVisible) {
+		rafId = null;
+		return;
+	}
+
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
 
@@ -467,6 +474,9 @@ function onResize() {
 
 // ===== 生命周期 =====
 
+let isVisible = true;
+let visibilityObserver: IntersectionObserver | null = null;
+
 onMount(() => {
 	onResize();
 
@@ -476,6 +486,20 @@ onMount(() => {
 	};
 	ballImg.src = "/assets/images/about.webp";
 
+	// IntersectionObserver：离开视口时暂停渲染循环
+	if (container) {
+		visibilityObserver = new IntersectionObserver(
+			(entries) => {
+				isVisible = entries[0]?.isIntersecting ?? true;
+				if (isVisible && !rafId) {
+					rafId = requestAnimationFrame(render);
+				}
+			},
+			{ threshold: 0 },
+		);
+		visibilityObserver.observe(container);
+	}
+
 	rafId = requestAnimationFrame(render);
 	window.addEventListener("resize", onResize);
 });
@@ -483,6 +507,7 @@ onMount(() => {
 onDestroy(() => {
 	cancelAnimationFrame(rafId);
 	window.removeEventListener("resize", onResize);
+	visibilityObserver?.disconnect();
 	clearCache();
 	paraLayouts = [];
 	paragraphs = [];

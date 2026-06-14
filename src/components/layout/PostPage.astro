@@ -263,12 +263,16 @@ const categories = await getCategoryList();
       item.style.setProperty('height', 'auto', 'important');
     });
 
-    // Pass 2: 批量读取高度，计算位置，统一写入
+    // Pass 2: 批量读取高度（纯读阶段，不写样式，避免强制同步布局）
+    const heights: number[] = [];
     items.forEach((item) => {
-      const colIndex = colHeights.indexOf(Math.min(...colHeights));
       // @ts-ignore
-      const height = item.offsetHeight;
+      heights.push(item.offsetHeight);
+    });
 
+    // Pass 3: 批量写入位置（纯写阶段，利用已缓存的高度数据）
+    items.forEach((item, i) => {
+      const colIndex = colHeights.indexOf(Math.min(...colHeights));
       const top = colHeights[colIndex];
       const left = colIndex * (itemWidth + gap);
 
@@ -277,7 +281,7 @@ const categories = await getCategoryList();
       // @ts-ignore
       item.style.left = `${left}px`;
 
-      colHeights[colIndex] += height + gap;
+      colHeights[colIndex] += heights[i] + gap;
     });
 
     container.style.height = `${Math.max(...colHeights)}px`;

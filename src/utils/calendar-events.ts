@@ -251,23 +251,9 @@ export function getNearestByType(
 	return out;
 }
 
-export function getTodayEvents(
-	bucket: EventBucket,
-	today: Date,
-): CalendarEvent[] {
-	return bucket[formatYmd(today)] || [];
-}
-
 // 工具：日期 → "YYYY-MM-DD"
 export function formatYmd(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
 		d.getDate(),
 	).padStart(2, "0")}`;
-}
-
-// 工具：计算 a 到 b 的天数差（正：b 在 a 之后）
-export function daysBetween(a: Date, b: Date): number {
-	const aMid = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
-	const bMid = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
-	return Math.round((bMid - aMid) / 86400000);
 }
