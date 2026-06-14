@@ -1,7 +1,7 @@
 ---
 import DataMetricCard from "@components/features/DataMetricCard.astro";
 import LogoLoop from "@components/features/LogoLoop.svelte";
-import { profileConfig, skillsConfig } from "@/config";
+import { profileConfig, siteConfig, skillsConfig } from "@/config";
 import {
 	getCategoryList,
 	getSortedPosts,
@@ -46,9 +46,15 @@ const socialItems = profileConfig.links.map((link) => ({
 }));
 
 const skillItems = normalizeSkillItems({ items: skillsConfig.items });
+
+const umamiConfig = siteConfig.analytics?.umamiAnalytics;
+const statsBaseUrl = umamiConfig?.scriptUrl ? new URL(umamiConfig.scriptUrl).origin : "";
+const statsShareId = umamiConfig?.shareId ?? "";
 ---
 
-<section class="home-data-layer" aria-labelledby="home-data-layer-title" id="home-data-layer">
+<section class="home-data-layer" aria-labelledby="home-data-layer-title" id="home-data-layer"
+	data-stats-base-url={statsBaseUrl}
+	data-stats-share-id={statsShareId}>
 	<div class="home-data-layer__inner">
 		<div class="home-data-layer__heading">
 			<p class="home-data-layer__kicker">CONTEXT</p>
@@ -151,6 +157,13 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 	import { gsap } from "gsap";
 	import { ScrollTrigger } from "gsap/ScrollTrigger";
 	import { formatCompactNumber } from "@/utils/home-data-layer.js";
+	import { createCache } from "@/utils/cache-utils";
+
+	type ShareData = { websiteId: string; token: string };
+	const shareCache = createCache<ShareData>({
+		key: "umami_share_data",
+		ttl: 3_600_000,
+	});
 
 	gsap.registerPlugin(ScrollTrigger);
 
@@ -184,17 +197,37 @@ const skillItems = normalizeSkillItems({ items: skillsConfig.items });
 	function initVisitStats() {
 		const layer = document.getElementById("home-data-layer");
 		if (!layer) return;
+		const statsBaseUrl = layer.dataset.statsBaseUrl;
+		const statsShareId = layer.dataset.statsShareId;
+		if (!statsBaseUrl || !statsShareId) return;
 		const detail = layer.querySelector(".data-card[data-stat-kind='visits'] .data-card__detail");
 		const valueNodes = layer.querySelectorAll<HTMLElement>("[data-stat-value]");
-		fetch("/api/count", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ path: location.pathname }),
-		})
-			.then((response) => response.json())
+		shareCache
+			.fetch(async () => {
+				const res = await fetch(`${statsBaseUrl}/api/share/${statsShareId}`);
+				if (!res.ok) throw new Error("获取 Umami 分享信息失败");
+				const share = await res.json();
+				return {
+					websiteId: share.websiteId || share.entityId,
+					token: share.token || statsShareId,
+				};
+			})
+			.then(({ websiteId, token }) => {
+				const now = Date.now();
+				return fetch(
+					`${statsBaseUrl}/api/websites/${websiteId}?startAt=0&endAt=${now}`,
+					{
+						headers: {
+							Authorization: `Bearer ${token}`,
+							"Content-Type": "application/json",
+						},
+					},
+				);
+			})
+			.then((r) => r.json())
 			.then((data) => {
-				const uv = formatCompactNumber(data.uv);
-				const pv = formatCompactNumber(data.pv);
+				const uv = formatCompactNumber(data.uv || data.visitors || 0);
+				const pv = formatCompactNumber(data.pv || data.pageviews || 0);
 				if (detail) detail.textContent = `访客 ${uv} / 浏览 ${pv}`;
 				valueNodes.forEach((node) => {
 					const key = node.dataset.statValue;

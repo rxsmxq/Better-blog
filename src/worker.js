@@ -1,14 +1,9 @@
 import { handleAIChat } from "./workers/ai-chat.js";
-import { handleCount } from "./workers/count.js";
 import { handleGuestbook } from "./workers/guestbook.js";
 
 export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
-
-		if (url.pathname === "/api/count") {
-			return handleCount(request, env);
-		}
 
 		if (url.pathname.startsWith("/api/guestbook")) {
 			return handleGuestbook(request, env, url);

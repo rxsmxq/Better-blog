@@ -222,6 +222,7 @@ export const siteConfig: SiteConfig = {
 		// Umami 统计配置
 		umamiAnalytics: {
 			websiteId: "5907656e-d254-4c9e-ad73-5ce40bf184bb",
+			shareId: "uAfsjwbIKgVPjxtc",
 			scriptUrl: "https://stats.mmzhiku.xyz/script.js",
 			// 是否追踪出站链接
 			trackOutboundLinks: true,
