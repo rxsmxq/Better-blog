@@ -200,11 +200,16 @@
 	height: var(--identity-avatar-size);
 	border-radius: 50%;
 	overflow: hidden;
-	border: 4px solid #ffffff;
-	outline: 3px solid #000000;
+	outline: 3px solid #D44E7D;
 	background: #ffffff;
-	box-shadow: 0 10px 0 rgba(0, 0, 0, 0.9), 0 18px 38px rgba(0, 0, 0, 0.48);
+	box-shadow: 0 10px 0 #D44E7D, 0 18px 38px rgba(0, 0, 0, 0.48);
 	flex-shrink: 0;
+}
+
+/* 下班时头像边框和阴影恢复黑色 */
+.home-hero__avatar-group:has(.is-off-work) .home-hero__avatar-wrapper {
+	outline-color: #000000;
+	box-shadow: 0 10px 0 rgba(0, 0, 0, 0.9), 0 18px 38px rgba(0, 0, 0, 0.48);
 }
 
 .home-hero__avatar {
@@ -224,39 +229,44 @@
 	min-width: 5.75rem;
 	justify-content: center;
 	padding: 0.35rem 0.85rem;
-	border: 3px solid #000000;
+	border: 3px solid #D44E7D;
 	border-radius: 999px;
 	background: #ffffff;
-	color: #000000;
+	color: #D44E7D;
 	font-size: 1rem;
 	font-weight: 900;
 	line-height: 1;
 	white-space: nowrap;
-	box-shadow: 0 3px 0 rgba(0, 0, 0, 0.9);
+	box-shadow: 0 3px 0 #D44E7D;
 }
 
 .home-hero__status-dot {
 	width: 0.55rem;
 	height: 0.55rem;
 	border-radius: 50%;
-	background: #000000;
+	background: #D44E7D;
 	flex-shrink: 0;
+	animation: status-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.25; transform: scale(0.7); }
 }
 
 .home-hero__status-badge.is-off-work {
-	background: #ffffff;
+	border-color: #000000;
 	color: #000000;
+	box-shadow: 0 3px 0 rgba(0, 0, 0, 0.9);
 }
 
-[data-theme="light"] .home-hero__avatar-wrapper {
-	border-color: #ffffff;
-	outline-color: #000000;
+.home-hero__status-badge.is-off-work .home-hero__status-dot {
+	background: #000000;
+	animation: none;
 }
 
 [data-theme="light"] .home-hero__status-badge {
 	background: #ffffff;
-	color: #000000;
-	border-color: #000000;
 }
 
 /* 名字 */
@@ -430,7 +440,7 @@
 
 .home-hero--motion-pending .home-hero__speech {
 	opacity: 0;
-	transform: translate(-50%, 34px) scale(0.92);
+	transform: translateY(34px) scale(0.92);
 	filter: blur(10px);
 }
 
@@ -502,7 +512,7 @@
 
 .home-hero__speech {
 	position: absolute;
-	left: 50%;
+	right: clamp(1rem, 4vw, 3rem);
 	bottom: clamp(4.4rem, 8.6vh, 6.2rem);
 	z-index: 32;
 	width: min(34rem, 82%);
@@ -518,7 +528,6 @@
 	color: rgba(255, 255, 255, 0.86);
 	pointer-events: none;
 	text-align: center;
-	transform: translateX(-50%);
 	transform-origin: 50% 100%;
 }
 

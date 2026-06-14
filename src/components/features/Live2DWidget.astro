@@ -192,12 +192,16 @@ const size = config.size || { width: 280, height: 250 };
 		}
 
 		async loadResources() {
-			await Live2DStateManager.loadScript(
-				"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",
-			);
-			await Live2DStateManager.loadScript(
-				"https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js",
-			);
+			// cubismcore 和 pixi.js 无依赖关系，并行加载
+			await Promise.all([
+				Live2DStateManager.loadScript(
+					"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",
+				),
+				Live2DStateManager.loadScript(
+					"https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js",
+				),
+			]);
+			// pixi-live2d-display 依赖前两者，串行加载
 			await Live2DStateManager.loadScript(
 				"https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js",
 			);

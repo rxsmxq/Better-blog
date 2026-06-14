@@ -21,8 +21,8 @@ export type HomePortfolioShutterConfig = {
 export const homePortfolioShutterConfig = {
 	enabled: true,
 	kicker: "The End",
-	title: "2026年 加油！",
-	description: "从想法到实现，每一行代码都是成长的痕迹。",
+	title: "愿你每一天 都闪闪发光",
+	description: "岁岁常欢愉，万事皆胜意。",
 	scrollDistance: 4000,
 	finalImage: {
 		src: "/assets/images/home-truncated/utl.webp",

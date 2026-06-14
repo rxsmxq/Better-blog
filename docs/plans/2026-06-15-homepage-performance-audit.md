@@ -373,7 +373,7 @@
 
 ### P2-13 SearchModal 双重防抖
 
-- [ ] **修复完成**
+- [x] **修复完成**（P0-6 修复时已一并解决）
 - **功能**: 搜索输入响应
 - **问题**: `doSearch` 内部已有 300ms 防抖，`$effect` 响应 `keyword` 变化又调用 `doSearch`，Svelte 5 的 `$effect` 本身有微任务调度，形成双重延迟
 - **文件**: `src/components/controls/SearchModal.svelte:67-89, 308-322`
@@ -483,7 +483,7 @@
 
 ### P3-8 Live2D 串行加载三个外部 JS
 
-- [ ] **修复完成**
+- [x] **修复完成**
 - **功能**: Live2D 模型资源加载
 - **问题**: 三个外部 JS 文件（cubismcore、pixi.js、pixi-live2d-display）串行加载，总加载时间是三个文件下载时间之和
 - **文件**: `src/components/features/Live2DWidget.astro:194-208`
