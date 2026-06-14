@@ -1,7 +1,3 @@
-// KV 缓存
-const CACHE_KEY = "umami:site-stats";
-const CACHE_TTL = 300; // 5 分钟（秒）
-
 const corsHeaders = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -56,22 +52,9 @@ export async function handleCount(request, env) {
 		);
 	}
 
-	// GET 和 POST 都返回全站统计
 	if (request.method === "GET" || request.method === "POST") {
 		try {
-			// 尝试读缓存
-			const cached = await env.VISITOR_KV.get(CACHE_KEY, { type: "json" });
-			if (cached) {
-				return Response.json(cached, { headers: corsHeaders });
-			}
-
 			const result = await fetchSiteStats(env);
-
-			// 写缓存
-			await env.VISITOR_KV.put(CACHE_KEY, JSON.stringify(result), {
-				expirationTtl: CACHE_TTL,
-			});
-
 			return Response.json(result, { headers: corsHeaders });
 		} catch (e) {
 			return Response.json(

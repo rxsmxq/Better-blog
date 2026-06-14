@@ -412,7 +412,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		}
 
 		const sections = Array.from(document.querySelectorAll<HTMLElement>(
-			".home-page > :not(#home-hero), .home-status, .home-pending-layer",
+			".home-page > :not(#home-hero), .home-pending-layer",
 		)).filter((section, index, list) => list.indexOf(section) === index);
 
 		sections.forEach((section, index) => {

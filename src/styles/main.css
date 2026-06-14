@@ -28,7 +28,6 @@
 @import './components/home-data-layer.css';
 @import './components/home-portfolio-shutter.css';
 @import './components/home-ticker.css';
-@import './components/home-status.css';
 @import './components/home-pending.css';
 @import './components/floating-dock.css';
 @import './components/friend-card.css';
@@ -48,7 +47,6 @@
 @import './components/ai-search.css';
 
 /* === 侧边栏组件层 === */
-@import './widgets/site-stats.css';
 @import './widgets/calendar.css';
 @import './widgets/sidebar-toc.css';
 @import './widgets/archive-heatmap.css';
