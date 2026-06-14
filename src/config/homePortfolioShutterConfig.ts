@@ -22,8 +22,7 @@ export const homePortfolioShutterConfig = {
 	enabled: true,
 	kicker: "The End",
 	title: "2026年 加油！",
-	description:
-		"从想法到实现，每一行代码都是成长的痕迹。",
+	description: "从想法到实现，每一行代码都是成长的痕迹。",
 	scrollDistance: 4000,
 	finalImage: {
 		src: "/assets/images/home-truncated/utl.webp",

@@ -21,6 +21,8 @@ jobs:
 
       - name: 安装 Playwright
         run: |
+          mkdir -p /tmp/playwright-setup
+          cd /tmp/playwright-setup
           npm init -y
           npm install playwright
           npx playwright install --with-deps chromium
