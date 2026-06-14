@@ -215,10 +215,11 @@ const statsShareId = umamiConfig?.shareId ?? "";
 			.then(({ websiteId, token }) => {
 				const now = Date.now();
 				return fetch(
-					`${statsBaseUrl}/api/websites/${websiteId}?startAt=0&endAt=${now}`,
+					`${statsBaseUrl}/api/websites/${websiteId}/stats?startAt=0&endAt=${now}`,
 					{
 						headers: {
-							Authorization: `Bearer ${token}`,
+							"x-umami-share-token": token,
+							"x-umami-share-context": "1",
 							"Content-Type": "application/json",
 						},
 					},
