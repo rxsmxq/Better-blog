@@ -229,6 +229,22 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 		},
 		// UI 组件库
 		{
+			name: "One Page Love",
+			url: "https://onepagelove.com/",
+			description: "单页网站设计灵感库，汇集 Landing Page 模板与创意参考",
+			category: "UI 组件库",
+			icon: favicon("onepagelove.com"),
+			enabled: true,
+		},
+		{
+			name: "Mobbin",
+			url: "https://mobbin.com/",
+			description: "移动端 UI 设计参考库，收录海量 App 界面截图与交互模式",
+			category: "UI 组件库",
+			icon: favicon("mobbin.com"),
+			enabled: true,
+		},
+		{
 			name: "Awwwards",
 			url: "https://www.awwwards.com/",
 			description: "全球最佳网页设计作品评选平台，汇集创意灵感与设计趋势",
