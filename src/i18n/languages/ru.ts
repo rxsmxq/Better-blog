@@ -6,6 +6,7 @@ export const ru: Translation = {
 	[Key.about]: "О нас",
 	[Key.archive]: "Архив",
 	[Key.postHeatmap]: "Тепловая карта",
+	[Key.githubHeatmap]: "Вклад в GitHub",
 	[Key.search]: "Поиск",
 	[Key.searchNoResults]: "Результаты не найдены.",
 	[Key.searchTypeSomething]: "Введите ключевое слово для поиска...",

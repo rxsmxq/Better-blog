@@ -1,4 +1,7 @@
 ---
+import { siteConfig } from "@/config";
+import GithubHeatmap from "./GithubHeatmap.astro";
+import PostHeatmap from "./PostHeatmap.astro";
 
 interface Post {
 	id: string;
@@ -14,201 +17,19 @@ interface Props {
 
 const { posts } = Astro.props;
 
-function formatYmd(d: Date): string {
-	const y = d.getFullYear();
-	const m = String(d.getMonth() + 1).padStart(2, "0");
-	const day = String(d.getDate()).padStart(2, "0");
-	return `${y}-${m}-${day}`;
-}
-
-const now = new Date();
-const currentYear = now.getFullYear();
-
-const postCountByDate = new Map<string, number>();
-const yearsSet = new Set<number>();
-for (const p of posts) {
-	const d = p.data.published;
-	const key = formatYmd(d);
-	postCountByDate.set(key, (postCountByDate.get(key) || 0) + 1);
-	yearsSet.add(d.getFullYear());
-}
-
-const availableYears = Array.from(yearsSet).sort((a, b) => b - a);
-const defaultYear = availableYears.length > 0 ? availableYears[0] : currentYear;
-
-function getLevel(count: number, maxCount: number): number {
-	if (count === 0) return 0;
-	if (maxCount <= 1) return 1;
-	const ratio = count / maxCount;
-	if (ratio <= 0.25) return 1;
-	if (ratio <= 0.5) return 2;
-	if (ratio <= 0.75) return 3;
-	return 4;
-}
-
-interface Cell {
-	key: string;
-	count: number;
-	level: number;
-	visible: boolean;
-}
-
-function buildYearGrid(year: number): Cell[][] {
-	const startDate = new Date(year, 0, 1);
-	const endDate = new Date(year, 11, 31);
-	const startDay = startDate.getDay();
-	const startOffset = startDay === 0 ? -6 : 1 - startDay;
-	startDate.setDate(startDate.getDate() + startOffset);
-
-	const maxCount = Math.max(1, ...Array.from(postCountByDate.values()));
-	const weeks: Cell[][] = [];
-
-	let current = new Date(startDate);
-	while (current <= endDate) {
-		const week: Cell[] = [];
-		for (let i = 0; i < 7; i++) {
-			const key = formatYmd(current);
-			const count = postCountByDate.get(key) || 0;
-			week.push({
-				key,
-				count,
-				level: current.getFullYear() === year ? getLevel(count, maxCount) : 0,
-				visible: current.getFullYear() === year,
-			});
-			current.setDate(current.getDate() + 1);
-		}
-		weeks.push(week);
-	}
-	return weeks;
-}
-
-const monthLabels = [
-	"1月",
-	"2月",
-	"3月",
-	"4月",
-	"5月",
-	"6月",
-	"7月",
-	"8月",
-	"9月",
-	"10月",
-	"11月",
-	"12月",
-];
-
-function getMonthBoundaries(year: number) {
-	const boundaries: { label: string; weekIndex: number }[] = [];
-	for (let m = 0; m < 12; m++) {
-		const firstDay = new Date(year, m, 1);
-		const startDay = firstDay.getDay();
-		const startOffset = startDay === 0 ? -6 : 1 - startDay;
-		const weekStart = new Date(firstDay);
-		weekStart.setDate(firstDay.getDate() + startOffset);
-		const yearStart = new Date(year, 0, 1);
-		const yearStartDay = yearStart.getDay();
-		const yearStartOffset = yearStartDay === 0 ? -6 : 1 - yearStartDay;
-		yearStart.setDate(yearStart.getDate() + yearStartOffset);
-		const diffMs = weekStart.getTime() - yearStart.getTime();
-		const weekIndex = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
-		boundaries.push({ label: monthLabels[m], weekIndex });
-	}
-	return boundaries;
-}
-
-interface YearData {
-	year: number;
-	weeks: Cell[][];
-	monthBoundaries: { label: string; weekIndex: number }[];
-}
-
-const allYearsData: YearData[] = availableYears.map((year) => ({
-	year,
-	weeks: buildYearGrid(year),
-	monthBoundaries: getMonthBoundaries(year),
-}));
+const githubConfig = siteConfig.heatmap?.github;
+const showGithub = githubConfig?.enabled && githubConfig.username;
 ---
 
 <div class="archive-heatmap mb-6" id="archive-heatmap">
-  <div class="flex items-center justify-end mb-4">
-    <div class="heatmap-year-nav">
-      {allYearsData.map((yd) => (
-        <button
-          class="heatmap-year-btn"
-          data-active={yd.year === defaultYear ? "" : undefined}
-          data-year={yd.year}
-        >{yd.year}</button>
-      ))}
-    </div>
-  </div>
-
-  {allYearsData.map((yd) => (
-    <div class="heatmap-year" data-year={yd.year} hidden={yd.year !== defaultYear}>
-      <div class="heatmap-body">
-        <div class="heatmap-months">
-          {yd.monthBoundaries.map((mb, i) => (
-            <span
-              class="heatmap-month-label"
-              style={`grid-column: ${mb.weekIndex + 1} / span ${i < yd.monthBoundaries.length - 1 ? yd.monthBoundaries[i + 1].weekIndex - mb.weekIndex : 3}`}
-            >{mb.label}</span>
-          ))}
-        </div>
-        <div class="heatmap-grid-wrap">
-          <div class="heatmap-days">
-            <span class="heatmap-day-label"></span>
-            <span class="heatmap-day-label">一</span>
-            <span class="heatmap-day-label"></span>
-            <span class="heatmap-day-label">三</span>
-            <span class="heatmap-day-label"></span>
-            <span class="heatmap-day-label">五</span>
-            <span class="heatmap-day-label"></span>
-          </div>
-          <div class="heatmap-grid">
-            {yd.weeks.map((week) => (
-              <div class="heatmap-week">
-                {week.map((cell) => (
-                  <div
-                    class={`heatmap-cell level-${cell.level}`}
-                    title={cell.visible ? `${cell.key} · ${cell.count} 篇` : ""}
-                    style={cell.visible ? "" : "visibility:hidden"}
-                  ></div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  ))}
-
-  <div class="heatmap-legend">
-    <span class="heatmap-legend-label">少</span>
-    <div class="heatmap-cell level-0"></div>
-    <div class="heatmap-cell level-1"></div>
-    <div class="heatmap-cell level-2"></div>
-    <div class="heatmap-cell level-3"></div>
-    <div class="heatmap-cell level-4"></div>
-    <span class="heatmap-legend-label">多</span>
-  </div>
+	<div class="heatmap-container">
+		{showGithub && (
+			<div class="heatmap-panel">
+				<GithubHeatmap username={githubConfig.username!} />
+			</div>
+		)}
+		<div class="heatmap-panel">
+			<PostHeatmap posts={posts} />
+		</div>
+	</div>
 </div>
-
-<script>
-const container = document.getElementById("archive-heatmap");
-if (container) {
-  container.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest(".heatmap-year-btn") as HTMLElement | null;
-    if (!btn) return;
-    const year = btn.getAttribute("data-year");
-    if (!year) return;
-
-    container.querySelectorAll(".heatmap-year-btn").forEach((b) => b.removeAttribute("data-active"));
-    btn.setAttribute("data-active", "");
-
-    container.querySelectorAll(".heatmap-year").forEach((el) => {
-      (el as HTMLElement).hidden = el.getAttribute("data-year") !== year;
-    });
-  });
-}
-</script>
-
-<!-- 样式已迁移至 src/styles/widgets/archive-heatmap.css -->

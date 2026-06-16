@@ -153,6 +153,14 @@ export type SiteConfig = {
 	// 备案号配置（留空则不显示）
 	beian?: string;
 
+	// 热力图配置
+	heatmap?: {
+		github?: {
+			enabled: boolean; // 是否启用 GitHub 贡献热力图
+			username: string; // GitHub 用户名，为空则不渲染
+		};
+	};
+
 	// 图片优化配置
 	imageOptimization?: {
 		/**
