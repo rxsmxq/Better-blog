@@ -361,6 +361,11 @@ export const ru: Translation = {
 
 	// Календарь
 	[Key.calendar]: "Календарь",
+	[Key.feibichi]: "Фэйби Цзюби",
+	[Key.contactMe]: "Связаться",
+	[Key.qqGroup]: "QQ Группа",
+	[Key.navPosts]: "Статьи",
+	[Key.navMy]: "Моё",
 	[Key.calendarDescription]:
 		"Праздники, дни рождения, события и публикации в одном месте",
 	[Key.calendarToday]: "Сегодня",

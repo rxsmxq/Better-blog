@@ -360,6 +360,11 @@ export const en: Translation = {
 
 	// Calendar page
 	[Key.calendar]: "Calendar",
+	[Key.feibichi]: "Feibichi",
+	[Key.contactMe]: "Contact Me",
+	[Key.qqGroup]: "QQ Group",
+	[Key.navPosts]: "Posts",
+	[Key.navMy]: "My",
 	[Key.calendarDescription]:
 		"Holidays, birthdays, schedules and post updates at a glance",
 	[Key.calendarToday]: "Today",

@@ -1,6 +1,6 @@
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
-import { LinkPreset, type NavBarLink } from "@/types/config";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import { LinkPreset, type NavBarLink } from "../types/config";
 
 export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 	[LinkPreset.Home]: {
@@ -72,5 +72,32 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		name: i18n(I18nKey.tags),
 		url: "/tags/",
 		icon: "material-symbols:label",
+	},
+	[LinkPreset.Feibichi]: {
+		name: i18n(I18nKey.feibichi),
+		url: "https://mmzhiku.xyz/",
+		icon: "material-symbols:link",
+		external: true,
+	},
+	[LinkPreset.ContactMe]: {
+		name: i18n(I18nKey.contactMe),
+		url: "/contact/",
+		icon: "material-symbols:mail",
+	},
+	[LinkPreset.QQGroup]: {
+		name: i18n(I18nKey.qqGroup),
+		url: "https://qm.qq.com/q/1102902650",
+		icon: "fa7-brands:qq",
+		external: true,
+	},
+	[LinkPreset.NavPosts]: {
+		name: i18n(I18nKey.navPosts),
+		url: "/list/",
+		icon: "material-symbols:article",
+	},
+	[LinkPreset.NavMy]: {
+		name: i18n(I18nKey.navMy),
+		url: "/my/",
+		icon: "material-symbols:person",
 	},
 };

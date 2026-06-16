@@ -359,6 +359,11 @@ export const ja: Translation = {
 
 	// カレンダーページ
 	[Key.calendar]: "カレンダー",
+	[Key.feibichi]: "菲比啾比",
+	[Key.contactMe]: "お問い合わせ",
+	[Key.qqGroup]: "QQグループ",
+	[Key.navPosts]: "記事",
+	[Key.navMy]: "マイ",
 	[Key.calendarDescription]: "祝日・誕生日・予定・記事更新の総合カレンダー",
 	[Key.calendarToday]: "今日",
 	[Key.calendarTomorrow]: "明日",

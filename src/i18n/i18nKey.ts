@@ -362,6 +362,12 @@ enum I18nKey {
 	calendarNearestHoliday = "calendarNearestHoliday",
 	calendarNearestBirthday = "calendarNearestBirthday",
 	calendarNearestSchedule = "calendarNearestSchedule",
+
+	feibichi = "feibichi",
+	contactMe = "contactMe",
+	qqGroup = "qqGroup",
+	navPosts = "navPosts",
+	navMy = "navMy",
 }
 
 export default I18nKey;

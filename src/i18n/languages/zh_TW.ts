@@ -350,6 +350,11 @@ export const zh_TW: Translation = {
 
 	// 日曆頁面
 	[Key.calendar]: "日曆",
+	[Key.feibichi]: "菲比啾比",
+	[Key.contactMe]: "聯繫我",
+	[Key.qqGroup]: "QQ群",
+	[Key.navPosts]: "文章",
+	[Key.navMy]: "我的",
 	[Key.calendarDescription]: "節日、生日、安排與文章發布的綜合日曆",
 	[Key.calendarToday]: "今日",
 	[Key.calendarTomorrow]: "明日",
