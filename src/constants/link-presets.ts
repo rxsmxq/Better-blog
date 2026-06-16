@@ -86,7 +86,7 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 	},
 	[LinkPreset.QQGroup]: {
 		name: i18n(I18nKey.qqGroup),
-		url: "https://qm.qq.com/q/1102902650",
+		url: "https://qm.qq.com/q/2R07cjGTZ0",
 		icon: "fa7-brands:qq",
 		external: true,
 	},
