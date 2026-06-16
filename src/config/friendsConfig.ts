@@ -203,6 +203,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "YFBLOG - 幻新至简",
+		imgurl: "https://cdn.yfblog.asia/image/favicon.ico",
+		desc: "随手笔记，技术心得分享",
+		siteurl: "https://yfblog.asia/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
