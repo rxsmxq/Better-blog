@@ -1,7 +1,7 @@
 export const SHUTTER_PANEL_COUNT = 5;
 export const MOBILE_REMOVAL_WIDTH = 768;
 export const DESKTOP_MEDIA_QUERY = `(min-width: ${MOBILE_REMOVAL_WIDTH + 1}px)`;
-export const SHUTTER_MIN_SCROLL_VIEWPORTS = 2.7;
+export const SHUTTER_MIN_SCROLL_VIEWPORTS = 4;
 export const SHUTTER_PANEL_STEP = 0.5;
 export const SHUTTER_MERGE_DELAY = 0.22;
 

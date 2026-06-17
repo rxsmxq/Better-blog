@@ -3,6 +3,7 @@ import { homePortfolioShutterConfig } from "@/config";
 import { normalizeShutterPanels } from "@/utils/home-portfolio-shutter.js";
 
 const panels = normalizeShutterPanels(homePortfolioShutterConfig.panels);
+const interlude = homePortfolioShutterConfig.interlude;
 const transparentPixel =
 	"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 ---
@@ -60,6 +61,50 @@ const transparentPixel =
 			))}
 		</div>
 
+		<div class="home-portfolio-shutter__interlude" data-shutter-interlude aria-hidden="true">
+			<div class="home-portfolio-shutter__interlude-bg" data-shutter-interlude-bg></div>
+
+			<div class="home-portfolio-shutter__interlude-strips">
+				<img
+					class="home-portfolio-shutter__interlude-strip home-portfolio-shutter__interlude-strip--left"
+					data-shutter-interlude-strip-left
+					data-src={interlude.stripLeft}
+					src={transparentPixel}
+					alt=""
+					loading="lazy"
+					decoding="async"
+				/>
+				<img
+					class="home-portfolio-shutter__interlude-strip home-portfolio-shutter__interlude-strip--right"
+					data-shutter-interlude-strip-right
+					data-src={interlude.stripRight}
+					src={transparentPixel}
+					alt=""
+					loading="lazy"
+					decoding="async"
+				/>
+			</div>
+
+			<div class="home-portfolio-shutter__interlude-copy" data-shutter-interlude-copy>
+				<span class="home-portfolio-shutter__interlude-copy-text home-portfolio-shutter__interlude-copy-text--left">
+					{interlude.copyLeft}
+				</span>
+				<span class="home-portfolio-shutter__interlude-copy-text home-portfolio-shutter__interlude-copy-text--right">
+					{interlude.copyRight}
+				</span>
+			</div>
+
+			<img
+				class="home-portfolio-shutter__interlude-fg"
+				data-shutter-interlude-fg
+				data-src={interlude.foreground}
+				src={transparentPixel}
+				alt=""
+				loading="lazy"
+				decoding="async"
+			/>
+		</div>
+
 		<div class="home-portfolio-shutter__final-copy" data-shutter-final-copy>
 			<p>{homePortfolioShutterConfig.kicker}</p>
 			<h2 id="home-portfolio-shutter-title">{homePortfolioShutterConfig.title}</h2>
@@ -82,13 +127,31 @@ const transparentPixel =
 	const TRANSPARENT_PIXEL =
 		"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 	const IMAGE_DECODE_TIMEOUT = 3000;
-	const FINAL_IMAGE_ENTER_OFFSET = 0.02;
-	const FINAL_IMAGE_ENTER_DURATION = 1.2;
-	const FINAL_COPY_ENTER_GAP = 0.12;
-	const FINAL_COPY_ENTER_AT = `merge+=${(
-		FINAL_IMAGE_ENTER_OFFSET +
-		FINAL_IMAGE_ENTER_DURATION +
-		FINAL_COPY_ENTER_GAP
+
+	// ===== 时间轴阶段常量（单位：秒，对应 GSAP timeline） =====
+	// Phase 1: Panels — 5 张长条图依次滑入（0 → panelsEnd）
+	// Phase 2: Interlude — 三层插入动画（panelsEnd → interludeEnd）
+	// Phase 3: Merge — 渐变滑入大图（interludeEnd → end）
+
+	// Interlude 阶段内部时序
+	const INTERLUDE_FG_START = 0.1; // b-1.png 前景渐入开始
+	const INTERLUDE_FG_DURATION = 0.5;
+	const INTERLUDE_BG_START = 0.6; // 背景渐变黑色开始（前景渐入后）
+	const INTERLUDE_BG_DURATION = 0.4;
+	const INTERLUDE_STRIPS_START = 1.0; // 两条长条反向水平滑入开始（背景黑后）
+	const INTERLUDE_STRIPS_DURATION = 1.0;
+	const INTERLUDE_COPY_START = 1.5; // 文字渐入开始（长条滑到一半）
+	const INTERLUDE_COPY_DURATION = 0.4;
+	const INTERLUDE_TOTAL = 2.4; // Interlude 阶段总时长
+
+	// Merge 阶段内部时序
+	const MERGE_FINAL_IMAGE_OFFSET = 0.02;
+	const MERGE_FINAL_IMAGE_DURATION = 1.2;
+	const MERGE_FINAL_COPY_GAP = 0.12;
+	const MERGE_FINAL_COPY_AT = `merge+=${(
+		MERGE_FINAL_IMAGE_OFFSET +
+		MERGE_FINAL_IMAGE_DURATION +
+		MERGE_FINAL_COPY_GAP
 	).toFixed(2)}`;
 
 	let activeCleanup: Cleanup | null = null;
@@ -120,7 +183,7 @@ const transparentPixel =
 	function getLazyImages(root: HTMLElement) {
 		return Array.from(
 			root.querySelectorAll<HTMLImageElement>(
-				"img[data-shutter-image], img[data-shutter-final-image]",
+				"img[data-shutter-image], img[data-shutter-final-image], img[data-shutter-interlude-fg], img[data-shutter-interlude-strip-left], img[data-shutter-interlude-strip-right]",
 			),
 		);
 	}
@@ -279,7 +342,36 @@ const transparentPixel =
 			root.querySelectorAll<HTMLElement>("[data-shutter-panel-copy]"),
 		);
 
-		if (!viewport || !finalImage || !finalCopy || !rail || !mask || panels.length !== 5) {
+		// Interlude 元素：三层布局（背景长条 / 中景文字 / 前景大图）
+		const interlude = root.querySelector<HTMLElement>("[data-shutter-interlude]");
+		const interludeBg = root.querySelector<HTMLElement>("[data-shutter-interlude-bg]");
+		const interludeFg = root.querySelector<HTMLElement>("[data-shutter-interlude-fg]");
+		const interludeCopy = root.querySelector<HTMLElement>("[data-shutter-interlude-copy]");
+		const interludeCopyLeft = root.querySelector<HTMLElement>(
+			".home-portfolio-shutter__interlude-copy-text--left",
+		);
+		const interludeCopyRight = root.querySelector<HTMLElement>(
+			".home-portfolio-shutter__interlude-copy-text--right",
+		);
+		const stripLeft = root.querySelector<HTMLElement>("[data-shutter-interlude-strip-left]");
+		const stripRight = root.querySelector<HTMLElement>("[data-shutter-interlude-strip-right]");
+
+		if (
+			!viewport ||
+			!finalImage ||
+			!finalCopy ||
+			!rail ||
+			!mask ||
+			!interlude ||
+			!interludeBg ||
+			!interludeFg ||
+			!interludeCopy ||
+			!interludeCopyLeft ||
+			!interludeCopyRight ||
+			!stripLeft ||
+			!stripRight ||
+			panels.length !== 5
+		) {
 			return;
 		}
 
@@ -294,6 +386,7 @@ const transparentPixel =
 			return `+=${distance}`;
 		};
 
+		// ===== 初始状态 =====
 		if (underlay) gsap.set(underlay, { zIndex: 0 });
 		gsap.set(rail, { autoAlpha: 1 });
 		gsap.set(mask, { scaleY: 0, transformOrigin: "50% 100%" });
@@ -309,6 +402,14 @@ const transparentPixel =
 			gsap.set(panel, { autoAlpha: 1, yPercent: fromY });
 			if (image) gsap.set(image, { yPercent: 0, scale: 1.02 });
 		});
+
+		// Interlude 初始状态
+		gsap.set(interlude, { autoAlpha: 1 });
+		gsap.set(interludeBg, { autoAlpha: 0 });
+		gsap.set(interludeFg, { autoAlpha: 0, yPercent: 8, scale: 1.04 });
+		gsap.set([interludeCopyLeft, interludeCopyRight], { autoAlpha: 0 });
+		gsap.set(stripLeft, { xPercent: -100 });
+		gsap.set(stripRight, { xPercent: 100 });
 
 		const underlayPin = underlay
 			? ScrollTrigger.create({
@@ -338,6 +439,8 @@ const transparentPixel =
 			},
 		});
 
+		// ===== Phase 1: Panels — 5 张长条图依次滑入 =====
+		timeline.addLabel("panels", 0);
 		panels.forEach((panel, index) => {
 			const image = panel.querySelector<HTMLElement>("[data-shutter-image]");
 			const copy = panel.querySelector<HTMLElement>("[data-shutter-panel-copy]");
@@ -350,7 +453,7 @@ const transparentPixel =
 					duration: 0.48,
 					ease: "power3.out",
 				},
-				at,
+				`panels+=${at}`,
 			);
 
 			if (image) {
@@ -362,7 +465,7 @@ const transparentPixel =
 						duration: 0.58,
 						ease: "power2.out",
 					},
-					at,
+					`panels+=${at}`,
 				);
 			}
 
@@ -375,55 +478,125 @@ const transparentPixel =
 						duration: 0.18,
 						ease: "power2.out",
 					},
-					at + 0.3,
+					`panels+=${at + 0.3}`,
 				);
 			}
 		});
 
-		timeline
-			.addLabel("merge", getShutterMergeStart(panels.length))
-			.to(
-				panelCopies,
-				{
-					autoAlpha: 0,
-					y: -36,
-					duration: 0.28,
-					stagger: 0.02,
-					ease: "power2.out",
-				},
-				"merge",
-			)
-			.to(
-				mask,
-				{
-					scaleY: 1,
-					duration: 0.9,
-					ease: "power3.inOut",
-				},
-				"merge",
-			)
-			.to(
-				finalImage,
-				{
-					autoAlpha: 1,
-					yPercent: 0,
-					scale: 1,
-					duration: FINAL_IMAGE_ENTER_DURATION,
-					ease: "power3.inOut",
-				},
-				`merge+=${FINAL_IMAGE_ENTER_OFFSET}`,
-			)
-			.to(
-				finalCopy,
-				{
-					autoAlpha: 1,
-					y: 0,
-					duration: 0.46,
-					ease: "power3.inOut",
-				},
-				FINAL_COPY_ENTER_AT,
-			)
-			.to({ hold: 0 }, { hold: 1, duration: 1.0, ease: "none" });
+		// ===== Phase 2: Interlude — 三层插入动画 =====
+		// 顺序：前景 b-1.png 渐入 → 背景渐黑 → 两条长条反向滑入 → 中景文字渐入
+		timeline.addLabel("interlude", getShutterMergeStart(panels.length));
+
+		// 2a: 面板文字淡出（为 interlude 让位）
+		timeline.to(
+			panelCopies,
+			{
+				autoAlpha: 0,
+				y: -36,
+				duration: 0.28,
+				stagger: 0.02,
+				ease: "power2.out",
+			},
+			"interlude",
+		);
+
+		// 2b: 前景 b-1.png 渐入（仅显示上半部分，由 CSS clip-path 控制）
+		timeline.to(
+			interludeFg,
+			{
+				autoAlpha: 1,
+				yPercent: 0,
+				scale: 1,
+				duration: INTERLUDE_FG_DURATION,
+				ease: "power3.out",
+			},
+			`interlude+=${INTERLUDE_FG_START}`,
+		);
+
+		// 2c: 背景渐变黑色（前景渐入后）
+		timeline.to(
+			interludeBg,
+			{
+				autoAlpha: 1,
+				duration: INTERLUDE_BG_DURATION,
+				ease: "power2.inOut",
+			},
+			`interlude+=${INTERLUDE_BG_START}`,
+		);
+
+		// 2d: 两条长条反向水平滑入（背景黑后）
+		timeline.to(
+			stripLeft,
+			{
+				xPercent: 0,
+				duration: INTERLUDE_STRIPS_DURATION,
+				ease: "power3.inOut",
+			},
+			`interlude+=${INTERLUDE_STRIPS_START}`,
+		);
+		timeline.to(
+			stripRight,
+			{
+				xPercent: 0,
+				duration: INTERLUDE_STRIPS_DURATION,
+				ease: "power3.inOut",
+			},
+			`interlude+=${INTERLUDE_STRIPS_START}`,
+		);
+
+		// 2e: 中景文字渐入（长条滑到一半时）
+		timeline.to(
+			[interludeCopyLeft, interludeCopyRight],
+			{
+				autoAlpha: 1,
+				duration: INTERLUDE_COPY_DURATION,
+				ease: "power2.out",
+				stagger: 0.08,
+			},
+			`interlude+=${INTERLUDE_COPY_START}`,
+		);
+
+		// ===== Phase 3: Merge — 从下往上遮罩 + 最终大图从上往下渐入滑入 =====
+		timeline.addLabel("merge", `interlude+=${INTERLUDE_TOTAL}`);
+
+		// 3a: 黑色遮罩从底部向上展开
+		timeline.to(
+			mask,
+			{
+				scaleY: 1,
+				duration: 0.9,
+				ease: "power3.inOut",
+			},
+			"merge",
+		);
+
+		// 3b: 最终大图从上方渐入滑入
+		timeline.to(
+			finalImage,
+			{
+				autoAlpha: 1,
+				yPercent: 0,
+				scale: 1,
+				duration: MERGE_FINAL_IMAGE_DURATION,
+				ease: "power3.inOut",
+			},
+			`merge+=${MERGE_FINAL_IMAGE_OFFSET}`,
+		);
+
+		// 3c: 最终文字渐入
+		timeline.to(
+			finalCopy,
+			{
+				autoAlpha: 1,
+				y: 0,
+				duration: 0.46,
+				ease: "power3.inOut",
+			},
+			MERGE_FINAL_COPY_AT,
+		);
+
+		// 3d: 保持
+		timeline.to({ hold: 0 }, { hold: 1, duration: 1.0, ease: "none" });
 
 		ScrollTrigger.refresh();
 		syncTitleBarClipPaths(root);
@@ -441,6 +614,14 @@ const transparentPixel =
 					...(underlay ? [underlay] : []),
 					finalImage,
 					finalCopy,
+					interlude,
+					interludeBg,
+					interludeFg,
+					interludeCopy,
+					interludeCopyLeft,
+					interludeCopyRight,
+					stripLeft,
+					stripRight,
 					...panels,
 					...panelCopies,
 				],
