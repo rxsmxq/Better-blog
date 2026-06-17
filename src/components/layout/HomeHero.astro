@@ -210,11 +210,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 
 	function initHeroOpening() {
 		const hero = document.getElementById("home-hero");
-		if (!hero) return;
+		if (!hero) return Promise.resolve();
 		if (prefersReducedMotion() || isMobile()) {
 			hero.classList.remove("home-hero--motion-pending");
 			hero.classList.add("home-hero--motion-ready");
-			return;
+			return Promise.resolve();
 		}
 
 		const occupation = hero.querySelector(".home-hero__occupation");
@@ -233,8 +233,14 @@ const heroBioText = Array.isArray(profileConfig.bio)
 
 		hero.classList.add("home-hero--motion-ready");
 
+		let resolveHeroTitleReady: () => void;
+		const heroTitleReady = new Promise<void>((resolve) => {
+			resolveHeroTitleReady = resolve;
+		});
+
 		heroOpeningTimeline = gsap.timeline({
 			defaults: { ease: "power4.out" },
+			onInterrupt: () => resolveHeroTitleReady(),
 		});
 
 		heroOpeningTimeline
@@ -292,6 +298,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 				clipPath: "inset(0 0% 0 0)",
 				duration: 1.18,
 				ease: "expo.out",
+				onComplete: () => resolveHeroTitleReady(),
 			}, 0.98)
 			.fromTo(badge, {
 				autoAlpha: 0,
@@ -401,6 +408,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 			}, 3.08);
 
 		hero.classList.remove("home-hero--motion-pending");
+		return heroTitleReady;
 	}
 
 	function initHomeScrollMotion() {
@@ -632,16 +640,15 @@ const heroBioText = Array.isArray(profileConfig.bio)
 	// ============================================
 	// 标题 Hatching Shader 效果
 	// ============================================
-	async function initHeroHatch() {
+	async function initHeroHatch(heroTitleReady: Promise<void>, token: number) {
 		const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
 		if (!nameEl) return;
 		if (prefersReducedMotion() || isMobile()) return;
 
-		// 等待 GSAP 标题入场动画大部分完成（约 2.0s）
-		await new Promise((r) => setTimeout(r, 2200));
+		await heroTitleReady;
 
 		// 再次检查元素是否仍在 DOM（Swup 可能已切走页面）
-		if (!document.contains(nameEl)) return;
+		if (token !== initToken || !document.contains(nameEl)) return;
 
 		destroyHeroHatch();
 
@@ -694,10 +701,11 @@ const heroBioText = Array.isArray(profileConfig.bio)
 
 	function init() {
 		cleanup();
-		initHeroOpening();
+		const token = initToken;
+		const heroOpeningReady = initHeroOpening();
 		initParallax();
 		initWorkStatus();
-		void initHeroHatch();
+		void initHeroHatch(heroOpeningReady, token);
 
 		// 推迟 ScrollTrigger 初始化，避免阻塞 Hero 入场动画的首次渲染
 		requestAnimationFrame(() => {
