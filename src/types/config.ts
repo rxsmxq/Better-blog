@@ -153,6 +153,9 @@ export type SiteConfig = {
 	// 备案号配置（留空则不显示）
 	beian?: string;
 
+	// 公安网备号配置（留空则不显示）
+	policeBeian?: string;
+
 	// 热力图配置
 	heatmap?: {
 		github?: {

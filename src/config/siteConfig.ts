@@ -295,4 +295,7 @@ export const siteConfig: SiteConfig = {
 
 	// 备案号配置，留空则不显示
 	beian: "粤ICP备2026073665号-1",
+
+	// 公安网备号配置，留空则不显示
+	policeBeian: "粤公网安备44060602003342号",
 };

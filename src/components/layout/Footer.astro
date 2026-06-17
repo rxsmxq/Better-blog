@@ -11,6 +11,7 @@ const currentYear = new Date().getFullYear();
 // 从配置中获取站点开始日期
 const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
 const beian = siteConfig.beian || "";
+const policeBeian = siteConfig.policeBeian || "";
 
 // 获取最新文章日期（用于计算最后活动时间）
 const posts = await getSortedPosts();
@@ -110,16 +111,31 @@ const todayText = i18n(I18nKey.today);
 		</div>
 
 		{/* 第五层：备案信息 */}
-		{beian && (
+		{(beian || policeBeian) && (
 			<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-sm flex-wrap">
-				<a
-					class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
-					target="_blank"
-					href="https://beian.miit.gov.cn/#/Integrated/index"
-				>
-					<img src="https://blog.haiyong.site/img/icp.png" alt="ICP备案" class="w-4 h-4 inline-block" />
-					<span>{beian}</span>
-				</a>
+				{beian && (
+					<a
+						class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+						target="_blank"
+						href="https://beian.miit.gov.cn/#/Integrated/index"
+					>
+						<span>{beian}</span>
+					</a>
+				)}
+				{beian && policeBeian && (
+					<span class="text-neutral-300 dark:text-neutral-600">|</span>
+				)}
+				{policeBeian && (
+					<a
+						class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
+						target="_blank"
+						rel="noreferrer"
+						href="https://beian.mps.gov.cn/#/query/webSearch?code=44060602003342"
+					>
+						<img src="https://blog.haiyong.site/img/icp.png" alt="公安网备" class="w-4 h-4 inline-block" />
+						<span>{policeBeian}</span>
+					</a>
+				)}
 			</div>
 		)}
 
