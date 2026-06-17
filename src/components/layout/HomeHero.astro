@@ -424,7 +424,9 @@ const heroBioText = Array.isArray(profileConfig.bio)
 		sections.forEach((section, index) => {
 			const title = section.querySelector(".home-section-title, [data-motion-title]");
 			const cards = section.querySelectorAll(".card-base, .post-card-wrapper, .home-pending, .stats-container, [data-motion-card]");
-			const images = section.querySelectorAll("img, [data-motion-image]");
+			const images = section.querySelectorAll(
+			"img[data-home-motion-image]:not([data-shutter-image]):not([data-shutter-final-image]), [data-home-motion-image]:not([data-shutter-image]):not([data-shutter-final-image])",
+		);
 			if (!title && cards.length === 0 && images.length === 0) return;
 
 			const tl = gsap.timeline({

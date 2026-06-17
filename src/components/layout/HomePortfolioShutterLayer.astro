@@ -22,7 +22,7 @@ const transparentPixel =
 			data-src={homePortfolioShutterConfig.finalImage.src}
 			src={transparentPixel}
 			alt={homePortfolioShutterConfig.finalImage.alt}
-			loading="lazy"
+			loading="eager"
 			decoding="async"
 		/>
 
@@ -45,9 +45,16 @@ const transparentPixel =
 						loading="lazy"
 						decoding="async"
 					/>
-					<div class="home-portfolio-shutter__panel-copy" data-shutter-panel-copy>
-						<strong>{panel.title}</strong>
-						<span>{panel.description}</span>
+					<div
+						class="home-portfolio-shutter__panel-copy"
+						data-shutter-panel-copy
+						style={`--panel-image: url(${panel.image})`}
+					>
+						<div class="home-portfolio-shutter__panel-title-bar">
+							<span class="home-portfolio-shutter__panel-label">{panel.english}</span>
+							<strong>{panel.title}</strong>
+							<span class="home-portfolio-shutter__panel-description">{panel.description}</span>
+						</div>
 					</div>
 				</article>
 			))}
@@ -74,6 +81,7 @@ const transparentPixel =
 	const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 	const TRANSPARENT_PIXEL =
 		"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+	const IMAGE_DECODE_TIMEOUT = 3000;
 	const FINAL_IMAGE_ENTER_OFFSET = 0.02;
 	const FINAL_IMAGE_ENTER_DURATION = 1.2;
 	const FINAL_COPY_ENTER_GAP = 0.12;
@@ -123,6 +131,15 @@ const transparentPixel =
 		});
 	}
 
+	function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+		return Promise.race([
+			promise,
+			new Promise<T>((_, reject) => {
+				window.setTimeout(() => reject(new Error("Shutter image decode timeout")), ms);
+			}),
+		]);
+	}
+
 	function hydrateLazyImages(root: HTMLElement) {
 		const images = getLazyImages(root);
 		const decodeQueue = images.map(async (image) => {
@@ -133,7 +150,10 @@ const transparentPixel =
 			await image.decode?.().catch(() => undefined);
 		});
 
-		return Promise.allSettled(decodeQueue);
+		return withTimeout(Promise.allSettled(decodeQueue), IMAGE_DECODE_TIMEOUT).catch(() => {
+			console.warn("[home-portfolio-shutter] image decode timeout, proceeding with fallback");
+			return Promise.allSettled([]);
+		});
 	}
 
 	/**
@@ -187,6 +207,22 @@ const transparentPixel =
 		if (!matchesDesktop()) resetLazyImages(root);
 	}
 
+	function syncTitleBarClipPaths(root: HTMLElement) {
+		const copies = Array.from(
+			root.querySelectorAll<HTMLElement>("[data-shutter-panel-copy]"),
+		);
+		for (const copy of copies) {
+			const titleBar = copy.querySelector<HTMLElement>(
+				".home-portfolio-shutter__panel-title-bar",
+			);
+			if (!titleBar) continue;
+			const top = titleBar.offsetTop;
+			const bottom = copy.clientHeight - top - titleBar.offsetHeight;
+			copy.style.setProperty("--title-bar-clip-top", `${top}px`);
+			copy.style.setProperty("--title-bar-clip-bottom", `${bottom}px`);
+		}
+	}
+
 	async function initHomePortfolioShutter() {
 		const token = ++initToken;
 		if (activeCleanup) {
@@ -208,10 +244,14 @@ const transparentPixel =
 		}
 
 		root.dataset.shutterReady = "loading";
-		const imageHydration = hydrateLazyImages(root);
 
 		// 等 onload-animation 完全结束，消除 containing block
 		await ensureNoContentWrapperContainingBlock();
+
+		if (token !== initToken || !document.contains(root) || !matchesDesktop()) return;
+
+		// 图片 decode 完成后再创建 ScrollTrigger，避免未解码图片进入 pin 动画段
+		await hydrateLazyImages(root);
 
 		if (token !== initToken || !document.contains(root) || !matchesDesktop()) return;
 
@@ -257,7 +297,7 @@ const transparentPixel =
 		if (underlay) gsap.set(underlay, { zIndex: 0 });
 		gsap.set(rail, { autoAlpha: 1 });
 		gsap.set(mask, { scaleY: 0, transformOrigin: "50% 100%" });
-		gsap.set(finalImage, { autoAlpha: 0, yPercent: 35, scale: 1.06 });
+		gsap.set(finalImage, { autoAlpha: 0, yPercent: -35, scale: 1.06 });
 		gsap.set(finalCopy, { autoAlpha: 0, y: 80 });
 		gsap.set(panelCopies, { autoAlpha: 0, y: 48 });
 
@@ -386,11 +426,7 @@ const transparentPixel =
 			.to({ hold: 0 }, { hold: 1, duration: 1.0, ease: "none" });
 
 		ScrollTrigger.refresh();
-		void imageHydration.then(() => {
-			if (token === initToken && document.contains(root)) {
-				ScrollTrigger.refresh();
-			}
-		});
+		syncTitleBarClipPaths(root);
 
 		activeCleanup = () => {
 			underlayPin?.kill();
@@ -421,11 +457,25 @@ const transparentPixel =
 			void initHomePortfolioShutter();
 		};
 
+		let resizeTimeout: number | undefined;
+		const handleResize = () => {
+			window.clearTimeout(resizeTimeout);
+			resizeTimeout = window.setTimeout(() => {
+				const root = getRoot();
+				if (root && root.dataset.shutterReady === "ready") {
+					syncTitleBarClipPaths(root);
+				}
+			}, 150);
+		};
+
 		desktopQuery.addEventListener("change", handleChange);
 		reduceMotionQuery.addEventListener("change", handleChange);
+		window.addEventListener("resize", handleResize);
 		mediaCleanup = () => {
 			desktopQuery.removeEventListener("change", handleChange);
 			reduceMotionQuery.removeEventListener("change", handleChange);
+			window.removeEventListener("resize", handleResize);
+			window.clearTimeout(resizeTimeout);
 		};
 	}
 
