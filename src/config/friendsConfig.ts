@@ -216,7 +216,7 @@ export const friendsConfig: FriendLink[] = [
 		title: "阿叶Ayeez的小站",
 		imgurl: "https://qiniu.ayeez.cn/avatar.jpg",
 		desc: "记录学习历程，记录美好生活",
-		siteurl: "ttps://blog.Ayeez.cn",
+		siteurl: "https://blog.Ayeez.cn",
 		tags: ["Blog"],
 		weight: 5,
 		enabled: true,
