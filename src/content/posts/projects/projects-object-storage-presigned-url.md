@@ -3,7 +3,7 @@ title: 对象存储签名URL有效期机制
 published: 2026-05-01
 description: 对象存储签名 URL 与有效期机制详解
 tags: [对象存储,OSS,MinIO, 安全]
-category: project
+category: projects
 draft: false
 ---
 

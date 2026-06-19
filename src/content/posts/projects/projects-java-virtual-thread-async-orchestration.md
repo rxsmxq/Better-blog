@@ -3,7 +3,7 @@ title: 虚拟线程到异步编排
 published: 2026-05-07
 description: 本文从工程实践角度彻底分析了Java虚拟线程的使用方法，涵盖虚拟线程的创建、使用、监控、调优等，以及在企业级场景下的应用。
 tags: [Java, 虚拟线程, 异步编排, 并发编程]
-category: project
+category: projects
 draft: false
 ---
 

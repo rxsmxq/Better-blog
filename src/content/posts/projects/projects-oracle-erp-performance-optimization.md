@@ -1,13 +1,13 @@
 ---
 title: Oracle ERP 性能优化技术总结
-published: 2025-01-02
+published: 2026-01-02
 description: 本文总结了 Oracle ERP 性能优化的技术方案，包括降水位、表重定义、索引优化、查询优化等。
 tags:
   - Oracle
   - 数据库
   - ERP
   - 性能优化
-category: project
+category: projects
 draft: false
 ---
 

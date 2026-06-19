@@ -3,7 +3,7 @@ title: 魔法链接登录设计文档
 published: 2026-05-01
 description: 本文档设计了魔法链接登录功能的完整技术方案，包括基于Cloudflare Turnstile的人机校验、魔法链接Token生成与Redis缓存、邮件发送、回调验证及自动登录流程，涵盖架构设计、API接口、数据库与缓存设计、安全性分析、前端操作流程及自动注册用户字段说明。
 tags: [魔法链接, 登录, Turnstile, 邮件, 认证, 安全]
-category: project
+category: projects
 draft: false
 ---
 

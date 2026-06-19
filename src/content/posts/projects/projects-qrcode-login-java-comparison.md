@@ -1,13 +1,13 @@
 ---
-title: Java 扫码登录实现与方案对比
+title: 扫码登录实现与方案对比
 published: 2026-05-01
 description: 本文系统对比了短轮询、长轮询、WebSocket、SSE 四种扫码登录状态同步方案，详细给出了基于 WebSocket + Redis 的企业级 Java 实现步骤，涵盖二维码生成与状态机设计、手机端扫码确认流程、前端 WebSocket 与长轮询降级适配、安全防御（二维码劫持/重放/暴力扫码）及生产环境部署清单。
 tags: [扫码登录, Java, Redis, WebSocket, 长轮询, 认证]
-category: project
+category: projects
 draft: false
 ---
 
-# Java 扫码登录实现与方案对比
+# 扫码登录实现与方案对比
 
 > 核心思路：PC 端生成带唯一标识的二维码，手机端扫码确认后，服务端更新 Redis 状态，PC 端通过 WebSocket 实时感知状态变更并获取 Token。评审重点：二维码状态机的 5 种状态转换是否完整、WebSocket 与长轮询的降级策略是否可靠、安全防御是否覆盖二维码劫持和重放攻击。
 

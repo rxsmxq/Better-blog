@@ -129,26 +129,26 @@ docker compose logs napcat
 ## 服务器部署
 
 ### 建目录
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529001508.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529001508.png)
 
 ### 新建文件
 
 名字为：`docker-compose.yml`，复制上方compose的内容到这个文件去
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529001833.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529001833.png)
 
 ### 编排
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529001953.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529001953.png)
 
 等待
 ### 校验
 
 成功后检查网络是否联通、容器是否启动
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529002127.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529002127.png)
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529002159.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529002159.png)
 
 ## NapCat 相关配置
 
@@ -189,7 +189,7 @@ docker-compose 中设置了 `MODE=astrbot`，NapCat 启动后会 **自动连接 
 
 ### NapCat 配置文件位置（部署忽略，这里只是补充说明）
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529001254.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529001254.png)
 
 
 ## AstrBot 相关配置
@@ -228,7 +228,7 @@ docker-compose 中设置了 `MODE=astrbot`，NapCat 启动后会 **自动连接 
 
 #### Agnes
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260612031123.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260612031123.png)
 
 从数据上看可以发现完全不弱！还是免费！！因为是新模型博主还没体验怎么样，感兴趣可以试试
 
@@ -244,13 +244,13 @@ docker-compose 中设置了 `MODE=astrbot`，NapCat 启动后会 **自动连接 
 
 注意：免费推理API由阿里云提供算力支持，**要求的ModelScope账号必须首先[绑定阿里云账号](https://www.modelscope.cn/docs/accounts/aliyun-binding-and-authorization)**。同时为了防止滥用，对应云账号需已通过[**实名认证**](https://help.aliyun.com/zh/account/real-name-authentication)后，才可正常使用API-Inference。
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260513003730.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260513003730.png)
 
 [模型库首页 · 魔搭社区](https://www.modelscope.cn/models)
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260513003757.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260513003757.png)
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260513003940.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260513003940.png)
 
 
 
@@ -258,13 +258,13 @@ docker-compose 中设置了 `MODE=astrbot`，NapCat 启动后会 **自动连接 
 
 记得保存！记得保存！记得保存！
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529002347.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529002347.png)
 
 ### 平台设置
 
 记得保存！记得保存！记得保存！
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529002454.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529002454.png)
 
 ### 扩展功能
 
@@ -335,7 +335,7 @@ npx skills add alchaincyf/nuwa-skill
 
 ### 喵墩备份（天阶功法，某天炸了别把为师名字暴露出来）
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260529001009.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260529001009.png)
 
 以下是我家猫娘「喵墩」的完整人格设定，可以直接复制使用：
 
@@ -428,9 +428,9 @@ npx skills add alchaincyf/nuwa-skill
 
 ### 如图
 
-![](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260512233150.png)
+![](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260512233150.png)
 
-![697](./image/6001_002_哈基墩备份.assets/6001_002_哈基墩备份-20260512233158.png)
+![697](./image/ai-napcat-astrbot-deployment.assets/ai-napcat-astrbot-deployment-20260512233158.png)
 
 ### 为什么我不用记忆呢
 

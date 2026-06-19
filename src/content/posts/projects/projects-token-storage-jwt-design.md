@@ -3,7 +3,7 @@ title: Token存储方案设计
 published: 2026-05-04
 description: 本文系统阐述了从Session到JWT双Token的企业级Token存储方案演进，深入对比了Cookie、localStorage、Pinia三种前端存储机制的优劣，详细设计了基于RS256签名的Access Token+Refresh Token双令牌方案，涵盖Token生成、刷新、吊销、多设备管理、纵深防御体系及完整的迁移路径。
 tags: [JWT, Token, 认证, 安全, Cookie]
-category: project
+category: projects
 draft: false
 ---
 

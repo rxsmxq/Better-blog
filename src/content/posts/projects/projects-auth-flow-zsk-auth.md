@@ -3,7 +3,7 @@ title: 认证流程说明
 published: 2026-05-02
 description: 本文详细说明了zsk-auth认证模块的登录与注册完整流程，包括滑块验证码防刷、RSA加密传输、BCrypt哈希存储、邮箱验证码身份核验等安全机制，涵盖验证码生成与校验、邮件发送、用户注册、密码登录、限流机制等核心环节的技术实现与代码示例。
 tags: [认证, 登录, 注册, RSA, BCrypt, 验证码, 安全]
-category: project
+category: projects
 draft: false
 ---
 
