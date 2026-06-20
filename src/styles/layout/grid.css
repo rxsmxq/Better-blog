@@ -19,8 +19,8 @@
 	position: absolute;
 	left: calc(50% + 32rem);
 	top: 0;
-	width: 15rem;
-	max-width: 15rem;
+	width: 20rem;
+	max-width: 20rem;
 	pointer-events: none;
 	z-index: 10;
 	transition: transform 0.3s ease;
