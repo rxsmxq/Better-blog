@@ -221,6 +221,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "云灿の随笔小站",
+		imgurl: "https://yuncan.xyz/images/icon/favicon.ico",
+		desc: "浮云一别后，流水十年间",
+		siteurl: "https://blog.yuncan.xyz/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
