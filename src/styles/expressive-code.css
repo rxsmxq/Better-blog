@@ -1,6 +1,23 @@
 .expressive-code {
+  --code-block-bg: var(--codeblock-bg);
+  --code-block-border: var(--codeblock-border);
+
   .frame {
     @apply shadow-none!;
+    background: var(--code-block-bg) !important;
+    border-color: var(--code-block-border) !important;
+  }
+
+  .frame pre,
+  .frame code,
+  .frame .code,
+  .frame .ec-code,
+  .frame .ec-code__inner {
+    background: var(--code-block-bg) !important;
+  }
+
+  .frame pre {
+    border-color: var(--code-block-border) !important;
   }
 
   .title {
