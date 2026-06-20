@@ -144,11 +144,11 @@
 .home-portfolio-shutter__interlude-fg {
 	position: absolute;
 	left: 46%;
-	bottom: -100vh;
+
 	z-index: 4;
 	width: auto;
-	max-width: 200%;
-	height: 200vh;
+	max-width: 100%;
+	height: 100vh;
 	object-fit: contain;
 	object-position: center bottom;
 	transform: translateX(-50%);
