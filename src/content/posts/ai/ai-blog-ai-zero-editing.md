@@ -95,6 +95,10 @@ draft: false
 4. 检查 `claude.md`：例如若其中提到提交代码规范，而你有对应 skill，可改为让其使用指定 skill。
 5. 再让 AI 做一次头脑风暴，按企业级规范对齐内容，迭代一次。
 
+### TDD是神
+
+![](./image/ai-blog-ai-zero-editing.assets/ai-blog-ai-zero-editing-20260620163427.png)
+
 ## 4、开发
 
 1. 获取原型 HTML。

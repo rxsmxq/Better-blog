@@ -1,5 +1,5 @@
 ---
-title: Ai | prompt 收录 | 学习文档
+title: prompt 收录 | 学习文档
 published: 2026-06-19
 description: 平时使用AI时候的提示词整合包
 tags: [ai, prompt]
@@ -7,7 +7,7 @@ category: ai
 draft: false
 ---
 
-# Ai | prompt 收录 | 学习文档
+# prompt 收录 | 学习文档
 
 ## 规范限制
 

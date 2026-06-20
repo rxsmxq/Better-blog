@@ -1,5 +1,5 @@
 ---
-title: ai | ai 搜索 | Cloudflare Vectorize 实现ai问答 | 设计文档
+title: ai 搜索 | Cloudflare Vectorize 实现ai问答 | 设计文档
 published: 2026-05-14
 description: 记录博客 ai 搜索功能的完整实现——Markdown 文档分块、向量化、Cloudflare Vectorize 存储、Worker 流式问答。架构选型、数据流、关键代码、踩坑点。
 tags: [ai, RAG, Cloudflare, Vectorize, Svelte]
@@ -7,7 +7,7 @@ category: ai
 draft: false
 ---
 
-# ai | ai 搜索 | Cloudflare Vectorize 实现ai问答 | 设计文档
+# ai 搜索 | Cloudflare Vectorize 实现ai问答 | 设计文档
 
 ## 背景
 

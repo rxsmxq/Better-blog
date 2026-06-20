@@ -1,5 +1,5 @@
 ---
-title: ai | skill | 收集 | 学习文档
+title: skill | 收集 | 学习文档
 published: 2026-04-12
 description: 收集一些比较强势，但是还没使用的SKILL，用于辅助开发。
 tags: [ai, skill]
@@ -7,7 +7,7 @@ category: ai
 draft: false
 ---
 
-# ai | skill | 收集 | 学习文档
+# skill | 收集 | 学习文档
 
 ## superpowers — 工程化开发工作流
 

@@ -1,5 +1,5 @@
 ---
-title: ai | openSpec + superpowers | 学习文档
+title: openSpec + superpowers | 学习文档
 published: 2026-06-03
 description: 系统梳理 OpenSpec 规范驱动开发与 Superpowers 工程化工作流的核心概念、功能特性、安装配置、使用方法及协同实践，形成可执行的 AI 编程工程化闭环。
 tags:
@@ -12,13 +12,15 @@ image: ./cover/cover1.webp
 draft: false
 ---
 
-# ai | openSpec + superpowers | 学习文档
+# openSpec + superpowers | 学习文档
 
 > 本文面向使用 AI 辅助编程的开发者，系统整理 OpenSpec 与 Superpowers 两个工具的核心能力、配置方法与协同流程。核心目标：建立"规范驱动规划 + 流程驱动执行"的 AI 工程化闭环，降低需求偏差与代码回归风险。
 
 ---
 
 ## 一、介绍
+
+![](./image/ai-openspec-superpowers-workflow.assets/ai-openspec-superpowers-workflow-20260620163505.png)
 
 ### 1.1 Superpowers
 
