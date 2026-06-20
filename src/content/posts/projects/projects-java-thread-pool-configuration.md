@@ -1,70 +1,86 @@
 ---
-title: 线程池设置
+title: 线程池 | 配置指南 | 学习文档
 published: 2026-05-07
-description: 本文从工程实践角度彻底分析了Java线程池的设置方法，涵盖线程池的创建、使用、监控、调优等，以及在企业级场景下的应用。
+description: 系统梳理 Java ThreadPoolExecutor 的核心参数、执行流程、线程数估算、队列选型、反模式、企业级监控与动态调优方案，附带可落地的配置代码与 FAQ。
 tags: [Java, 线程池, 并发编程]
 category: projects
 draft: false
 ---
 
-# Java 线程池该设多大？
+# 线程池 | 配置指南 | 学习文档
 
-> 线程池设置没有"标准答案"，只有"合理工程流程"。本文按入门→进阶→企业级三层递进，从"为什么需要线程池"讲起，到"如何估算线程数"，再到"如何在生产环境保障线程池稳定运行"，给出可落地的完整方案。
+> 本文面向需要在生产环境配置 Java 线程池的开发者。核心目标：将 `ThreadPoolExecutor` 的七个参数、任务调度流程、CPU/IO 场景差异、线程数估算方法、队列选型原则、监控指标与动态调优方案整理为可执行的工程规范。重点审查项：线程数是否受下游资源约束、拒绝策略是否可观测、容器环境是否正确读取 CPU 核数。
 
-***
+## 核心摘要
+
+- **问题**：手动创建线程存在资源失控、创建开销大、缺乏背压与降级机制三类风险。
+- **方案**：使用 `ThreadPoolExecutor` 显式配置核心线程数、最大线程数、队列、拒绝策略与线程工厂，并通过监控指标闭环调优。
+- **关键约束**：`corePoolSize` 不应超过下游最小连接池容量；必须使用有界队列；拒绝策略必须可观测。
+- **目标**：读完本文后，能够针对 CPU 密集、IO 密集、混合型三种业务场景给出初始配置，并设计压测与监控方案。
+
+---
 
 ## 一、为什么需要线程池
 
-手动为每个请求创建线程，看似简单，实际存在三个问题：
+手动为每个请求创建线程，存在以下三类问题：
 
-| 问题   | 具体表现                                                          |
-| ---- | ------------------------------------------------------------- |
-| 资源失控 | 每个线程默认约 1MB 栈空间（`-Xss` 可配置），1000 个并发请求 = 1GB 堆外内存，突发流量下直接 OOM |
-| 创建开销 | 线程创建涉及 JVM 栈分配、OS 内核态切换，单次约 10\~50μs，高频创建的累积开销不可忽视            |
-| 管理缺失 | 无法限制并发上限、无法感知任务积压、无法做优雅降级                                     |
+| 问题 | 具体表现 | 后果 |
+| --- | --- | --- |
+| 资源失控 | 每个线程默认约 1MB 栈空间（`-Xss` 可配置），1000 个并发请求约占用 1GB 堆外内存 | 突发流量下触发 OOM |
+| 创建开销 | 线程创建涉及 JVM 栈分配、OS 内核态切换，单次约 10~50μs | 高频创建时 CPU 与延迟显著上升 |
+| 管理缺失 | 无法限制并发上限、无法感知任务积压、无法优雅降级 | 故障时缺乏控制手段 |
 
-线程池解决的核心问题：**用有限的线程资源，可控地处理无限的任务请求**。它提供三重保障——线程复用降低创建开销、有界队列提供背压机制、拒绝策略实现降级兜底。
+线程池提供的核心能力：
 
-## 二、ThreadPoolExecutor 七个参数全解
+1. **线程复用**：降低线程创建与销毁开销。
+2. **有界队列**：提供背压机制，防止无限堆积。
+3. **拒绝策略**：在容量耗尽时执行降级或告警。
 
-`ThreadPoolExecutor` 的行为由七个参数共同决定，必须整体理解，不能只看 `corePoolSize` 和 `maximumPoolSize`。
+---
+
+## 二、ThreadPoolExecutor 核心参数
+
+`ThreadPoolExecutor` 的构造函数包含七个参数，必须整体理解：
 
 ```java
 new ThreadPoolExecutor(
-    corePoolSize,      // 1. 核心线程数：长期保活，默认不被回收
-    maximumPoolSize,   // 2. 最大线程数：队列满后才扩张到此值
-    keepAliveTime,     // 3. 空闲超时：非核心线程空闲超过此时间后销毁
-    TimeUnit.SECONDS,  // 4. 时间单位
-    new LinkedBlockingQueue<>(1000), // 5. 工作队列：决定排队行为和弹性空间
-    new NamedThreadFactory("order-exec"), // 6. 线程工厂：命名、优先级、守护线程、异常处理
-    new ThreadPoolExecutor.CallerRunsPolicy() // 7. 拒绝策略：队列+线程均满时的降级方案
+    corePoolSize,                         // 1. 核心线程数
+    maximumPoolSize,                      // 2. 最大线程数
+    keepAliveTime,                        // 3. 非核心线程空闲存活时间
+    TimeUnit.SECONDS,                     // 4. 时间单位
+    new LinkedBlockingQueue<>(1000),      // 5. 工作队列
+    new NamedThreadFactory("order-exec"), // 6. 线程工厂
+    new ThreadPoolExecutor.CallerRunsPolicy() // 7. 拒绝策略
 );
 ```
 
-### 参数 1\~2：corePoolSize 与 maximumPoolSize
+### 2.1 corePoolSize 与 maximumPoolSize
 
-- `corePoolSize`：线程池长期维持的线程数量，即使空闲也不回收（除非设置 `allowCoreThreadTimeOut(true)`）
-- `maximumPoolSize`：线程池允许的最大线程数，仅在队列满后才会扩张到此值
+| 参数 | 含义 | 行为 |
+| --- | --- | --- |
+| `corePoolSize` | 长期保活的核心线程数 | 即使空闲，默认也不回收（除非调用 `allowCoreThreadTimeOut(true)`） |
+| `maximumPoolSize` | 线程池允许创建的最大线程数 | 仅在工作队列满后才会扩张到此值 |
 
-两者的关系决定了线程池的弹性策略：
+两种典型策略：
 
-| 策略   | 设置方式       | 行为特征             |
-| ---- | ---------- | ---------------- |
-| 固定大小 | core = max | 无弹性，队列缓冲波动       |
-| 弹性伸缩 | core < max | 队列满后自动扩容，空闲后自动回收 |
+- **固定大小**：`corePoolSize = maximumPoolSize`。无弹性，依赖队列缓冲流量波动。
+- **弹性伸缩**：`corePoolSize < maximumPoolSize`。队列满后扩容，空闲线程超时回收。
 
-### 参数 3\~4：keepAliveTime 与 TimeUnit
+### 2.2 keepAliveTime 与 TimeUnit
 
-- 非核心线程空闲超过此时间后销毁
-- 建议值 30\~120 秒，过短导致线程频繁创建销毁（CPU 抖动），过长导致资源闲置
+- 控制非核心线程的空闲回收时间。
+- 建议值 30~120 秒。过短导致线程频繁创建销毁，引起 CPU 抖动；过长导致资源闲置。
 
-### 参数 5：工作队列
+### 2.3 工作队列
 
-队列类型与线程数设置强耦合，必须一起决策。详细选型见进阶篇第五章。
+队列类型决定排队行为与弹性空间，必须与线程数一起决策。详见第六章。
 
-### 参数 6：线程工厂
+### 2.4 线程工厂
 
-生产环境必须自定义线程工厂，为线程赋予有意义的名称。原因：`jstack` 排查时，`"pool-1-thread-1"` 无法判断业务归属，`"order-exec-1"` 可以。
+生产环境必须自定义线程工厂，原因：
+
+- `jstack` 或 arthas 排查时，`"pool-1-thread-1"` 无法判断业务归属；
+- 命名清晰的线程（如 `"order-exec-1"`）可快速定位问题线程池。
 
 ```java
 public class CustomThreadFactory implements ThreadFactory {
@@ -86,181 +102,173 @@ public class CustomThreadFactory implements ThreadFactory {
 }
 ```
 
-### 参数 7：拒绝策略
+### 2.5 拒绝策略
 
-队列和线程均满时，新提交的任务触发拒绝策略。四种内置策略：
+当工作队列满且线程数达到 `maximumPoolSize` 时，新任务触发拒绝策略：
 
-| 策略                    | 行为                              | 适用场景          | 风险           |
-| --------------------- | ------------------------------- | ------------- | ------------ |
-| `AbortPolicy`（默认）     | 抛出 `RejectedExecutionException` | 核心链路，必须感知拒绝   | 调用方需捕获异常     |
-| `CallerRunsPolicy`    | 由提交线程本身执行                       | 不能丢任务的场景，天然限流 | 可能阻塞调用线程     |
-| `DiscardPolicy`       | 静默丢弃                            | 可幂等重试的非关键任务   | 无感知数据丢失，生产慎用 |
-| `DiscardOldestPolicy` | 丢弃队头最老任务                        | 实时性优先，允许淘汰旧请求 | 老请求静默失败      |
+| 策略 | 行为 | 适用场景 | 风险 |
+| --- | --- | --- | --- |
+| `AbortPolicy`（默认） | 抛出 `RejectedExecutionException` | 核心链路，必须让调用方感知拒绝 | 调用方需捕获异常 |
+| `CallerRunsPolicy` | 由提交线程自身执行 | 不能丢任务，天然限流 | 可能阻塞调用线程 |
+| `DiscardPolicy` | 静默丢弃 | 可幂等重试的非关键任务 | 无感知数据丢失，生产慎用 |
+| `DiscardOldestPolicy` | 丢弃队头最老任务 | 实时性优先，允许淘汰旧请求 | 老请求静默失败 |
 
-企业生产首选**自定义策略**：记录指标 + 告警 + 降级处理，确保拒绝事件可观测。实现方式见企业级篇。
+**生产建议**：优先实现自定义拒绝策略，记录指标、触发告警、执行降级。
 
-## 三、任务提交后的执行流程
+---
 
-理解这个流程是正确设置参数的前提：
+## 三、任务提交与执行流程
 
-```
+```text
 提交任务
-  |
-  v
-核心线程数未满？ ──是──> 新建核心线程执行
-  |
-  否
-  v
-放入工作队列
-  |
-  v
-队列已满？ ──否──> 等待队列中排队
-  |
-  是
-  v
-线程数 < maximumPoolSize？ ──是──> 新建非核心线程执行
-  |
-  否
-  v
+   │
+   ▼
+当前线程数 < corePoolSize？
+   │ 是 ──► 创建核心线程并执行
+   │ 否
+   ▼
+将任务放入工作队列
+   │
+   ▼
+工作队列是否已满？
+   │ 否 ──► 任务在队列中等待
+   │ 是
+   ▼
+当前线程数 < maximumPoolSize？
+   │ 是 ──► 创建非核心线程并执行
+   │ 否
+   ▼
 触发拒绝策略
 ```
 
-**关键认知**：只有队列满了才会创建非核心线程。如果使用无界队列，`maximumPoolSize` 永远不会生效——这是很多人设置 max 后发现线程数从不增长的根因。
+**关键认知**：只有工作队列满了，线程池才会创建非核心线程。若使用无界队列，`maximumPoolSize` 永远不会生效。
 
-## 四、CPU 密集 vs IO 密集：决定线程数的核心维度
+---
 
-线程池大小最核心的决策维度是**任务的阻塞比（W/C）**——等待时间与计算时间的比值。
+## 四、CPU 密集型与 IO 密集型任务
 
-### CPU 密集型
+线程池大小最核心的决策依据是**阻塞比（W/C）**，即等待时间与计算时间的比值。
 
-**典型场景**：加密解密、数据压缩、图像处理、JSON 序列化、排序计算
+### 4.1 CPU 密集型
 
-- 线程大部分时间占用 CPU 执行指令
-- 阻塞比（W/C）约等于 0，几乎没有等待
-- 线程切换本身是纯损耗，切换期间无任何有效计算
-- **线程数应约等于 CPU 核心数**，多余线程只增加切换开销，不增加吞吐
+**典型场景**：加密解密、数据压缩、图像处理、复杂排序、JSON 序列化。
 
-### IO 密集型
+- 线程大部分时间占用 CPU 执行指令。
+- 阻塞比 W/C 约等于 0。
+- 线程切换是纯损耗，不会提升吞吐。
+- **线程数建议**：`N_cpu + 1`。
 
-**典型场景**：数据库查询、HTTP 远程调用、文件读写、消息队列消费
+### 4.2 IO 密集型
 
-- 线程大量时间在等待 IO 响应（阻塞状态）
-- 阻塞比（W/C）可达几倍到几十倍
-- CPU 空闲期间可以调度更多线程，充分利用等待时间
-- **线程数可远超 CPU 核心数**，上限受下游连接池约束
+**典型场景**：数据库查询、HTTP 远程调用、文件读写、消息队列消费。
 
-### 实际业务：混合型
+- 线程大量时间处于 IO 等待状态。
+- 阻塞比 W/C 可达几倍到几十倍。
+- CPU 空闲期间可调度更多线程，提升资源利用率。
+- **线程数建议**：根据 Goetz 公式估算，并受下游连接池约束。
 
-一个典型 Web 服务的请求链路拆分：
+### 4.3 混合型任务
 
-| 阶段          | 类型    | 占比（示例） |
-| ----------- | ----- | ------ |
-| 接受 HTTP 请求  | 网络 IO | 约 5%   |
-| 参数校验 / 反序列化 | CPU   | 约 5%   |
-| 查询数据库       | IO 等待 | 约 70%  |
-| 业务规则计算      | CPU   | 约 10%  |
-| 写 Redis 缓存  | IO    | 约 10%  |
+典型 Web 请求链路示例：
 
-混合场景需要分段分析，或用压测数据实测整体阻塞比，不能套单一公式。
+| 阶段 | 类型 | 耗时占比（示例） |
+| --- | --- | --- |
+| 接受 HTTP 请求 | 网络 IO | 约 5% |
+| 参数校验 / 反序列化 | CPU | 约 5% |
+| 查询数据库 | IO 等待 | 约 70% |
+| 业务规则计算 | CPU | 约 10% |
+| 写 Redis 缓存 | IO | 约 10% |
 
-***
+混合场景应分段分析，或通过压测统计整体阻塞比，避免直接套用单一公式。
 
-## 五、线程数估算：从公式到约束
+---
 
-### 5.1 Little's Law（利特尔法则）
+## 五、线程数估算方法
+
+### 5.1 Little's Law
 
 系统稳态下的基本关系：
 
-```
-平均并发数（L） = 到达率（λ） × 平均响应时间（W）
+```text
+平均并发数 L = 到达率 λ × 平均响应时间 W
 ```
 
 推导出线程数下界：
 
-```
+```text
 N_threads ≥ λ × T_response
 ```
 
-**示例**：峰值 QPS = 500，平均 RT = 200ms = 0.2s，最低需要 500 × 0.2 = **100 个并发线程**才能维持吞吐。
+**示例**：峰值 QPS = 500，平均 RT = 200ms = 0.2s，则最低需要 `500 × 0.2 = 100` 个并发线程维持吞吐。
 
 ### 5.2 Brian Goetz 公式
 
 出处：《Java 并发编程实战》
 
-```
+```text
 N_threads = N_cpu × U_cpu × (1 + W/C)
 ```
 
-| 参数      | 含义               | 获取方式                                         |
-| ------- | ---------------- | -------------------------------------------- |
-| `N_cpu` | CPU 核心数          | `Runtime.getRuntime().availableProcessors()` |
-| `U_cpu` | 目标 CPU 利用率       | 建议 0.7\~0.85，留余量给 GC / OS / 其他进程             |
-| `W/C`   | 等待时间 / 计算时间（阻塞比） | Profiler 测量或 APM 统计                          |
+| 参数 | 含义 | 获取方式 |
+| --- | --- | --- |
+| `N_cpu` | CPU 核心数 | `Runtime.getRuntime().availableProcessors()` |
+| `U_cpu` | 目标 CPU 利用率 | 建议 0.7~0.85，预留余量给 GC / OS / 其他进程 |
+| `W/C` | 等待时间 / 计算时间 | Profiler 或 APM 统计 |
 
-**示例**：8 核机器，目标利用率 80%，IO 等待 200ms，计算 20ms
+**示例**：8 核机器，目标利用率 80%，IO 等待 200ms，计算 20ms。
 
-- W/C = 200/20 = 10
-- N = 8 × 0.8 × (1 + 10) = **70.4，取 72**
+- W/C = 200 / 20 = 10
+- N = 8 × 0.8 × (1 + 10) = 70.4，取 **72**
 
-### 5.3 公式的三个局限
+### 5.3 公式的局限
 
-**局限 1：阻塞比难以准确测量**
-
-W/C 依赖 Profiler 或埋点统计，不同流量时段、不同数据量下差异巨大。高峰期数据库慢查询增多，W/C 可能从 10 飙升到 50。用单次测量值套公式会得到严重误导性结果。
-
-**局限 2：忽略下游瓶颈**
-
-数据库连接池上限 50，设 200 个线程全去查库——200 个线程只有 50 个能真正工作，其余 150 个在等连接。多出的线程不仅无效，反而造成大量上下文切换和排队延迟，P99 延迟显著上升。
-
-**局限 3：假设任务同质**
-
-公式假设所有任务特征相似。同一个线程池处理轻量查询（5ms）和重量报表计算（2000ms）混合任务时，平均 W/C 没有意义——轻任务会被重任务"传染"，应按任务类型隔离线程池。
+1. **阻塞比难以准确测量**：不同流量时段、不同数据量下差异巨大，单次测量值可能误导。
+2. **忽略下游瓶颈**：数据库连接池上限 50 时，设 200 个线程只会造成大量线程等待连接，反而劣化延迟。
+3. **假设任务同质**：同一池处理轻量查询与重量报表时，平均 W/C 失去意义。
 
 ### 5.4 估算流程
 
-公式给出的是理论初始值，实际决策必须经过约束校验：
-
-```
+```text
 1. 用 Goetz 公式或 Little's Law 得出理论初始值
-2. 对比下游资源上限（DB连接池、HTTP连接池），取较小值
+2. 对比下游资源上限（DB 连接池、HTTP 连接池），取较小值
 3. 结合机器内存校验：线程数 × 1MB（默认栈）不超过可用堆外内存的 50%
-4. 用此值作为压测起点，做阶梯加压验证
+4. 以该值作为压测起点，做阶梯加压验证
 ```
 
 ### 5.5 常见场景参考值
 
-| 场景               | corePoolSize 参考          | maximumPoolSize 参考 | 说明            |
-| ---------------- | ------------------------ | ------------------ | ------------- |
-| CPU 密集（加密、压缩）    | `N_cpu + 1`              | `N_cpu + 1`        | +1 防止偶发 IO 阻塞 |
-| IO 密集（DB 查询为主）   | `min(N_cpu × 10, DB连接池)` | core × 1.2         | 严格受下游约束       |
-| IO 密集（HTTP 调用为主） | `N_cpu × (1 + W/C)`      | core × 1.5         | W/C 需实测       |
-| 混合型 Web 服务       | 实测后取 10\~20× 核数          | core × 1.25        | 务必压测验证        |
-| 定时任务 / 批处理       | 2\~`N_cpu`               | core × 2           | 避免与业务线程池竞争    |
+| 场景 | corePoolSize | maximumPoolSize | 说明 |
+| --- | --- | --- | --- |
+| CPU 密集 | `N_cpu + 1` | `N_cpu + 1` | +1 防止偶发 IO 阻塞 |
+| IO 密集（DB 为主） | `min(N_cpu × 10, DB 连接池)` | core × 1.2 | 严格受下游约束 |
+| IO 密集（HTTP 为主） | `N_cpu × (1 + W/C)` | core × 1.5 | W/C 需实测 |
+| 混合型 Web | 实测后取 10~20× 核数 | core × 1.25 | 务必压测验证 |
+| 定时任务 / 批处理 | 2~`N_cpu` | core × 2 | 避免与业务线程池竞争 |
 
-## 六、工作队列策略选型
+---
 
-队列类型与线程数设置强耦合，必须一起决策。
+## 六、工作队列选型
 
-| 队列类型                     | 容量      | 行为特征              | 适配场景               | 配套线程数策略                           |
-| ------------------------ | ------- | ----------------- | ------------------ | --------------------------------- |
-| `LinkedBlockingQueue(n)` | 有界      | FIFO，满时触发拒绝策略     | 通用业务，需要背压控制        | core=max=N，队列缓冲突发                 |
-| `SynchronousQueue`       | 0（直接传递） | 没有缓冲，提交时必须立即有线程接收 | 高吞吐、低延迟            | 需要大 max，`newCachedThreadPool` 的底层 |
-| `ArrayBlockingQueue(n)`  | 有界，数组实现 | 内存局部性好，固定容量，可预测   | 严格控制内存，需要 max 弹性生效 | core 小，max 大，队列满才扩线程              |
-| `PriorityBlockingQueue`  | 无界      | 按优先级出队，低优任务可能饥饿   | 任务有优先级差异           | 无界风险，必须控制提交速率                     |
-| `DelayQueue`             | 无界      | 到期才出队             | 延迟任务、定时重试          | 通常 core=max=固定小值                  |
+| 队列类型 | 容量 | 行为特征 | 适配场景 | 配套线程数策略 |
+| --- | --- | --- | --- | --- |
+| `LinkedBlockingQueue(n)` | 有界 | FIFO，满时触发拒绝策略 | 通用业务，需要背压 | core = max = N，队列缓冲突发 |
+| `SynchronousQueue` | 0 | 无缓冲，提交必须立即有线程接收 | 高吞吐低延迟 | max 较大，`newCachedThreadPool` 底层 |
+| `ArrayBlockingQueue(n)` | 有界，数组实现 | 内存局部性好，容量固定 | 严格控制内存 | core 小，max 大，队列满才扩容 |
+| `PriorityBlockingQueue` | 无界 | 按优先级出队 | 任务有优先级差异 | 必须控制提交速率 |
+| `DelayQueue` | 无界 | 到期才出队 | 延迟任务、定时重试 | core = max = 固定小值 |
 
-**生产红线**：禁止使用 `Executors.newFixedThreadPool()` 和 `Executors.newCachedThreadPool()`。
+**生产红线**：禁止使用 `Executors.newFixedThreadPool()` 与 `Executors.newCachedThreadPool()`。
 
-- `newFixedThreadPool` 使用**无界 LinkedBlockingQueue**，任务堆积可导致 OOM
-- `newCachedThreadPool` 的 maximumPoolSize 为 **Integer.MAX\_VALUE**，突发流量下线程数失控
+- `newFixedThreadPool` 使用无界 `LinkedBlockingQueue`，任务堆积可导致 OOM。
+- `newCachedThreadPool` 的 `maximumPoolSize` 为 `Integer.MAX_VALUE`，突发流量下线程数失控。
 
-阿里巴巴《Java 开发手册》已将此列为**强制禁止**项。
+---
 
-## 七、常见反模式与避坑
+## 七、常见反模式
 
-### 反模式 1：全局共用一个线程池
+### 7.1 全局共用一个线程池
 
-核心链路（支付）和非核心链路（日志上报）共享线程池，日志上报突发会挤占支付请求的线程，造成核心业务延迟甚至超时。
+核心链路与非核心链路共享线程池时，非核心任务突发会挤占核心任务资源。
 
 ```java
 // 错误：所有任务共用
@@ -268,60 +276,54 @@ W/C 依赖 Profiler 或埋点统计，不同流量时段、不同数据量下差
 ThreadPoolExecutor global() { ... }
 
 // 正确：按业务隔离
-@Bean("paymentExecutor")   // 核心链路，高优先级
+@Bean("paymentExecutor")   // 核心链路
 ThreadPoolExecutor payment() { ... }
 
 @Bean("logExecutor")       // 非核心，允许丢弃
 ThreadPoolExecutor log() { ... }
 ```
 
-### 反模式 2：不考虑下游限制盲目设大
+### 7.2 不考虑下游限制盲目设大
 
-下游 MySQL 连接池 50，设 500 个线程，450 个线程在等连接，徒增内存占用和上下文切换，P99 延迟反而更高。
+下游 MySQL 连接池上限 50 时，设 500 个线程会导致 450 个线程空等连接，增加上下文切换与排队延迟。
 
-正确做法：`corePoolSize ≤ 下游最小连接池上限`，这是物理约束，不是软限制。
+**正确做法**：`corePoolSize ≤ 下游最小连接池上限`。
 
-### 反模式 3：keepAliveTime 设置过短
+### 7.3 keepAliveTime 设置过短
 
-在流量波动场景下，`keepAliveTime` 过短（如 1 秒）导致非核心线程频繁创建销毁，造成 CPU 和内存的抖动。
+流量波动场景下，`keepAliveTime` 过短（如 1 秒）会导致非核心线程频繁创建销毁，造成 CPU 与内存抖动。
 
-正确做法：建议 30\~120 秒，平衡资源回收与线程创建成本。
+**正确做法**：建议 30~120 秒。
 
-### 反模式 4：线程池任务中嵌套提交任务（死锁陷阱）
+### 7.4 任务中嵌套提交任务
 
 ```java
-// 危险代码：父任务等待子任务，子任务进不来队列 → 死锁
+// 危险：父任务等待子任务，子任务无法入队 → 死锁
 executor.submit(() -> {
     Future<?> child = executor.submit(() -> { /* 子任务 */ });
-    child.get(); // 父任务在此阻塞等待子任务完成
+    child.get();
 });
-// 如果队列已满，子任务无法入队，父任务永远等不到结果
 ```
 
-正确做法：使用 `ForkJoinPool` 处理父子依赖任务，或为子任务使用独立线程池。
+**正确做法**：使用 `ForkJoinPool` 处理父子依赖任务，或为子任务使用独立线程池。
 
-### 反模式 5：容器环境不修正 CPU 核数
+### 7.5 容器环境不修正 CPU 核数
 
-Docker 容器设置了 2 核 CPU 限制，但 `Runtime.getRuntime().availableProcessors()` 在旧版 JDK 上会返回宿主机的 32 核，导致线程数严重虚高，触发 OOM。
+Docker 容器限制 2 核时，旧版 JDK 的 `Runtime.getRuntime().availableProcessors()` 可能返回宿主机 32 核，导致线程数虚高。
 
 ```java
-// 问题版本：直接使用，容器内可能返回宿主机 32 核
-int cores = Runtime.getRuntime().availableProcessors(); // 危险
+// 问题版本
+int cores = Runtime.getRuntime().availableProcessors();
 
 // 安全版本：读取容器 CPU 配额
-int cores = getCpuCores();
-
 private int getCpuCores() {
-    // JDK 8u191+ 已修复（需添加 JVM 参数 -XX:+UseContainerSupport）
-    // 旧版本手动兜底
     String cpuLimit = System.getenv("CPU_LIMIT");
     if (cpuLimit != null) return Integer.parseInt(cpuLimit);
 
-    // 读取 cgroups 配额
     try {
         Path quotaPath = Paths.get("/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
         Path periodPath = Paths.get("/sys/fs/cgroup/cpu/cpu.cfs_period_us");
-        long quota  = Long.parseLong(Files.readString(quotaPath).trim());
+        long quota = Long.parseLong(Files.readString(quotaPath).trim());
         long period = Long.parseLong(Files.readString(periodPath).trim());
         if (quota > 0) return (int) Math.ceil((double) quota / period);
     } catch (Exception ignored) {}
@@ -330,90 +332,69 @@ private int getCpuCores() {
 }
 ```
 
-### 反模式 6：没有为线程命名
+### 7.6 线程未命名
 
-```
-# 错误：jstack 输出无法判断线程归属
-"pool-1-thread-1" #42 prio=5
+`jstack` 中 `"pool-1-thread-1"` 无法判断业务归属，应使用 `"order-exec-1"` 等命名。
 
-# 正确：清晰的命名，一眼看出业务归属
-"order-exec-1" #42 prio=5
-"payment-exec-3" #43 prio=5
-```
+---
 
+## 八、企业级配置案例
 
-***
+### 8.1 需求分析清单
 
-# 企业级篇：生产保障
+配置线程池前必须明确：
 
-## 八、企业级调优流程
+1. 峰值 QPS、平均 RT、P99 RT 是多少？
+2. 任务是否存在外部依赖？下游连接池上限是多少？
+3. SLA 要求：能否丢任务？允许多大延迟？
+4. 容器 / Pod 分配的 CPU 核数是多少？
 
-静态配置无法适应生产环境的复杂性。企业级调优遵循以下流程：
+### 8.2 订单查询服务配置示例
 
-```
-需求分析 → 初始估算 → 代码实现 → 压测验证 → 监控落地 → 动态调整
-```
+**场景**：8 核 Pod，DB 查询 60ms，本地计算 5ms，W/C ≈ 12，目标 CPU 利用率 80%，DB 连接池上限 50。
 
-### Step 1：需求分析清单
+**计算过程**：
 
-开始写代码前，必须明确以下问题：
-
-1. **量化峰值负载**：峰值 QPS、平均 RT、P99 RT 是多少？
-2. **识别任务边界**：任务是否存在外部依赖？下游 DB 连接池上限？HTTP 连接池上限？这些是线程数的硬上限。
-3. **确认 SLA 要求**：能否丢任务？允许多少延迟？决定拒绝策略和队列深度。
-4. **机器规格**：容器/Pod 分配的 CPU 核数（注意 Docker 环境的核数获取问题，见反模式 5）。
-
-### Step 2：初始值计算示例
-
-**案例：订单查询服务**
-
-- 机器：8 核 Pod
-- 任务特征：查询 DB 约 60ms，本地计算约 5ms，W/C 约 12
-- 目标利用率：80%
-- DB 连接池上限：50
-
-计算过程：
-
-```
+```text
 Goetz 公式：8 × 0.8 × (1 + 12) = 83.2 → 取 84
 约束检查：DB 连接池上限 50 → 线程数不应超过 50
-内存检查：50 × 1MB = 50MB，在 Pod 内存 2GB 内完全可接受
+内存检查：50 × 1MB = 50MB，在 2GB Pod 内可接受
 
 最终决策：
   corePoolSize    = 50
-  maximumPoolSize = 60（留 20% 弹性）
-  queue           = LinkedBlockingQueue(300)（约 6 秒积压缓冲）
+  maximumPoolSize = 60
+  queue           = LinkedBlockingQueue(300)
   keepAliveTime   = 60 秒
-  拒绝策略        = 自定义（记录指标 + 抛异常）
+  拒绝策略         = 自定义（记录指标 + 抛异常）
 ```
 
-### Step 3：代码实现规范
+**代码实现**：
 
 ```java
 @Bean("orderExecutor")
 public ThreadPoolExecutor orderExecutor() {
     int cores = Runtime.getRuntime().availableProcessors();
-    // 容器环境修正：避免 availableProcessors() 返回宿主机核数
     int effectiveCores = Math.min(cores, Integer.parseInt(
         System.getenv().getOrDefault("CPU_LIMIT", String.valueOf(cores))));
 
-    int coreSize = Math.min(effectiveCores * 10, DB_POOL_SIZE); // 受下游约束
-    int maxSize  = (int)(coreSize * 1.2);                       // 弹性上限 20%
-    int queueCap = coreSize * 6;                                // 约 6 秒积压缓冲
+    int dbPoolSize = 50;
+    int coreSize = Math.min(effectiveCores * 10, dbPoolSize);
+    int maxSize = (int) (coreSize * 1.2);
+    int queueCap = coreSize * 6;
 
     ThreadPoolExecutor executor = new ThreadPoolExecutor(
         coreSize, maxSize,
         60L, TimeUnit.SECONDS,
         new LinkedBlockingQueue<>(queueCap),
-        new CustomThreadFactory("order-exec"),    // 线程命名，便于 jstack 排查
-        new MetricsRejectedHandler("order")       // 自定义：记录指标并告警
+        new CustomThreadFactory("order-exec"),
+        new MetricsRejectedHandler("order")
     );
-    executor.allowCoreThreadTimeOut(false); // 核心线程永久保活，避免重建开销
+    executor.allowCoreThreadTimeOut(false);
     return executor;
 }
 ```
 
-自定义拒绝处理器——不静默丢失，必须可观测：
+**自定义拒绝处理器**：
 
 ```java
 public class MetricsRejectedHandler implements RejectedExecutionHandler {
@@ -425,59 +406,52 @@ public class MetricsRejectedHandler implements RejectedExecutionHandler {
 
     @Override
     public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
-        // 1. 记录 Prometheus 指标，触发告警
         Metrics.counter("threadpool.rejected", "pool", poolName).increment();
-        // 2. 打印线程池当前状态，便于排查
         log.error("[{}] 任务被拒绝，队列积压:{} 活跃线程:{} 最大线程:{}",
             poolName, e.getQueue().size(), e.getActiveCount(), e.getMaximumPoolSize());
-        // 3. 抛出异常，让调用方感知并做降级处理
         throw new RejectedExecutionException("Pool " + poolName + " is saturated");
     }
 }
 ```
 
-### Step 4：压测验证
+### 8.3 压测验证方案
 
-以阶梯加压方式测试（JMeter / Gatling），观察以下指标随并发数变化的拐点：
+阶梯加压节奏：
+
+```text
+10 并发  → 稳定 2 分钟 → 记录基准
+50 并发  → 稳定 2 分钟 → 记录吞吐 / RT / 队列深度
+100 并发 → 稳定 2 分钟 → 观察是否积压
+150 并发 → 稳定 2 分钟 → 观察 P99 劣化点
+200 并发 → 稳定 2 分钟 → 寻找拒绝临界点
+```
+
+压测期间重点采集：
 
 ```java
-// 压测期间应重点采集的线程池指标
-pool.getActiveCount()           // 当前活跃线程数
-pool.getQueue().size()          // 排队任务数（是否在积压？）
-pool.getCompletedTaskCount()    // 已完成任务总数（吞吐量）
-pool.getLargestPoolSize()       // 历史最大线程数（是否触达 max？）
-pool.getTaskCount()             // 提交的总任务数
-// 自定义：被拒绝的任务数（通过 MetricsRejectedHandler 记录）
+pool.getActiveCount();          // 当前活跃线程数
+pool.getQueue().size();         // 排队任务数
+pool.getCompletedTaskCount();   // 已完成任务总数
+pool.getLargestPoolSize();      // 历史最大线程数
+pool.getTaskCount();            // 提交的总任务数
 ```
 
-阶梯压测节奏示例：
+---
 
-```
-10 并发 → 稳定 2 分钟 → 记录基准
-50 并发 → 稳定 2 分钟 → 记录吞吐/RT/队列深度
-100 并发 → 稳定 2 分钟 → 观察是否出现积压
-150 并发 → 稳定 2 分钟 → 观察 P99 劣化点
-200 并发 → 稳定 2 分钟 → 寻找崩溃/拒绝临界点
-```
+## 九、动态线程池
 
-性能拐点（吞吐量不再增加但延迟持续上升）即为当前配置的**饱和点**，corePoolSize 应设置在该点的 70%\~80%。
+### 9.1 动态调整原理
 
-## 九、动态线程池方案
-
-静态配置无法适应流量波动。生产环境推荐实现可热更新的动态线程池，无需重启服务。
-
-### 动态调整原理
-
-`ThreadPoolExecutor` 提供了运行时修改方法：
+`ThreadPoolExecutor` 支持运行时修改核心参数：
 
 ```java
 executor.setCorePoolSize(newCoreSize);
 executor.setMaximumPoolSize(newMaxSize);
 ```
 
-结合 Apollo / Nacos 配置中心，实现秒级生效的参数热更新。
+结合 Apollo / Nacos 配置中心可实现秒级热更新。
 
-### 实现示例
+### 9.2 实现示例
 
 ```java
 @Component
@@ -486,15 +460,14 @@ public class DynamicThreadPoolManager {
     @Autowired
     private ThreadPoolExecutor orderExecutor;
 
-    // 监听配置变化（Nacos / Apollo 均支持类似机制）
     @NacosConfigListener(dataId = "thread-pool-config", groupId = "DEFAULT_GROUP")
     public void onConfigChange(String configJson) {
         ThreadPoolConfig cfg = JSON.parseObject(configJson, ThreadPoolConfig.class);
 
         int newCore = cfg.getCoreSize();
-        int newMax  = cfg.getMaxSize();
+        int newMax = cfg.getMaxSize();
 
-        // 调整顺序：扩大时先改 max，缩小时先改 core
+        // 扩大时先改 max，缩小时先改 core
         if (newCore > orderExecutor.getMaximumPoolSize()) {
             orderExecutor.setMaximumPoolSize(newMax);
             orderExecutor.setCorePoolSize(newCore);
@@ -508,23 +481,22 @@ public class DynamicThreadPoolManager {
 }
 ```
 
-### 队列容量动态修改
+### 9.3 队列容量动态修改
 
-标准 `BlockingQueue` 的容量在构造时固定，无法热更新。如需动态队列，有以下方案：
+标准 `BlockingQueue` 容量在构造时固定。如需动态队列，可选：
 
-1. **自实现 ResizableLinkedBlockingQueue**：重写 `capacity` 字段的 setter，加锁保证并发安全
+1. **自实现 `ResizableLinkedBlockingQueue`**：重写 `capacity` setter，加锁保证并发安全。
 2. **开源方案**：
-   - **dynamic-tp**（京东开源）：支持核心参数热更新、监控、告警一体化
-   - **Hippo4j**（美团团队维护）：企业级动态线程池框架，支持多注册中心
+   - **dynamic-tp**（京东开源）：支持参数热更新、监控、告警一体化。
+   - **Hippo4j**（美团团队维护）：企业级动态线程池框架，支持多注册中心。
 
-## 十、可观测性：监控指标与告警
+---
 
-线程池的问题在生产上往往是逐渐劣化的，不是突然崩溃的。完善的监控是发现问题的唯一可靠手段。
+## 十、可观测性：监控与告警
 
-### 指标暴露（Micrometer + Prometheus）
+### 10.1 Prometheus 指标暴露
 
 ```java
-// 推荐封装为通用工具方法
 public static void registerToPrometheus(ThreadPoolExecutor pool, String name) {
     MeterRegistry registry = Metrics.globalRegistry;
 
@@ -539,20 +511,19 @@ public static void registerToPrometheus(ThreadPoolExecutor pool, String name) {
 
     Gauge.builder("threadpool.utilization", pool,
              p -> (double) p.getActiveCount() / p.getCorePoolSize())
-         .tag("pool", name).description("核心线程利用率（0~1）").register(registry);
+         .tag("pool", name).description("核心线程利用率").register(registry);
 
     Gauge.builder("threadpool.largest_pool_size", pool, ThreadPoolExecutor::getLargestPoolSize)
          .tag("pool", name).description("历史最大线程数").register(registry);
 }
 ```
 
-### Prometheus 告警规则（AlertManager）
+### 10.2 AlertManager 告警规则
 
 ```yaml
 groups:
   - name: threadpool_alerts
     rules:
-      # 核心线程利用率过高
       - alert: ThreadPoolHighUtilization
         expr: threadpool_utilization > 0.85
         for: 2m
@@ -560,9 +531,7 @@ groups:
           severity: warning
         annotations:
           summary: "线程池 {{ $labels.pool }} 利用率超过 85%"
-          description: "当前利用率 {{ $value | humanizePercentage }}，考虑扩容"
 
-      # 队列积压严重
       - alert: ThreadPoolQueueBacklog
         expr: threadpool_queue_size / threadpool_queue_capacity > 0.7
         for: 1m
@@ -571,17 +540,14 @@ groups:
         annotations:
           summary: "线程池 {{ $labels.pool }} 队列积压超过 70%"
 
-      # 任务被拒绝（P0 告警）
       - alert: ThreadPoolRejection
         expr: increase(threadpool_rejected_total[1m]) > 0
         for: 0m
         labels:
           severity: critical
         annotations:
-          summary: "线程池 {{ $labels.pool }} 出现任务拒绝！"
-          description: "1 分钟内拒绝任务数：{{ $value }}"
+          summary: "线程池 {{ $labels.pool }} 出现任务拒绝"
 
-      # 线程数触达最大值
       - alert: ThreadPoolMaxSizeReached
         expr: threadpool_pool_size >= threadpool_max_size
         for: 3m
@@ -591,43 +557,146 @@ groups:
           summary: "线程池 {{ $labels.pool }} 线程数触达最大值，持续 3 分钟"
 ```
 
-### 关键告警阈值参考
+### 10.3 告警阈值参考
 
-| 指标                    | Warning 阈值 | Critical 阈值 | 含义         |
-| --------------------- | ---------- | ----------- | ---------- |
-| 活跃线程 / 核心线程数          | > 80%      | > 95%       | 线程饱和，即将排队  |
-| 队列积压量                 | > 队列容量 50% | > 80%       | 消费跟不上，延迟上涨 |
-| 被拒绝任务数（1分钟）           | > 0        | > 10        | 系统过载，必须处理  |
-| 线程数触达 maximumPoolSize | 持续 1 分钟    | 持续 5 分钟     | 需要扩容或限流    |
+| 指标 | Warning | Critical | 含义 |
+| --- | --- | --- | --- |
+| 活跃线程 / 核心线程数 | > 80% | > 95% | 线程饱和，即将排队 |
+| 队列积压量 | > 队列容量 50% | > 80% | 消费跟不上，延迟上涨 |
+| 被拒绝任务数（1 分钟） | > 0 | > 10 | 系统过载 |
+| 线程数触达 maximumPoolSize | 持续 1 分钟 | 持续 5 分钟 | 需要扩容或限流 |
 
-***
+---
 
-# 总结
+## 十一、性能调优建议
 
-## 决策速查表
+### 11.1 线程数调优
 
-| 场景           | corePoolSize      | maximumPoolSize | 队列                        | 拒绝策略               |
-| ------------ | ----------------- | --------------- | ------------------------- | ------------------ |
-| CPU 密集       | `N_cpu + 1`       | `N_cpu + 1`     | `SynchronousQueue` 或小容量有界 | `AbortPolicy`      |
-| IO 密集（有下游限制） | `min(公式值, 下游连接池)` | core × 1.2      | 有界，容量 = core × 6          | 自定义+指标             |
-| 高吞吐低延迟       | `N_cpu × 2`       | 较大              | `SynchronousQueue`        | `CallerRunsPolicy` |
-| 批处理 / 定时任务   | 2\~`N_cpu`        | core × 2        | 有界                        | `CallerRunsPolicy` |
-| 混合型 Web      | 实测后 10\~20×核数     | core × 1.25     | 有界，队列深度按 RT 估算            | 自定义+指标             |
+- **初始值**：使用 Goetz 公式或历史 QPS/RT 数据估算。
+- **约束校验**：确保 `corePoolSize ≤ min(DB 连接池, HTTP 连接池, 内存可承载线程数)`。
+- **压测验证**：以阶梯加压找到吞吐拐点，将 `corePoolSize` 设置在拐点并发量的 70%~80%。
+- **动态调整**：流量波动明显的服务接入动态线程池。
 
-## 五条必须遵守的原则
+### 11.2 队列深度调优
 
-1. **永远不用** **`Executors`** **工厂方法**，必须显式 `new ThreadPoolExecutor`
-2. **必须使用有界队列**，无界队列是 OOM 定时炸弹
-3. **corePoolSize 不超过下游最小连接池**，这是物理约束
-4. **拒绝策略必须可观测**，静默丢弃在生产等于数据黑洞
-5. **暴露监控指标，设置告警**，线程池问题不能靠"感觉"发现
+- 队列容量不宜过大：过大会隐藏延迟问题，导致 P99 劣化。
+- 经验公式：`queueCapacity = corePoolSize × 平均 RT（秒） × 安全系数（2~3）`。
+- 需要背压的场景使用有界队列，拒绝策略选择 `CallerRunsPolicy` 或自定义策略。
 
-## 核心结论
+### 11.3 GC 与内存调优
 
-没有"标准答案"，只有"合理工程流程"：
+- 关注线程栈内存占用：默认 1MB/线程，可通过 `-Xss` 调整。
+- 高频创建/销毁线程会增加 Native Memory 分配压力，尽量复用线程。
+- 容器环境开启 `-XX:+UseContainerSupport`（JDK 8u191+）。
 
-> **公式给出初始估算 → 约束条件（下游、内存）设定上限 → 压测找到性能拐点 → 监控保障生产可见性 → 动态调整应对流量变化**
+### 11.4 上下文切换调优
 
-***
+- 当 `cs（上下文切换次数）/ 任务数` 持续升高时，说明线程数过多。
+- 使用 `vmstat`、`pidstat -w` 监控上下文切换频率。
+- 在线程饱和前扩容机器或优化任务计算逻辑。
 
-*参考资料：《Java 并发编程实战》Brian Goetz · 阿里巴巴《Java 开发手册》· dynamic-tp · Hippo4j*
+---
+
+## 十二、常见问题解答（FAQ）
+
+### Q1：`corePoolSize` 和 `maximumPoolSize` 应该设成一样吗？
+
+**A**：不一定。固定大小（core = max）适合负载稳定的场景，实现简单；弹性伸缩（core < max）适合流量波动大、需要应对突发的场景。生产环境更推荐后者，配合有界队列使用。
+
+### Q2：为什么线程池达到了 `maximumPoolSize` 但 CPU 使用率仍然很低？
+
+**A**：可能原因：
+
+1. 线程大部分时间阻塞在 IO 等待，CPU 未被有效利用；
+2. 下游服务（数据库、缓存、HTTP 接口）成为瓶颈；
+3. 锁竞争严重，线程实际并行度不足。
+
+应通过 APM 或 Profiler 定位具体阻塞点，而不是简单增加线程数。
+
+### Q3：任务被拒绝时应该选择哪种策略？
+
+**A**：核心链路推荐 `AbortPolicy` 或自定义策略（记录指标 + 抛异常），让调用方感知并降级；非核心但不可丢任务的场景可选 `CallerRunsPolicy`；可丢弃的非关键任务可选 `DiscardPolicy` 或 `DiscardOldestPolicy`。
+
+### Q4：使用 `CompletableFuture` 时如何指定自定义线程池？
+
+**A**：`CompletableFuture` 默认使用 `ForkJoinPool.commonPool()`，可能不适合业务场景。应显式传入：
+
+```java
+CompletableFuture.supplyAsync(() -> fetchOrder(orderId), orderExecutor)
+    .thenApplyAsync(this::enrichOrder, orderExecutor);
+```
+
+### Q5：Spring 的 `@Async` 默认线程池有什么问题？
+
+**A**：Spring 默认使用 `SimpleAsyncTaskExecutor`，每次任务都新建线程，且队列无界。生产环境应通过 `ThreadPoolTaskExecutor` 自定义：
+
+```java
+@Bean("taskExecutor")
+public ThreadPoolTaskExecutor taskExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(16);
+    executor.setMaxPoolSize(32);
+    executor.setQueueCapacity(200);
+    executor.setThreadNamePrefix("async-");
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    executor.initialize();
+    return executor;
+}
+```
+
+### Q6：如何优雅关闭线程池？
+
+**A**：使用 `shutdown()` + `awaitTermination()` 组合：
+
+```java
+executor.shutdown();
+try {
+    if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+    }
+} catch (InterruptedException e) {
+    executor.shutdownNow();
+    Thread.currentThread().interrupt();
+}
+```
+
+### Q7：`allowCoreThreadTimeOut(true)` 是否推荐？
+
+**A**：适合流量波动极大的场景，可在低峰期回收核心线程节省资源。但会增加高峰期线程创建开销，核心链路建议保持默认 `false`。
+
+---
+
+## 十三、决策速查表
+
+| 场景 | corePoolSize | maximumPoolSize | 队列 | 拒绝策略 |
+| --- | --- | --- | --- | --- |
+| CPU 密集 | `N_cpu + 1` | `N_cpu + 1` | 有界或小容量 | `AbortPolicy` |
+| IO 密集（有下游限制） | `min(公式值, 下游连接池)` | core × 1.2 | 有界 | 自定义 + 指标 |
+| 高吞吐低延迟 | `N_cpu × 2` | 较大 | `SynchronousQueue` | `CallerRunsPolicy` |
+| 批处理 / 定时任务 | 2~`N_cpu` | core × 2 | 有界 | `CallerRunsPolicy` |
+| 混合型 Web | 实测后 10~20× 核数 | core × 1.25 | 有界 | 自定义 + 指标 |
+
+---
+
+## 总结
+
+1. **永远不用 `Executors` 工厂方法**，必须显式构造 `ThreadPoolExecutor`。
+2. **必须使用有界队列**，无界队列是 OOM 隐患。
+3. **corePoolSize 不超过下游最小连接池**，这是物理约束。
+4. **拒绝策略必须可观测**，静默丢弃在生产环境等于数据黑洞。
+5. **暴露监控指标并设置告警**，线程池问题不能靠感觉发现。
+
+合理工程流程：
+
+```text
+公式估算 → 约束校验 → 压测验证 → 监控落地 → 动态调整
+```
+
+---
+
+## 参考资料
+
+- 《Java 并发编程实战》Brian Goetz
+- 阿里巴巴《Java 开发手册》
+- [dynamic-tp](https://github.com/dromara/dynamic-tp)
+- [Hippo4j](https://github.com/opengoofy/hippo4j)

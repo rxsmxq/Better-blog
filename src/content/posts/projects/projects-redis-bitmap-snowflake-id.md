@@ -1,5 +1,5 @@
 ---
-title: Redis Bitmap与雪花ID
+title: redis | bitmap、雪花ID、分布式 | 踩坑日志
 published: 2026-05-06
 description: 本文深入剖析了Redis Bitmap在结合雪花ID与分布式架构时遇到的性能与正确性难题，从Bitmap本身、雪花ID结构、分布式环境三个维度展开分析，揭示了SETBIT首次写入O(offset)分配大内存导致的卡顿、哈希取模引入的碰撞风险、单线程阻塞及数据倾斜等问题，并最终给出了使用String+Set替代Bitmap的正确方案。
 tags: [Redis, 雪花ID, 分布式, Bitmap, 性能优化]
@@ -7,7 +7,7 @@ category: projects
 draft: false
 ---
 
-# Redis Bitmap 遇上雪花 ID 与分布式：一场注定失败的组合
+# redis | bitmap、雪花ID、分布式：一场注定失败的组合
 
 > Bitmap 是 Redis 中极其精巧的数据结构——用 1 个 bit 标记一个用户状态，1 亿用户仅需 12 MB。但当它遇上雪花 ID（64 bit）和分布式架构时，一切美好都化为泡影。本文从三个维度（Bitmap 本身、雪花 ID、分布式）深度剖析这个经典踩坑，并给出最终方案。
 

@@ -1,13 +1,13 @@
 ---
-title: 第三方登录流程文档
+title: 登录 | 第三方登录 | 设计文档
 published: 2026-05-03
 description: 本文档完整记录了GitHub、微信、QQ三种第三方登录的OAuth2授权码流程、代码结构及多环境配置清单，涵盖各平台的回调处理流程、后台配置、Nacos配置、Gateway白名单设置，以及开发环境绕过方案、常见问题排查和前端对接说明。
-tags: [OAuth2, 第三方登录, GitHub, 微信, QQ, 认证]
+tags: [OAuth2, 第三方登录, GitHub, 微信, QQ, 认证, 登录]
 category: projects
 draft: false
 ---
 
-# 第三方登录流程文档
+# 登录 | 第三方登录 | 设计文档
 
 本文档记录 GitHub、微信、QQ 三种第三方登录的完整流程、代码结构及多环境配置清单。
 

@@ -1,21 +1,21 @@
 ---
-title: 对象存储签名URL有效期机制
+title: MinIO | 文件存储签名 URL 有效期机制 | 学习文档
 published: 2026-05-01
-description: 对象存储签名 URL 与有效期机制详解
-tags: [对象存储,OSS,MinIO, 安全]
+description: MinIO 文件存储签名 URL 有效期机制文档，详细介绍了签名 URL 的使用场景、格式、工作原理、有效期计算等。
+tags: [MinIO, 安全]
 category: projects
 draft: false
 ---
 
-# 对象存储签名 URL 有效期机制
+# MinIO | 文件存储签名 URL 有效期机制 | 学习文档
 
 ## 一、背景
 
-在对象存储（OSS / S3 / MinIO）中，文件默认是私有的——只有拥有 AccessKey 的用户才能访问。但在实际业务中，我们经常需要让前端或第三方临时访问某个文件，比如：
+在文件存储（OSS / S3 / MinIO）中，文件默认是私有的——只有拥有 AccessKey 的用户才能访问。但在实际业务中，我们经常需要让前端或第三方临时访问某个文件，比如：
 
 - 用户在浏览器中预览上传的图片
 - 下载链接分享给外部用户
-- 前端直传文件到 OSS
+- 前端直传文件到 MinIO
 
 这就引出了**签名 URL（Presigned URL）** 的概念。
 
