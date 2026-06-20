@@ -1,6 +1,9 @@
 @reference "tailwindcss";
 
 .custom-md {
+  --markdown-code-block-bg: #131313;
+  --markdown-code-block-border: #242424;
+
   overflow-wrap: break-word;
 
   body.sticky-navbar & {
@@ -90,6 +93,23 @@
 
   .expressive-code {
     @apply my-4;
+  }
+
+  pre:not(.expressive-code *) {
+    @apply my-4 overflow-x-auto p-4;
+    background: var(--markdown-code-block-bg) !important;
+    border: 1px solid var(--markdown-code-block-border) !important;
+    border-radius: 0.75rem;
+  }
+
+  pre:not(.expressive-code *) > code {
+    display: block;
+    min-width: max-content;
+    padding: 0;
+    overflow: visible;
+    color: #e5e5e5;
+    background: transparent !important;
+    border-radius: 0;
   }
 
   ul,
@@ -218,5 +238,12 @@ body.wallpaper-transparent .custom-md {
 .markdown-bordered {
   padding: 0;
   margin: 1rem 0;
+}
+
+/* 移动端优化: 添加内边距 */
+@media (max-width: 768px) {
+  .markdown-bordered {
+    padding: 1rem;
+  }
 }
 

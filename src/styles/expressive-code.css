@@ -1,6 +1,25 @@
 .expressive-code {
+  --markdown-code-block-bg: #131313;
+  --markdown-code-block-border: #242424;
+
   .frame {
     @apply shadow-none!;
+    background: #131313 !important;
+    border-color: #242424 !important;
+  }
+
+  .frame,
+  .frame pre,
+  .frame code,
+  .frame .code,
+  .frame .ec-code,
+  .frame .ec-code__inner {
+    background: var(--markdown-code-block-bg) !important;
+  }
+
+  .frame,
+  .frame pre {
+    border-color: var(--markdown-code-block-border) !important;
   }
 
   .title {
