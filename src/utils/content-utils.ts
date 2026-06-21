@@ -1,7 +1,8 @@
 import { type CollectionEntry, getCollection } from "astro:content";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
-import { getCategoryUrl } from "@utils/url-utils";
+import { buildTagGraphData, type TagGraphData } from "@utils/tag-graph-data";
+import { getCategoryUrl, getPostUrlBySlug, getTagUrl } from "@utils/url-utils";
 
 let cachedPosts: CollectionEntry<"posts">[] | null = null;
 
@@ -83,6 +84,26 @@ export async function getTagList(): Promise<Tag[]> {
 	});
 
 	return keys.map((key) => ({ name: key, count: countMap[key] }));
+}
+
+export async function getTagGraphData(): Promise<TagGraphData> {
+	const allBlogPosts = await getAllPosts();
+	const graph = buildTagGraphData(
+		allBlogPosts.map((post) => ({
+			title: post.data.title,
+			url: getPostUrlBySlug(post.id),
+			published: post.data.published,
+			tags: post.data.tags,
+		})),
+	);
+
+	return {
+		...graph,
+		nodes: graph.nodes.map((node) => ({
+			...node,
+			url: getTagUrl(node.name),
+		})),
+	};
 }
 
 export type Category = {

@@ -215,3 +215,64 @@
     padding: 0.25rem 0.625rem;
   }
 }
+
+/* ============================================
+   标签关系图谱样式
+   ============================================ */
+
+.tag-graph {
+  width: 100%;
+  position: relative;
+}
+
+.tag-graph__header {
+  margin-bottom: 1rem;
+}
+
+.tag-graph__title {
+  margin: 0;
+  color: var(--deep-text);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.tag-graph__meta {
+  margin: 0.25rem 0 0;
+  color: var(--content-meta);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.tag-graph__chart {
+  width: 100%;
+  height: 620px;
+  min-height: 360px;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.5rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+:root.dark .tag-graph__chart {
+  background: #000;
+}
+
+@media (max-width: 1023px) {
+  .tag-graph__chart {
+    height: 520px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tag-graph__chart {
+    height: 420px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tag-graph__chart {
+    height: 360px;
+  }
+}
