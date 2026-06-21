@@ -96,7 +96,7 @@ const heroBioText = Array.isArray(profileConfig.bio)
 						{profileConfig.displayName && (
 							<h1 class="home-hero__name">{profileConfig.displayName}</h1>
 						)}
-						<div class="home-hero__name-badge">784774835</div>
+						<div class="home-hero__name-badge">{profileConfig.nameBadge || ""}</div>
 					</div>
 
 					<!-- 头像 + 状态 -->

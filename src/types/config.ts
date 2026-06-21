@@ -242,6 +242,7 @@ export type ProfileConfig = {
 	avatarOffWork?: string;
 	name: string;
 	displayName?: string; // 首页展示名字（如 MmMing）
+	nameBadge?: string; // 名字旁边的徽章（如 QQ 号）
 	occupation?: string; // 职业/身份标签（如 后端开发 / 技术博主）
 	bio?: string | string[];
 	links: {

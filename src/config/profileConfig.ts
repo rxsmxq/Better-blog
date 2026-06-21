@@ -17,6 +17,9 @@ export const profileConfig: ProfileConfig = {
 	// 首页展示名字（留空则使用 name）
 	displayName: "MmzMing",
 
+	// 名字右侧徽章文字（如 QQ 号）
+	nameBadge: "B站：Mmz明崽",
+
 	// 职业/身份标签
 	occupation: "[(伪)全栈工程师[啥都干工程师] / 技术博主]",
 
