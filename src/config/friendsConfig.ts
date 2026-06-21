@@ -239,6 +239,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "Olinl Blog",
+		imgurl: "https://q2.qlogo.cn/headimg_dl?dst_uin=9892214&spec=0",
+		desc: "分享、实践、学习",
+		siteurl: "https://blog.olinl.com/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
