@@ -1,8 +1,8 @@
 ---
 title: NapCat + AstrBot | 部署文档
 published: 2026-05-12
-description: 使用 Docker Compose 一站式部署 NapCat + AstrBot，从零搭建属于自己的 AI QQ 机器人
-tags: [ai, NapCat, AstrBot, Bot]
+description: 使用 Docker Compose 一站式部署 NapCat + AstrBot，从零搭建 AI QQ 机器人，含 OneBot 11 协议对接与风控替代方案。
+tags: [AI, Bot, 部署]
 category: ai
 draft: false
 ---

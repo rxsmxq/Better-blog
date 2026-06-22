@@ -1,8 +1,8 @@
 ---
 title: skill | 收集 | 学习文档
 published: 2026-04-12
-description: 收集一些比较强势，但是还没使用的SKILL，用于辅助开发。
-tags: [ai, skill]
+description: 收集实用的 AI Agent Skill，涵盖工程化工作流、技能创建器、技术图表生成等开发辅助工具。
+tags: [AI, Skill, Agent]
 category: ai
 draft: false
 ---

@@ -1,7 +1,7 @@
 ---
 title: 线程池 | 配置指南 | 学习文档
 published: 2026-05-07
-description: 系统梳理 Java ThreadPoolExecutor 的核心参数、执行流程、线程数估算、队列选型、反模式、企业级监控与动态调优方案，附带可落地的配置代码与 FAQ。
+description: Java ThreadPoolExecutor 核心参数、线程数估算、队列选型与拒绝策略，附带企业级监控与动态调优方案。
 tags: [Java, 线程池, 并发编程]
 category: projects
 draft: false

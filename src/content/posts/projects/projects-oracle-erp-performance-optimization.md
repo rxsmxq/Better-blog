@@ -1,8 +1,8 @@
 ---
 title: Oracle | erp、mrp、性能优化 | 设计文档
 published: 2026-01-02
-description: 本文总结了 Oracle ERP 性能优化的技术方案，包括降水位、表重定义、索引优化、查询优化等。
-tags: [oracle, database, erp, 性能优化]
+description: Oracle ERP 因 SHRINK 操作导致聚簇因子恶化的性能排查与优化，涵盖 AWR 分析、索引重建及查询调优。
+tags: [Oracle, 数据库, 性能优化]
 category: projects
 draft: false
 ---
