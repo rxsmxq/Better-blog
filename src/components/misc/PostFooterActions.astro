@@ -12,15 +12,8 @@ export interface Props {
 	licenseUrl?: string;
 }
 
-const {
-	title,
-	published,
-	id,
-	author,
-	sourceLink,
-	licenseName,
-	licenseUrl,
-} = Astro.props;
+const { title, published, id, author, sourceLink, licenseName, licenseUrl } =
+	Astro.props;
 ---
 
 {licenseConfig.enable && (

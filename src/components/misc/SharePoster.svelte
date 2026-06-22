@@ -1,6 +1,6 @@
 <script lang="ts">
 import QRCode from "qrcode";
-import { onMount, onDestroy } from "svelte";
+import { onDestroy, onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import I18nKey from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";

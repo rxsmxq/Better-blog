@@ -2,12 +2,12 @@
 import Icon from "@components/common/Icon.astro";
 import VisitorCount from "@components/common/VisitorCount.astro";
 import SharePoster from "@components/misc/SharePoster.svelte";
+import { profileConfig } from "@/config/profileConfig";
+import { siteConfig } from "@/config/siteConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { getCategoryUrl, getTagUrl } from "@/utils/url-utils";
-import { profileConfig } from "@/config/profileConfig";
-import { siteConfig } from "@/config/siteConfig";
 
 export interface Props {
 	published: Date;
