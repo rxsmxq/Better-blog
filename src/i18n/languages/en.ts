@@ -215,22 +215,6 @@ export const en: Translation = {
 	// Encrypted
 	[Key.postEncrypted]: "This post is encrypted",
 
-	// Wallpaper Mode
-	[Key.wallpaperMode]: "Wallpaper Mode",
-	[Key.wallpaperBannerMode]: "Banner Wallpaper",
-	[Key.wallpaperOverlayMode]: "Overlay Wallpaper",
-	[Key.wallpaperNoneMode]: "None Wallpaper",
-
-	// Banner Settings
-	[Key.bannerSettings]: "Banner Settings",
-	[Key.bannerTitle]: "Home Banner Title",
-	[Key.bannerCarousel]: "Banner Carousel",
-	[Key.wavesAnimation]: "Waves Animation",
-	[Key.overlaySettings]: "Transparency Settings",
-	[Key.overlayOpacity]: "Wallpaper Opacity",
-	[Key.overlayBlur]: "Background Blur",
-	[Key.overlayCardOpacity]: "Card Opacity",
-
 	// Post List Layout
 	[Key.postListLayout]: "Post List Layout",
 	[Key.postListLayoutList]: "List",

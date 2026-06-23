@@ -2,15 +2,6 @@
    赞助页 — 来自 sponsor.astro
    ============================================ */
 
-/* 透明模式下使用半透明背景 */
-body.wallpaper-transparent .usage-info-box {
-	background-color: rgba(var(--primary-rgb, 70, 130, 180), 0.15) !important;
-}
-
-:root.dark body.wallpaper-transparent .usage-info-box {
-	background-color: oklch(from var(--primary) l c h / 0.15) !important;
-}
-
 /* ============================================
    扫码赞助卡片
    ============================================ */

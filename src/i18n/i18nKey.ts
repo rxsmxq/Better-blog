@@ -203,22 +203,6 @@ enum I18nKey {
 	// 加密
 	postEncrypted = "postEncrypted",
 
-	// 壁纸模式
-	wallpaperMode = "wallpaperMode",
-	wallpaperBannerMode = "wallpaperBannerMode",
-	wallpaperOverlayMode = "wallpaperOverlayMode",
-	wallpaperNoneMode = "wallpaperNoneMode",
-
-	// 横幅设置
-	bannerSettings = "bannerSettings",
-	bannerTitle = "bannerTitle",
-	bannerCarousel = "bannerCarousel",
-	wavesAnimation = "wavesAnimation",
-	overlaySettings = "overlaySettings",
-	overlayOpacity = "overlayOpacity",
-	overlayBlur = "overlayBlur",
-	overlayCardOpacity = "overlayCardOpacity",
-
 	// 文章布局
 	postListLayout = "postListLayout",
 	postListLayoutList = "postListLayoutList",

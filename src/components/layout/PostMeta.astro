@@ -2,7 +2,7 @@
 import Icon from "@components/common/Icon.astro";
 import VisitorCount from "@components/common/VisitorCount.astro";
 import SharePoster from "@components/misc/SharePoster.svelte";
-import { profileConfig } from "@/config/profileConfig";
+import { homeConfig } from "@/config/homeConfig";
 import { siteConfig } from "@/config/siteConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -149,7 +149,7 @@ const path = customPath || (id ? `/posts/${id}` : "");
       <SharePoster
         client:only="svelte"
         title={posterTitle}
-        author={profileConfig.name}
+        author={homeConfig.name}
         description={posterDescription || posterTitle}
         pubDate={formatDateToYYYYMMDD(published)}
         coverImage={posterCoverUrl}

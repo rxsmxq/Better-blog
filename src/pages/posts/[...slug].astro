@@ -22,7 +22,7 @@ import PostMetadata from "@/components/layout/PostMeta.astro";
 import PostFooterActions from "@/components/misc/PostFooterActions.astro";
 import RecommendedPost from "@/components/misc/RecommendedPost.astro";
 import { coverImageConfig } from "@/config/coverImageConfig";
-import { profileConfig } from "@/config/profileConfig";
+import { homeConfig } from "@/config/homeConfig";
 import { siteConfig } from "@/config/siteConfig";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
@@ -80,7 +80,7 @@ if (processedImage) {
 }
 
 // 处理头像URL
-let posterAvatarUrl: string | null = profileConfig.avatar || null;
+let posterAvatarUrl: string | null = homeConfig.avatar || null;
 if (posterAvatarUrl) {
 	const isLocalAvatar = !(
 		posterAvatarUrl.startsWith("/") ||
@@ -114,7 +114,7 @@ const jsonLd = {
 	image: posterCoverUrl || undefined,
 	author: {
 		"@type": "Person",
-		name: profileConfig.name,
+		name: homeConfig.name,
 		url: Astro.site,
 	},
 	publisher: {

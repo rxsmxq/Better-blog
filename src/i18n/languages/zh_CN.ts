@@ -208,22 +208,6 @@ export const zh_CN: Translation = {
 	// 加密
 	[Key.postEncrypted]: "本文已加密",
 
-	// 壁纸模式
-	[Key.wallpaperMode]: "壁纸模式",
-	[Key.wallpaperBannerMode]: "横幅壁纸",
-	[Key.wallpaperOverlayMode]: "全屏透明",
-	[Key.wallpaperNoneMode]: "纯色背景",
-
-	// 横幅设置
-	[Key.bannerSettings]: "横幅设置",
-	[Key.bannerTitle]: "首页横幅标题",
-	[Key.bannerCarousel]: "横幅轮播",
-	[Key.wavesAnimation]: "水波纹动画",
-	[Key.overlaySettings]: "透明设置",
-	[Key.overlayOpacity]: "壁纸透明度",
-	[Key.overlayBlur]: "背景模糊度",
-	[Key.overlayCardOpacity]: "卡片透明度",
-
 	// 文章布局
 	[Key.postListLayout]: "文章布局",
 	[Key.postListLayoutList]: "列表",

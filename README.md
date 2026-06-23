@@ -88,10 +88,10 @@ npx wrangler deploy
 
 | 配置文件 | 职责 |
 |----------|------|
-| `siteConfig.ts` | 核心配置：语言、主题色、壁纸模式、页面开关、文章列表布局、分页、分析、图片优化、字体 |
+| `siteConfig.ts` | 核心配置：语言、主题色、页面开关、文章列表布局、分页、分析、图片优化、字体 |
 | `sidebarConfig.ts` | 侧边栏布局与组件配置 |
-| `navBarConfig.ts` | 导航栏链接与搜索配置（根据页面开关动态生成） |
-| `profileConfig.ts` | 头像、昵称、签名、社交链接 |
+| `navBarConfig.ts` | 导航栏链接配置（根据页面开关动态生成） |
+| `homeConfig.ts` | 首页与用户资料配置：头像、昵称、签名、社交链接、首页图片、技能图标、作品百叶窗 |
 | `commentConfig.ts` | 评论系统配置（Waline/Twikoo/Giscus/Artalk/Disqus） |
 | `musicConfig.ts` | 音乐播放器配置（Meting API / 本地音乐） |
 | `pioConfig.ts` | Live2D / Spine 看板娘配置 |
@@ -100,10 +100,6 @@ npx wrangler deploy
 | `friendsConfig.ts` | 友链配置 |
 | `sponsorConfig.ts` | 赞助页配置 |
 | `calendarConfig.ts` | 日历页面配置 |
-| `homePortfolioShutterConfig.ts` | 首页作品百叶窗配置 |
-| `skillsConfig.ts` | 技能标签配置 |
-| `backgroundWallpaper.ts` | 壁纸配置 |
-| `adConfig.ts` | 广告栏配置 |
 | `announcementConfig.ts` | 公告栏配置 |
 | `licenseConfig.ts` | 文章许可证配置 |
 | `footerConfig.ts` | 页脚配置 |
@@ -176,7 +172,7 @@ npx wrangler deploy
 
 - `src/config/aiSearchConfig.ts`：AI 搜索配置（模型、Embedding、向量索引）
 - `src/config/commentConfig.ts`：评论系统配置（更换地址）
-- `src/config/profileConfig.ts`：首页信息：头像、昵称、签名、社交链接
+- `src/config/homeConfig.ts`：首页与用户资料配置：头像、昵称、签名、社交链接、首页图片、技能图标、作品百叶窗
 - `src/config/siteConfig.ts`：网站配置：上下班时间、网站设置、页面开关、Umami 统计、导航栏配置
 - `wrangler.toml`：Cloudflare KV / Vectorize / AI 绑定配置
 
@@ -192,9 +188,6 @@ npx wrangler deploy
 - `src/config/calendarConfig.ts`：日历页面配置
 - `src/config/sponsorConfig.ts`：赞助页配置
 - `src/config/coverImageConfig.ts`：封面图配置
-- `src/config/homePortfolioShutterConfig.ts`：首页作品百叶窗配置
-- `src/config/skillsConfig.ts`：技能标签配置
-- `src/config/backgroundWallpaper.ts`：背景壁纸配置
 
 ## 文章存储位置
 

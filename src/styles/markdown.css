@@ -213,24 +213,6 @@
   }
 }
 
-body.wallpaper-transparent .custom-md {
-  .horizontal-scroll-container {
-    background-color: var(--card-bg-transparent);
-  }
-
-  th {
-    background-color: color-mix(in oklch, var(--btn-regular-bg) 72%, transparent);
-  }
-
-  td {
-    background-color: color-mix(in oklch, var(--card-bg-transparent) 92%, transparent);
-  }
-
-  tr:nth-child(even) td {
-    background-color: color-mix(in oklch, var(--btn-plain-bg-active) 68%, transparent);
-  }
-}
-
 /* Markdown 内容黑白边框样式 */
 .markdown-bordered {
   padding: 0;

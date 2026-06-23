@@ -8,8 +8,7 @@
 src/config/
 ├── index.ts                   # 配置索引文件 - 统一导出
 ├── siteConfig.ts              # 站点基础配置
-├── backgroundWallpaper.ts     # 背景壁纸配置
-├── profileConfig.ts           # 用户资料配置
+├── homeConfig.ts              # 首页与用户资料配置（含首页图片、技能图标、作品百叶窗）
 ├── musicConfig.ts             # 音乐播放器配置
 ├── commentConfig.ts           # 评论系统配置
 ├── announcementConfig.ts      # 公告配置
@@ -20,14 +19,11 @@ src/config/
 ├── sidebarConfig.ts           # 侧边栏配置
 ├── navBarConfig.ts            # 导航栏配置
 ├── pioConfig.ts               # 看板娘模型配置（Spine / Live2D）
-├── adConfig.ts                # 广告配置
 ├── friendsConfig.ts           # 友链配置
 ├── galleryConfig.ts           # 相册配置
 ├── sponsorConfig.ts           # 赞助配置
 ├── coverImageConfig.ts        # 封面图配置
 ├── calendarConfig.ts          # 日历配置
-├── homePortfolioShutterConfig.ts # 首页作品百叶窗配置
-├── skillsConfig.ts            # 技能标签配置
 ├── aiSearchConfig.ts          # AI 搜索配置
 ├── collectionsApiConfig.ts    # 收藏 API 配置
 ├── plantumlConfig.ts          # PlantUML 图表配置
@@ -38,38 +34,34 @@ src/config/
 
 ### 推荐：使用配置索引（统一导入）
 ```typescript
-import { siteConfig, profileConfig } from '../config';
+import { siteConfig, homeConfig } from '../config';
 ```
 
 ### 直接导入单个配置
 ```typescript
 import { siteConfig } from '../config/siteConfig';
-import { profileConfig } from '../config/profileConfig';
+import { homeConfig } from '../config/homeConfig';
 ```
 
 ## 📋 配置文件列表
 
 - `siteConfig.ts` - 站点基础配置（标题、描述、主题色等）
-- `backgroundWallpaper.ts` - 背景壁纸配置（壁纸模式、图片、横幅文字等）
-- `profileConfig.ts` - 用户资料配置（头像、姓名、社交链接等）
+- `homeConfig.ts` - 首页与用户资料配置（头像、姓名、社交链接、首页图片、技能图标、作品百叶窗等）
 - `musicConfig.ts` - 音乐播放器配置（导出 `musicPlayerConfig`）
 - `commentConfig.ts` - 评论系统配置（Waline / Twikoo / Giscus / Artalk / Disqus）
 - `announcementConfig.ts` - 公告配置（标题、内容、链接等）
 - `licenseConfig.ts` - 许可证配置（CC 协议等）
-- `footerConfig.ts` - 页脚配置（HTML 注入等）
+- `footerConfig.ts` - 页脚配置
 - `expressiveCodeConfig.ts` - 代码高亮配置（主题等）
 - `fontConfig.ts` - 字体配置（字体族、大小等）
 - `sidebarConfig.ts` - 侧边栏配置（导出 `sidebarLayoutConfig`）
-- `navBarConfig.ts` - 导航栏配置（导出 `navBarConfig`、`navBarSearchConfig`）
+- `navBarConfig.ts` - 导航栏配置（导出 `navBarConfig`）
 - `pioConfig.ts` - 看板娘模型配置（导出 `spineModelConfig`、`live2dModelConfig`）
-- `adConfig.ts` - 广告配置（导出 `adConfig1`、`adConfig2`）
 - `friendsConfig.ts` - 友链配置（导出 `friendsPageConfig`、`friendsConfig`、`getEnabledFriends`）
 - `galleryConfig.ts` - 相册配置
 - `sponsorConfig.ts` - 赞助配置（赞助方式、二维码等）
 - `coverImageConfig.ts` - 封面图配置（随机封面图列表等）
 - `calendarConfig.ts` - 日历页面配置
-- `homePortfolioShutterConfig.ts` - 首页作品百叶窗配置
-- `skillsConfig.ts` - 技能标签配置
 - `aiSearchConfig.ts` - AI 搜索配置
 - `collectionsApiConfig.ts` - 收藏 API 配置
 - `plantumlConfig.ts` - PlantUML 图表配置

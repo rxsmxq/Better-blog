@@ -5,7 +5,7 @@ import AnimatedTabs from "@/components/controls/AnimatedTabs.svelte";
 import BubbleMenu from "@/components/features/BubbleMenu.svelte";
 import CategoryBubbleMenu from "@/components/features/CategoryBubbleMenu.svelte";
 import PostCard from "@/components/layout/PostCard.astro";
-import { profileConfig, siteConfig } from "@/config";
+import { homeConfig, siteConfig } from "@/config";
 import { getCategoryList } from "@/utils/content-utils";
 
 const { page } = Astro.props;
@@ -36,7 +36,7 @@ const categories = await getCategoryList();
 
 <div id="post-list-toolbar" class="flex items-center justify-between mb-3 px-1">
   <div class="flex items-center gap-2">
-    <BubbleMenu links={profileConfig.links} client:load />
+    <BubbleMenu links={homeConfig.links} client:load />
     <CategoryBubbleMenu categories={categories.map(c => ({ name: c.name.trim(), count: c.count, url: c.url }))} client:load />
   </div>
   <div class:list={["layout-toggle-group", { "hidden": !allowLayoutSwitch }]}>

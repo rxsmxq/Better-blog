@@ -1,9 +1,6 @@
 import type { FooterConfig } from "../types/config";
 
 export const footerConfig: FooterConfig = {
-	// 是否启用 Footer HTML 注入功能
-	enable: false,
-
 	// 社交链接（mailto:/tel: 开头的链接不会在新标签打开）
 	socialLinks: [
 		{
@@ -47,5 +44,3 @@ export const footerConfig: FooterConfig = {
 		},
 	],
 };
-
-// 启用 HTML 注入功能时，可直接编辑 config/FooterConfig.html 添加自定义内容

@@ -1,7 +1,5 @@
 import type { FriendLink, FriendsPageConfig } from "../types/config";
 
-// 可以在src/content/spec/friends.md中编写友链页面下方的自定义内容
-
 // 友链页面配置
 export const friendsPageConfig: FriendsPageConfig = {
 	// 页面标题，如果留空则使用 i18n 中的翻译
@@ -9,9 +7,6 @@ export const friendsPageConfig: FriendsPageConfig = {
 
 	// 页面描述文本，如果留空则使用 i18n 中的翻译
 	description: "",
-
-	// 是否显示底部自定义内容（friends.mdx 中的内容）
-	showCustomContent: true,
 
 	// 是否显示评论区，需要先在commentConfig.ts启用评论系统
 	showComment: true,

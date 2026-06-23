@@ -3,8 +3,6 @@ import {
 	LinkPreset,
 	type NavBarConfig,
 	type NavBarLink,
-	type NavBarSearchConfig,
-	NavBarSearchMethod,
 } from "../types/config";
 import { siteConfig } from "./siteConfig";
 
@@ -70,11 +68,6 @@ const buildNavBarConfig = (): NavBarConfig => {
 	];
 
 	return { links };
-};
-
-// 导航搜索配置
-export const navBarSearchConfig: NavBarSearchConfig = {
-	method: NavBarSearchMethod.PageFind,
 };
 
 export const navBarConfig: NavBarConfig = buildNavBarConfig();

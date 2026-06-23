@@ -1,6 +1,6 @@
 ---
 import Icon from "@components/common/Icon.astro";
-import { footerConfig, profileConfig, siteConfig } from "@/config";
+import { footerConfig, homeConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { getSortedPosts } from "@/utils/content-utils";
@@ -90,7 +90,7 @@ const isExternalLink = (href: string) => !/^(mailto:|tel:)/i.test(href);
 
 		{/* 第四层：版权 */}
 		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-sm flex-wrap">
-			<span>&copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}</span>
+			<span>&copy; <span id="copyright-year">{currentYear}</span> {homeConfig.name}</span>
 		</div>
 
 		{/* 第五层：备案信息 */}

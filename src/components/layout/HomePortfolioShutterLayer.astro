@@ -1,9 +1,10 @@
 ---
-import { homePortfolioShutterConfig } from "@/config";
+import { homeConfig } from "@/config";
 import { normalizeShutterPanels } from "@/utils/home-portfolio-shutter.js";
 
-const panels = normalizeShutterPanels(homePortfolioShutterConfig.panels);
-const interlude = homePortfolioShutterConfig.interlude;
+const shutterConfig = homeConfig.portfolioShutter;
+const panels = normalizeShutterPanels(shutterConfig.panels);
+const interlude = shutterConfig.interlude;
 const transparentPixel =
 	"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 ---
@@ -13,16 +14,16 @@ const transparentPixel =
 	id="home-portfolio-shutter"
 	aria-labelledby="home-portfolio-shutter-title"
 	data-home-shutter
-	data-shutter-enabled={homePortfolioShutterConfig.enabled ? "true" : "false"}
-	data-scroll-distance={String(homePortfolioShutterConfig.scrollDistance)}
+	data-shutter-enabled={shutterConfig.enabled ? "true" : "false"}
+	data-scroll-distance={String(shutterConfig.scrollDistance)}
 >
 	<div class="home-portfolio-shutter__viewport" data-shutter-viewport>
 		<img
 			class="home-portfolio-shutter__final-image"
 			data-shutter-final-image
-			data-src={homePortfolioShutterConfig.finalImage.src}
+			data-src={shutterConfig.finalImage.src}
 			src={transparentPixel}
-			alt={homePortfolioShutterConfig.finalImage.alt}
+			alt={shutterConfig.finalImage.alt}
 			loading="eager"
 			decoding="async"
 		/>
@@ -106,9 +107,9 @@ const transparentPixel =
 		</div>
 
 		<div class="home-portfolio-shutter__final-copy" data-shutter-final-copy>
-			<p>{homePortfolioShutterConfig.kicker}</p>
-			<h2 id="home-portfolio-shutter-title">{homePortfolioShutterConfig.title}</h2>
-			<span>{homePortfolioShutterConfig.description}</span>
+			<p>{shutterConfig.kicker}</p>
+			<h2 id="home-portfolio-shutter-title">{shutterConfig.title}</h2>
+			<span>{shutterConfig.description}</span>
 		</div>
 	</div>
 </section>

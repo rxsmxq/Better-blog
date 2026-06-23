@@ -1,7 +1,7 @@
 ---
 import DataMetricCard from "@components/features/DataMetricCard.astro";
 import LogoLoop from "@components/features/LogoLoop.svelte";
-import { profileConfig, siteConfig, skillsConfig } from "@/config";
+import { homeConfig, siteConfig } from "@/config";
 import {
 	getCategoryList,
 	getSortedPosts,
@@ -38,14 +38,14 @@ const visitPills: DataPill[] = [
 	{ label: "SOURCE", value: "Umami", tone: "outline" },
 ];
 
-const socialItems = profileConfig.links.map((link) => ({
+const socialItems = homeConfig.links.map((link) => ({
 	name: link.name,
 	icon: link.icon,
 	href: link.url,
 	ariaLabel: link.name,
 }));
 
-const skillItems = normalizeSkillItems({ items: skillsConfig.items });
+const skillItems = normalizeSkillItems({ items: homeConfig.skills });
 
 const umamiConfig = siteConfig.analytics?.umamiAnalytics;
 const statsBaseUrl = umamiConfig?.scriptUrl
@@ -76,7 +76,7 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					variant="square"
 					pills={visitPills}
 					statKind="visits"
-					visualImage="/assets/images/home/home-data-1.webp"
+					visualImage={homeConfig.dataLayer.visitImage}
 				/>
 				<DataMetricCard
 					title="文章档案"
@@ -88,7 +88,7 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					variant="wide"
 					pills={articlePills}
 					statKind="articles"
-					visualImage="/assets/images/home/home-data-2.webp"
+					visualImage={homeConfig.dataLayer.archiveImage}
 				/>
 			</div>
 
@@ -97,7 +97,7 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					<div class="data-band__intro">
 						<div class="data-band__frame"></div>
 						<div class="data-band__visual" aria-hidden="true">
-							<img src="/assets/images/home/home-data-3.webp" alt="" class="data-band__visual-img" data-home-motion-image loading="lazy" decoding="async" />
+							<img src={homeConfig.dataLayer.contactImage} alt="" class="data-band__visual-img" data-home-motion-image loading="lazy" decoding="async" />
 						</div>
 						<div class="data-band__content">
 							<p class="data-band__eyebrow">CONTACT</p>
@@ -127,7 +127,7 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					<div class="data-band__intro">
 						<div class="data-band__frame"></div>
 						<div class="data-band__visual" aria-hidden="true">
-							<img src="/assets/images/home/home-data-4.webp" alt="" class="data-band__visual-img" data-home-motion-image loading="lazy" decoding="async" />
+							<img src={homeConfig.dataLayer.skillsImage} alt="" class="data-band__visual-img" data-home-motion-image loading="lazy" decoding="async" />
 						</div>
 						<div class="data-band__content">
 							<p class="data-band__eyebrow">SKILLS</p>

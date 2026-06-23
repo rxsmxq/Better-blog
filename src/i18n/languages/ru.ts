@@ -216,22 +216,6 @@ export const ru: Translation = {
 	// Зашифровано
 	[Key.postEncrypted]: "Эта статья зашифрована",
 
-	// Режим обоев
-	[Key.wallpaperMode]: "Режим обоев",
-	[Key.wallpaperBannerMode]: "Баннер обои",
-	[Key.wallpaperOverlayMode]: "Прозрачный",
-	[Key.wallpaperNoneMode]: "Однотонный фон",
-
-	// Настройки баннера
-	[Key.bannerSettings]: "Настройки баннера",
-	[Key.bannerTitle]: "Заголовок главного баннера",
-	[Key.bannerCarousel]: "Карусель баннера",
-	[Key.wavesAnimation]: "Анимация волн",
-	[Key.overlaySettings]: "Настройки прозрачности",
-	[Key.overlayOpacity]: "Прозрачность обоев",
-	[Key.overlayBlur]: "Размытие фона",
-	[Key.overlayCardOpacity]: "Прозрачность карточек",
-
 	// Макет списка сообщений
 	[Key.postListLayout]: "Макет списка сообщений",
 	[Key.postListLayoutList]: "Список",

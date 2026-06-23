@@ -8,8 +8,6 @@ export const calendarConfig: CalendarConfig = {
 	title: "",
 	// 页面描述，留空使用 i18n 翻译
 	description: "",
-	// 是否显示评论区
-	showComment: false,
 
 	// 节日 API（构建时拉取并缓存，运行时无网络依赖）
 	holidayApi: {
@@ -108,8 +106,6 @@ export const calendarConfig: CalendarConfig = {
 		posts: true,
 		// 单元格右上角是否显示农历日（廿一、初一等）
 		lunarDate: true,
-		// 是否显示周序号（第几周）
-		weekNumber: false,
 	},
 
 	// 顶部"未来概览"配置

@@ -7,7 +7,7 @@ import sharp from "sharp";
 import type { PostData } from "@/types/post";
 import { removeFileExtension } from "@/utils/url-utils";
 
-import { profileConfig } from "../../config/profileConfig";
+import { homeConfig } from "../../config/homeConfig";
 import { siteConfig } from "../../config/siteConfig";
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
@@ -67,14 +67,14 @@ export async function GET({
 	let avatarBase64: string;
 
 	// 检查头像是否为 URL
-	if (profileConfig.avatar?.startsWith("http")) {
+	if (homeConfig.avatar?.startsWith("http")) {
 		// 如果是 URL，直接使用
-		avatarBase64 = profileConfig.avatar;
+		avatarBase64 = homeConfig.avatar;
 	} else {
 		// 如果是本地路径，从 public 目录读取
-		const avatarPath = profileConfig.avatar?.startsWith("/")
-			? `./public${profileConfig.avatar}`
-			: `./src/${profileConfig.avatar}`;
+		const avatarPath = homeConfig.avatar?.startsWith("/")
+			? `./public${homeConfig.avatar}`
+			: `./src/${homeConfig.avatar}`;
 		const avatarBuffer = fs.readFileSync(avatarPath);
 		avatarBase64 = `data:image/png;base64,${avatarBuffer.toString("base64")}`;
 	}
@@ -259,7 +259,7 @@ export async function GET({
 													fontWeight: 600,
 													color: textColor,
 												},
-												children: profileConfig.name,
+												children: homeConfig.name,
 											},
 										},
 									],

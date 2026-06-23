@@ -2,9 +2,6 @@ import type {
 	DARK_MODE,
 	LIGHT_MODE,
 	SYSTEM_MODE,
-	WALLPAPER_BANNER,
-	WALLPAPER_NONE,
-	WALLPAPER_OVERLAY,
 } from "../constants/constants";
 
 export type SiteConfig = {
@@ -24,14 +21,6 @@ export type SiteConfig = {
 
 	// 页面整体宽度（单位：rem）
 	pageWidth?: number;
-
-	// 卡片样式配置
-	card: {
-		// 是否开启卡片边框和阴影立体效果
-		border: boolean;
-		// 是否让卡片风格跟随主题色相
-		followTheme?: boolean;
-	};
 
 	// 字体配置
 	font: FontConfig;
@@ -70,9 +59,6 @@ export type SiteConfig = {
 		};
 		title?: string; // 导航栏标题，如果不设置则使用 title
 		widthFull?: boolean; // 导航栏是否占满屏幕宽度
-		menuAlign?: "left" | "center"; // 导航菜单对齐方式（仅桌面端菜单）
-		followTheme?: boolean; // 导航栏图标和标题是否跟随主题色
-		stickyNavbar?: boolean; // 导航栏是否固定在顶部始终可见
 	};
 
 	showLastModified: boolean; // 控制"上次编辑"卡片显示的开关
@@ -86,7 +72,6 @@ export type SiteConfig = {
 		guestbook: boolean; // 留言板页面开关
 		gallery: boolean; // 相册页面开关
 		collections: boolean; // 收藏API页面开关
-		stats: boolean; // 统计页面开关
 		calendar: boolean; // 日历页面开关
 	};
 
@@ -219,19 +204,47 @@ export type NavBarLink = {
 	children?: (NavBarLink | LinkPreset)[]; // 支持子菜单，可以是NavBarLink或LinkPreset
 };
 
-export enum NavBarSearchMethod {
-	PageFind = 0,
-}
-
-export type NavBarSearchConfig = {
-	method: NavBarSearchMethod;
-};
-
 export type NavBarConfig = {
 	links: (NavBarLink | LinkPreset)[];
 };
 
-export type ProfileConfig = {
+export type HomePortfolioShutterPanel = {
+	title: string;
+	english: string;
+	description: string;
+	image: string;
+	alt?: string;
+};
+
+export type HomePortfolioShutterInterlude = {
+	/** 前景大图（仅显示上半部分） */
+	foreground: string;
+	/** 背景左侧滑入长条（从左向右） */
+	stripLeft: string;
+	/** 背景右侧滑入长条（从右向左） */
+	stripRight: string;
+	/** 中景左侧文字（人物左侧） */
+	copyLeft: string;
+	/** 中景右侧文字（人物右侧） */
+	copyRight: string;
+};
+
+export type HomePortfolioShutterConfig = {
+	enabled: boolean;
+	kicker: string;
+	title: string;
+	description: string;
+	scrollDistance: number;
+	finalImage: {
+		src: string;
+		alt: string;
+	};
+	panels: HomePortfolioShutterPanel[];
+	/** 5 张长条图之后的插入动画段：三层布局（背景长条 / 中景文字 / 前景大图） */
+	interlude: HomePortfolioShutterInterlude;
+};
+
+export type HomeConfig = {
 	avatar?: string;
 	avatarOffWork?: string;
 	name: string;
@@ -239,6 +252,34 @@ export type ProfileConfig = {
 	nameBadge?: string; // 名字旁边的徽章（如 QQ 号）
 	occupation?: string; // 职业/身份标签（如 后端开发 / 技术博主）
 	bio?: string | string[];
+	hero: {
+		backgroundImage: string;
+		characterImage: string;
+		speechAccentImage: string;
+		speech?: {
+			text: string;
+			english: string;
+		};
+		rightPanel?: {
+			pill: string;
+			title: string;
+			diamond: string;
+			subtitle: string;
+			microText: string;
+		};
+	};
+	dataLayer: {
+		visitImage: string;
+		archiveImage: string;
+		contactImage: string;
+		skillsImage: string;
+	};
+	portfolioShutter: HomePortfolioShutterConfig;
+	skills?: {
+		name: string;
+		icon?: string;
+		group?: string;
+	}[];
 	links: {
 		name: string;
 		url: string;
@@ -312,11 +353,6 @@ export type LIGHT_DARK_MODE =
 	| typeof LIGHT_MODE
 	| typeof DARK_MODE
 	| typeof SYSTEM_MODE;
-
-export type WALLPAPER_MODE =
-	| typeof WALLPAPER_BANNER
-	| typeof WALLPAPER_OVERLAY
-	| typeof WALLPAPER_NONE;
 
 export type BlogPostData = {
 	body: string;
@@ -441,8 +477,6 @@ export type FooterPoweredByItem = {
 };
 
 export type FooterConfig = {
-	enable: boolean; // 是否启用Footer HTML注入功能
-	customHtml?: string; // 自定义HTML内容，用于添加备案号等信息
 	socialLinks: FooterSocialLink[]; // 社交链接
 	beian: FooterBeianConfig; // 备案信息
 	poweredBy: FooterPoweredByItem[]; // Powered by 信息
@@ -601,136 +635,6 @@ export type Live2DModelConfig = {
 	};
 };
 
-export type BackgroundWallpaperConfig = {
-	mode: "banner" | "overlay" | "none"; // 壁纸模式：banner横幅模式、overlay全屏透明覆盖模式或none纯色背景
-	switchable?: boolean; // 是否允许用户通过导航栏切换壁纸模式，默认true
-	src:
-		| string
-		| string[]
-		| {
-				desktop?: string | string[];
-				mobile?: string | string[];
-		  }; // 支持单个图片、图片数组或分别设置桌面端和移动端图片
-
-	// Banner模式特有配置
-	banner?: {
-		position?:
-			| "top"
-			| "center"
-			| "bottom"
-			| "top left"
-			| "top center"
-			| "top right"
-			| "center left"
-			| "center center"
-			| "center right"
-			| "bottom left"
-			| "bottom center"
-			| "bottom right"
-			| "left top"
-			| "left center"
-			| "left bottom"
-			| "right top"
-			| "right center"
-			| "right bottom"
-			| string; // 壁纸位置，支持CSS object-position的所有值，包括百分比和像素值
-		homeText?: {
-			enable: boolean; // 是否在首页显示自定义文字（全局开关）
-			switchable?: boolean; // 是否允许用户通过控制面板切换横幅标题显示
-			title?: string; // 主标题
-			subtitle?: string | string[]; // 副标题，支持单个字符串或字符串数组
-			titleSize?: string; // 主标题字体大小，如 "3.5rem"
-			subtitleSize?: string; // 副标题字体大小，如 "1.5rem"
-			typewriter?: {
-				enable: boolean; // 是否启用打字机效果
-				speed: number; // 打字速度（毫秒）
-				deleteSpeed: number; // 删除速度（毫秒）
-				pauseTime: number; // 完整显示后的暂停时间（毫秒）
-			};
-		};
-		credit?: {
-			enable:
-				| boolean
-				| {
-						desktop: boolean; // 桌面端是否显示横幅图片来源文本
-						mobile: boolean; // 移动端是否显示横幅图片来源文本
-				  }; // 是否显示横幅图片来源文本，支持布尔值或分别设置桌面端和移动端
-			text:
-				| string
-				| {
-						desktop: string; // 桌面端显示的来源文本
-						mobile: string; // 移动端显示的来源文本
-				  }; // 横幅图片来源文本，支持字符串或分别设置桌面端和移动端
-			url?:
-				| string
-				| {
-						desktop: string; // 桌面端原始艺术品或艺术家页面的 URL 链接
-						mobile: string; // 移动端原始艺术品或艺术家页面的 URL 链接
-				  }; // 原始艺术品或艺术家页面的 URL 链接，支持字符串或分别设置桌面端和移动端
-		};
-		navbar?: {
-			transparentMode?: "semi" | "full" | "semifull"; // 导航栏透明模式
-			enableBlur?: boolean; // 是否开启毛玻璃模糊效果
-			blur?: number; // 毛玻璃模糊度
-		};
-		carousel?: {
-			enable: boolean; // 是否启用横幅图片轮播
-			interval?: number; // 轮播间隔时间，单位毫秒
-			switchable?: boolean; // 是否允许用户通过控制面板切换横幅轮播
-		};
-		waves?: {
-			enable:
-				| boolean
-				| {
-						desktop: boolean; // 桌面端是否启用水波纹动画效果
-						mobile: boolean; // 移动端是否启用水波纹动画效果
-				  }; // 是否启用水波纹动画效果，支持布尔值或分别设置桌面端和移动端
-			switchable?: boolean; // 是否允许用户通过控制面板切换水波纹动画
-		};
-	};
-	// 全屏透明覆盖模式特有配置
-	overlay?: {
-		switchable?:
-			| boolean
-			| {
-					opacity?: boolean; // 是否允许用户在控制面板调整壁纸透明度
-					blur?: boolean; // 是否允许用户在控制面板调整背景模糊度
-					cardOpacity?: boolean; // 是否允许用户在控制面板调整卡片透明度
-			  }; // 透明模式参数是否可在控制面板调整，支持统一开关或分项开关
-		zIndex?: number; // 层级，确保壁纸在合适的层级显示
-		opacity?: number; // 壁纸透明度，0-1之间
-		blur?: number; // 背景模糊程度，单位px
-		cardOpacity?: number; // 卡片背景透明度，0-1之间
-	};
-};
-
-// 广告栏配置
-export type AdConfig = {
-	title?: string; // 广告栏标题
-	content?: string; // 广告栏文本内容
-	image?: {
-		src: string; // 图片地址
-		alt?: string; // 图片描述
-		link?: string; // 图片点击链接
-		external?: boolean; // 是否外部链接
-	};
-	link?: {
-		text: string; // 链接文本
-		url: string; // 链接地址
-		external?: boolean; // 是否外部链接
-	};
-	padding?: {
-		top?: string; // 上边距，如 "0", "1rem", "16px"
-		right?: string; // 右边距
-		bottom?: string; // 下边距
-		left?: string; // 左边距
-		all?: string; // 统一边距，会覆盖单独设置
-	};
-	closable?: boolean; // 是否可关闭
-	displayCount?: number; // 显示次数限制，-1为无限制
-	expireDate?: string; // 过期时间 (ISO 8601 格式)
-};
-
 // 友链配置
 export type FriendLink = {
 	title: string; // 友链标题
@@ -758,7 +662,6 @@ export type FriendNote = {
 export type FriendsPageConfig = {
 	title?: string; // 页面标题，留空则使用 i18n 中的翻译
 	description?: string; // 页面描述，留空则使用 i18n 中的翻译
-	showCustomContent?: boolean; // 是否显示自定义内容（friends.mdx）
 	showComment?: boolean; // 是否显示评论区，默认 true
 	randomizeSort?: boolean; // 是否打乱排序，如果为 true，将忽略 weight，随机排序
 	applyLink?: string; // 友链申请链接，跳转到 GitHub Issue 等
@@ -842,8 +745,6 @@ export type SponsorConfig = {
 	methods: SponsorMethod[]; // 赞助方式列表
 	sponsors?: SponsorItem[]; // 赞助者列表（可选）
 	showSponsorsList?: boolean; // 是否显示赞助者列表，默认 true
-	showComment?: boolean; // 是否显示评论区，默认 false
-	showButtonInPost?: boolean; // 是否在文章详情页底部显示赞助按钮，默认 true
 };
 
 // 响应式图像布局类型
@@ -938,7 +839,6 @@ export type ScheduleItem = {
 export type CalendarConfig = {
 	title?: string; // 页面标题，留空使用 i18n
 	description?: string; // 页面描述，留空使用 i18n
-	showComment?: boolean; // 是否显示评论区，默认 false
 
 	// 节日 API（构建时拉取，失败回退仅用 builtinHolidays）
 	holidayApi: {
@@ -961,7 +861,6 @@ export type CalendarConfig = {
 	show: {
 		posts: boolean; // 是否把文章发布日上日历
 		lunarDate: boolean; // 单元格是否显示农历
-		weekNumber: boolean; // 是否显示周序号
 	};
 
 	// 顶部"未来概览"配置

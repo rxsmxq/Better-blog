@@ -1,9 +1,6 @@
 @import 'tailwindcss';
 
 /* === 布局层 === */
-@import './layout-styles.css';
-@import './banner-title.css';
-@import './waves.css';
 @import './transition.css';
 @import './custom-scrollbar.css';
 @import './guestbook.css';
@@ -48,7 +45,6 @@
 @import './widgets/calendar.css';
 @import './widgets/sidebar-toc.css';
 @import './widgets/archive-heatmap.css';
-@import './widgets/advertisement.css';
 @import './widgets/terrarium-model.css';
 @import './widgets/announcement.css';
 
@@ -200,16 +196,7 @@ html {
     }
     
     /* 导航栏主题切换保护 - 仅在非 View Transitions 模式下禁用过渡 */
-    .is-theme-transitioning:not(.use-view-transition) #navbar > div,
-    .is-theme-transitioning:not(.use-view-transition) #navbar[data-transparent-mode] > div,
-    .is-theme-transitioning:not(.use-view-transition) #navbar[data-transparent-mode].scrolled > div,
-    .is-theme-transitioning:not(.use-view-transition) body.wallpaper-transparent #navbar > div,
-    .is-theme-transitioning:not(.use-view-transition) body.wallpaper-transparent #navbar[data-transparent-mode] > div,
-    .is-theme-transitioning:not(.use-view-transition) body.wallpaper-transparent #navbar[data-transparent-mode].scrolled > div,
-    .is-theme-transitioning:not(.use-view-transition) #wallpaper-wrapper ~ * #navbar > div,
-    .is-theme-transitioning:not(.use-view-transition) #wallpaper-wrapper ~ * #navbar[data-transparent-mode] > div,
-    .is-theme-transitioning:not(.use-view-transition) body:has(#wallpaper-wrapper) #navbar > div,
-    .is-theme-transitioning:not(.use-view-transition) body:has(#wallpaper-wrapper) #navbar[data-transparent-mode] > div {
+    .is-theme-transitioning:not(.use-view-transition) #navbar > div {
         transition: none !important;
         backdrop-filter: none !important;
     }

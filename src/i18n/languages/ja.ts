@@ -214,22 +214,6 @@ export const ja: Translation = {
 	// 暗号化
 	[Key.postEncrypted]: "この記事は暗号化されています",
 
-	// 壁紙モード
-	[Key.wallpaperMode]: "壁紙モード",
-	[Key.wallpaperBannerMode]: "バナー壁紙",
-	[Key.wallpaperOverlayMode]: "透明",
-	[Key.wallpaperNoneMode]: "単色背景",
-
-	// バナー設定
-	[Key.bannerSettings]: "バナー設定",
-	[Key.bannerTitle]: "ホームバナータイトル",
-	[Key.bannerCarousel]: "バナーカルーセル",
-	[Key.wavesAnimation]: "波アニメーション",
-	[Key.overlaySettings]: "透明設定",
-	[Key.overlayOpacity]: "壁紙の透明度",
-	[Key.overlayBlur]: "背景ぼかし",
-	[Key.overlayCardOpacity]: "カード透明度",
-
 	// 投稿リストレイアウト
 	[Key.postListLayout]: "投稿リストレイアウト",
 	[Key.postListLayoutList]: "リスト",

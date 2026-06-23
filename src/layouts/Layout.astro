@@ -10,7 +10,7 @@ import MusicManager from "@components/features/MusicManager.astro";
 import PageLoader from "@components/features/PageLoader.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 
-import { expressiveCodeConfig, profileConfig, siteConfig } from "@/config";
+import { expressiveCodeConfig, homeConfig, siteConfig } from "@/config";
 import { PAGE_WIDTH } from "@/constants/constants";
 import { defaultFavicons } from "@/constants/icon";
 import type { Favicon } from "@/types/config";
@@ -63,7 +63,7 @@ const siteLang = lang.replace("_", "-");
 ---
 
 <!doctype html>
-<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode="none">
+<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]">
   <head>
     <meta charset="UTF-8" />
     {siteConfig.analytics?.googleAnalyticsId && (
@@ -109,7 +109,7 @@ const siteLang = lang.replace("_", "-");
     {siteConfig.keywords && siteConfig.keywords.length > 0 && (
       <meta name="keywords" content={siteConfig.keywords.join(", ")} />
     )}
-    <meta name="author" content={profileConfig.name} />
+    <meta name="author" content={homeConfig.name} />
 
     <meta property="og:site_name" content={siteConfig.title} />
     <meta property="og:url" content={Astro.url} />
@@ -179,7 +179,7 @@ const siteLang = lang.replace("_", "-");
     <link
       rel="alternate"
       type="application/rss+xml"
-      title={profileConfig.name}
+      title={homeConfig.name}
       href={`${Astro.site}rss.xml`}
     />
 

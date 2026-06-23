@@ -5,7 +5,6 @@
 export type {
 	AnnouncementConfig,
 	AnnouncementItem,
-	BackgroundWallpaperConfig,
 	BirthdayItem,
 	CalendarConfig,
 	CollectionApiItem,
@@ -22,11 +21,14 @@ export type {
 	GalleryAlbum,
 	GalleryConfig,
 	HolidayItem,
+	HomeConfig,
+	HomePortfolioShutterConfig,
+	HomePortfolioShutterInterlude,
+	HomePortfolioShutterPanel,
 	LicenseConfig,
 	MusicPlayerConfig,
 	NavBarConfig,
 	PlantUMLConfig,
-	ProfileConfig,
 	ScheduleItem,
 	SidebarLayoutConfig,
 	SiteConfig,
@@ -37,12 +39,9 @@ export type {
 	WidgetComponentConfig,
 	WidgetComponentType,
 } from "../types/config";
-export { adConfig1, adConfig2 } from "./adConfig"; // 广告配置
 // 核心配置
 export { aiSearchConfig } from "./aiSearchConfig"; // AI 搜索配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
-// 样式配置
-export { backgroundWallpaper } from "./backgroundWallpaper"; // 背景壁纸配置
 export { calendarConfig } from "./calendarConfig"; // 日历配置
 export { collectionsApiConfig } from "./collectionsApiConfig"; // 收藏API配置
 // 功能配置
@@ -53,16 +52,14 @@ export { fontConfig } from "./fontConfig"; // 字体配置
 export { footerConfig } from "./footerConfig"; // 页脚配置
 export { friendsPageConfig, getEnabledFriends } from "./friendsConfig"; // 友链配置
 export { galleryConfig } from "./galleryConfig"; // 相册配置
-export { homePortfolioShutterConfig } from "./homePortfolioShutterConfig"; // 首页作品百叶窗配置
+export { homeConfig } from "./homeConfig"; // 首页与用户资料配置
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
 // 组件配置
 export { musicPlayerConfig } from "./musicConfig"; // 音乐播放器配置
-export { navBarConfig, navBarSearchConfig } from "./navBarConfig"; // 导航栏配置与搜索配置
+export { navBarConfig } from "./navBarConfig"; // 导航栏配置
 export { live2dModelConfig, spineModelConfig } from "./pioConfig"; // 看板娘配置
 export { plantumlConfig } from "./plantumlConfig"; // PlantUML 图表配置
-export { profileConfig } from "./profileConfig"; // 用户资料配置
 // 布局配置
 export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
-export { skillsConfig } from "./skillsConfig"; // 技能标签配置
 export { sponsorConfig } from "./sponsorConfig"; // 赞助配置
