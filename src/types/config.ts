@@ -193,6 +193,7 @@ export enum LinkPreset {
 	QQGroup = 16,
 	NavPosts = 17,
 	NavMy = 18,
+	Music = 19,
 }
 
 export type NavBarLink = {

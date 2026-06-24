@@ -50,6 +50,7 @@ const buildNavBarConfig = (): NavBarConfig => {
 	if (siteConfig.pages.sponsor) {
 		myChildren.push(LinkPreset.Sponsor);
 	}
+	myChildren.push(LinkPreset.Music);
 	myChildren.push(LinkPreset.About);
 
 	const myNav: NavBarLink = {

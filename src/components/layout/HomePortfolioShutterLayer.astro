@@ -204,7 +204,7 @@ const transparentPixel =
 		]);
 	}
 
-	function hydrateLazyImages(root: HTMLElement) {
+	async function hydrateLazyImages(root: HTMLElement) {
 		const images = getLazyImages(root);
 		const decodeQueue = images.map(async (image) => {
 			const src = image.dataset.src;
