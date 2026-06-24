@@ -16,7 +16,7 @@ export const siteConfig: SiteConfig = {
 	site_url: "https://tblog.mmzhiku.xyz",
 
 	// 站点描述
-	description: "测试站点描述",
+	description: "mmzming的博客，记录个人学习、工作、AI相关的内容",
 
 	// 站点关键词
 	keywords: [
