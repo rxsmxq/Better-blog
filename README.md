@@ -1,74 +1,39 @@
 # Firefly-Mod
 
-> 基于 [Firefly](https://github.com/CuteLeaf/Firefly) 的个人博客魔改版 `V2.2.4`
+> 基于 [Firefly](https://github.com/CuteLeaf/Firefly) 的个人博客魔改版 `V2.3.0`
 
 ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen)
 ![pnpm >= 9](https://img.shields.io/badge/pnpm-%3E%3D9-blue)
 ![Astro](https://img.shields.io/badge/Astro-6.x-orange)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![Svelte](https://img.shields.io/badge/Svelte-5.x-%23FF3E00)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.x-%2306B6D4)
+![Biome](https://img.shields.io/badge/Biome-2.x-%2360A5FA)
+![Swup](https://img.shields.io/badge/Swup-4.x-%237467EF)
+![Pagefind](https://img.shields.io/badge/Pagefind-1.x-%234B5563)
 
 <img alt="博客预览" src="./docs/images/image.webp" />
 
 ## 项目概述
 
-Firefly-Mod 是从 [Firefly](https://github.com/CuteLeaf/Firefly) 分支出的个性化魔改版本，已脱离原分支独立演进。基于 Astro 6.x SSG 静态站点生成，搭配 Svelte 5 组件和 Tailwind CSS 4 样式系统，构建为纯静态博客。
+Firefly-Mod 是从 [Firefly](https://github.com/CuteLeaf/Firefly) 分支出的个性化魔改版本，已脱离原分支独立演进。
 
-核心特性：双侧边栏组件化布局、上下班状态感知、Live2D/Spine 看板娘、相册系统、收藏 API、Waline/Twikoo/Giscus/Artalk/Disqus 多评论系统支持、Swup 页面过渡动画、Pagefind 客户端全文搜索、基于 Cloudflare Vectorize 的 AI 语义搜索（RAG）、留言板、日历页面、首页作品百叶窗、文章分享海报、密码加密文章。
+基于 Firefly 魔改新增以下特性：
 
-## 技术栈
-
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 框架 | Astro (SSG) | 6.x |
-| UI 组件 | Svelte | 5.x |
-| 样式 | Tailwind CSS | 4.x |
-| 类型 | TypeScript | 5.x |
-| 格式化/Lint | Biome | 2.x |
-| 页面过渡 | Swup | — |
-| 全文搜索 | Pagefind | 1.x |
-| 包管理 | pnpm | ≥ 9 |
-| 运行时 | Node.js | ≥ 22 |
-
-## 快速开始
-
-```bash
-# 安装依赖
-pnpm install
-
-# 启动开发服务器 (localhost:4321)
-pnpm dev
-
-# 构建生产产物到 ./dist/
-pnpm build
-
-# 预览构建产物
-pnpm preview
-
-# 类型检查
-pnpm type-check
-
-# 重新生成图标
-pnpm icons
-
-# 构建/更新 AI 搜索向量索引（增量）
-pnpm build-index
-
-# 强制全量重建 AI 搜索向量索引
-pnpm build-index -- --force
-
-# 登录 Cloudflare（部署 Workers 前）
-npx wrangler login
-
-# 部署到 Cloudflare
-npx wrangler deploy
-```
-
-构建流程为三步：图标生成 → `astro build` → `pagefind --site dist`。
+- 重构整体UI，黑白简约风格，组件可交互为主，删除背景图片。
+- 首页更偏向于展示个人能力爱好，不展示最新文章，删除侧边栏。
+- 新增 AI 语义搜索（RAG）功能，基于 Cloudflare Vectorize 向量索引。
+- 魔改留言板功能，支持用户评论。
+- 新增日历页面，展示文章发布时间。
+- 关于页面，注重交互。
+- 删除动漫这些影响构建速度的功能。
+- 文章分类更注重视觉排版分类。
 
 ## 常用命令
 
 | 用途 | 命令 |
 |------|------|
+| 安装依赖 | `pnpm install` |
 | 开发服务器 | `pnpm dev` |
 | 构建 | `pnpm build` |
 | 预览构建产物 | `pnpm preview` |
@@ -80,7 +45,19 @@ npx wrangler deploy
 | 重新生成图标 | `pnpm icons` |
 | 构建/更新 AI 向量索引 | `pnpm build-index` |
 
-强制使用 pnpm（`preinstall` 脚本限制）。
+## AI 搜索向量索引
+```bash
+# 配置好.env文件后，执行以下命令：
+
+# 登录 Cloudflare（需要先删掉CLOUDFLARE_API_TOKEN环境变量）
+npx wrangler login
+
+# 构建/更新 AI 搜索向量索引（增量）（登录后需要配置CLOUDFLARE_API_TOKEN环境变量）
+pnpm build-index
+
+# 强制全量重建 AI 搜索向量索引（登录后需要配置CLOUDFLARE_API_TOKEN环境变量）
+pnpm build-index -- --force
+```
 
 ## 配置系统
 
@@ -109,16 +86,6 @@ npx wrangler deploy
 | `collectionsApiConfig.ts` | 收藏 API 配置 |
 | `aiSearchConfig.ts` | AI 搜索配置（模型、Embedding、向量索引） |
 
-### Markdown 插件流水线
-
-定义在 `astro.config.mjs`。
-
-**Remark 插件**（解析阶段，按顺序）：remarkMath → remarkReadingTime → remarkImageGrid → remarkExcerpt → remarkDirective → remarkSectionize → parseDirectiveNode → remarkMermaid → remarkPlantuml
-
-**Rehype 插件**（HTML 转换阶段）：rehypeKatex → rehypeCallouts → rehypeSlug → rehypeMermaid → rehypePlantuml → rehypeFigure → rehypeExternalLinks → rehypeEmailProtection → rehypeComponents → rehypeAutolinkHeadings
-
-自定义插件位于 `src/plugins/`。
-
 ## CI/CD 工作流
 
 | 工作流 | 触发条件 | 说明 |
@@ -145,77 +112,19 @@ npx wrangler deploy
 | AI 搜索 | 需 Cloudflare Vectorize 索引；构建索引需 `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`；LLM/Embedding 默认走 Workers AI，也可在 `aiSearchConfig.ts` 中配置第三方 API（如魔搭社区）并设置 `AI_API_KEY` |
 | 图床（可选）| 项目没引用图床，无需配置，但是我建议配置一个图床，用于存储文章中的图片 |
 
-### Cloudflare Pages 部署方案
+## Cloudflare Pages 部署方案
 
-本项目原生支持 Cloudflare Pages 部署，并提供 Workers 脚本用于 AI 搜索功能。
+因为是魔改[Firefly](https://github.com/CuteLeaf/Firefly)，所以部署方案与 Firefly 相同。
 
-#### 1. 连接 Git 仓库自动构建
+其他与 Firefly 相同，除了以下几点：
 
-1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com) → Pages → 创建项目
-2. 选择「连接到 Git」，授权 GitHub/GitLab 仓库
-3. 构建设置：
-   - **构建命令**：`pnpm build`
-   - **构建输出目录**：`dist`
-4. 点击「保存并部署」，首次构建约 2-5 分钟
-5. 添加 Pages 环境变量（Dashboard → Workers & Pages → Settings → Variables and Secrets）：
-   - **AI_API_KEY**：第三方 LLM/Embedding API 密钥（默认魔搭社区）。若完全使用 Cloudflare Workers AI，则无需配置。
-   - 如需 Umami 统计，添加 **UMAMI_TOKEN** Secret。
-6. 配置 KV 存储（用于留言板等 Worker 状态数据）：
+配置 KV 存储（用于留言板 Worker 状态数据）：
    - 登录 Cloudflare Dashboard → KV → 创建命名空间
    - 使用 `wrangler kv namespace create "VISITOR_KV"` 创建，并在 `wrangler.toml` 中同步 `id`
-7. 设置好后重启 Pages，等待部署成功。
-8. 创建 AI 搜索向量索引：
+
+创建 AI 搜索向量索引：
    - 索引名称需与 `src/config/aiSearchConfig.ts` 中的 `indexName` 一致（默认 `blog-ai-search`）
    - 使用 wrangler 创建：`wrangler vectorize create --name blog-ai-search --dimensions 1024 --metric cosine`
-
-### 你需要更改的配置文件
-
-- `src/config/aiSearchConfig.ts`：AI 搜索配置（模型、Embedding、向量索引）
-- `src/config/commentConfig.ts`：评论系统配置（更换地址）
-- `src/config/homeConfig.ts`：首页与用户资料配置：头像、昵称、签名、社交链接、首页图片、技能图标、作品百叶窗
-- `src/config/siteConfig.ts`：网站配置：上下班时间、网站设置、页面开关、Umami 统计、导航栏配置
-- `wrangler.toml`：Cloudflare KV / Vectorize / AI 绑定配置
-
-下方可选配置文件
-
-- `src/config/musicConfig.ts`：音乐播放器配置（Meting API / 本地音乐）
-- `src/config/pioConfig.ts`：Live2D / Spine 看板娘配置
-- `src/config/fontConfig.ts`：自定义字体配置
-- `src/config/collectionsApiConfig.ts`：收藏 API 配置
-- `src/config/announcementConfig.ts`：公告栏配置
-- `src/config/friendsConfig.ts`：友链配置
-- `src/config/galleryConfig.ts`：相册配置
-- `src/config/calendarConfig.ts`：日历页面配置
-- `src/config/sponsorConfig.ts`：赞助页配置
-- `src/config/coverImageConfig.ts`：封面图配置
-
-## 文章存储位置
-
-- `src/content/posts/`：Markdown / MDX 文章存储目录，文章内格式必须包含
-  - 标题：`title: 文章标题`
-  - 发布日期：`published: 2023-01-01`
-  - 分类：`category: 分类`
-  - 标签：`tags: [标签1, 标签2]`
-- 常用可选 frontmatter：
-  - 更新日期：`updated: 2023-01-02`
-  - 描述：`description: 文章描述`（未填写时默认取正文第一段作为摘要）
-  - 草稿：`draft: true`
-  - 置顶：`pinned: true`
-  - 封面图：`image: /assets/images/cover.webp`
-  - 密码：`password: 你的密码`（配合 `passwordHint` 使用）
-  - 作者、转载链接、许可证等：`author`, `sourceLink`, `licenseName`, `licenseUrl`
-
-- `src/content/spec/`：特殊页面内容目录，包含关于、友链、留言板、隐私政策等页面
-
-## 相册存储位置
-
-- `public/gallery/`：相册图片存储目录，子目录名需与 `src/config/galleryConfig.ts` 中的相册 `id` 对应
-- 每个相册目录下放图片，可手动放置 `cover.*` 作为封面；无封面时默认使用第一张图片
-
-## Live2D / Spine 模型存储位置
-
-- `public/pio/models/live2d/`：Live2D 模型存储目录
-- `public/pio/models/spine/`：Spine 模型存储目录
 
 ## Live2D 版权声明
 
