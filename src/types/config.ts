@@ -718,6 +718,50 @@ export type MusicPlayerConfig = {
 			lrc?: string; // 歌词内容，支持 LRC 格式
 		}>;
 	};
+
+	visualizer?: MusicVisualizerConfig;
+};
+
+export type MusicVisualizerThemeConfig = {
+	base1: string;
+	base2: string;
+	coolCore: string;
+	coolEdge: string;
+	warmCore: string;
+	warmEdge: string;
+	rippleColor: string;
+	fogColor: string;
+	glowIntensity: number;
+};
+
+export type MusicVisualizerHeightConfig = {
+	idle: number;
+	subBass: number;
+	bass: number;
+	lowMid: number;
+	mid: number;
+	highMid: number;
+	energy: number;
+	ripple: number;
+	rippleAccent: number;
+};
+
+export type MusicVisualizerConfig = {
+	background?: {
+		dark: string;
+		light: string;
+	};
+	camera?: {
+		position?: {
+			x: number;
+			y: number;
+			z: number;
+		};
+	};
+	autoRotate?: boolean;
+	autoRotateSpeed?: number;
+	height?: MusicVisualizerHeightConfig;
+	theme?: MusicVisualizerThemeConfig;
 };
 
 // 赞助方式类型

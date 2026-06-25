@@ -2,19 +2,18 @@
 import { onDestroy, onMount } from "svelte";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { musicPlayerConfig } from "@/config/musicConfig";
 import { AudioAnalyzer, type AudioData } from "./AudioAnalyzer";
 
 interface Props {
 	audioAnalyzer: AudioAnalyzer;
-	isDark?: boolean;
-	useLightBackground?: boolean;
+	backgroundColor?: string;
 	onSceneReady?: (() => void) | undefined;
 }
 
 let {
 	audioAnalyzer,
-	isDark = true,
-	useLightBackground = false,
+	backgroundColor = musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15",
 	onSceneReady = undefined,
 }: Props = $props();
 
@@ -29,7 +28,12 @@ let particleMesh: THREE.InstancedMesh;
 let terrainMaterial: THREE.ShaderMaterial;
 let animationId: number;
 let clock: THREE.Clock;
-const lightBackgroundColor = new THREE.Color(0xffffff);
+let onResize: (() => void) | undefined;
+const backgroundTargetColor = new THREE.Color();
+
+$effect(() => {
+	backgroundTargetColor.set(backgroundColor);
+});
 
 const GRID_SIZE = 128;
 const SPACING = 1.05;
@@ -99,32 +103,22 @@ const dummyPosition = new THREE.Vector3();
 const dummyQuaternion = new THREE.Quaternion();
 const dummyScale = new THREE.Vector3();
 
-function getThemeColors(dark: boolean) {
-	if (dark) {
-		return {
-			base1: new THREE.Color(0x050810),
-			base2: new THREE.Color(0x0a0f1a),
-			coolCore: new THREE.Color(0x2255ff),
-			coolEdge: new THREE.Color(0x8844ff),
-			warmCore: new THREE.Color(0xff4422),
-			warmEdge: new THREE.Color(0xffaa00),
-			rippleColor: new THREE.Color(0x44ddff),
-			fogColor: new THREE.Color(0x050810),
-			glowIntensity: 1.2,
-		};
-	}
+function getThemeColors() {
+	const theme = musicPlayerConfig.visualizer?.theme;
 	return {
-		base1: new THREE.Color(0xf8fafc),
-		base2: new THREE.Color(0xf1f5f9),
-		coolCore: new THREE.Color(0x3b82f6),
-		coolEdge: new THREE.Color(0x8b5cf6),
-		warmCore: new THREE.Color(0xf97316),
-		warmEdge: new THREE.Color(0xfbbf24),
-		rippleColor: new THREE.Color(0x0ea5e9),
-		fogColor: new THREE.Color(0xf8fafc),
-		glowIntensity: 0.9,
+		base1: new THREE.Color(theme?.base1 ?? "#050810"),
+		base2: new THREE.Color(theme?.base2 ?? "#0a0f1a"),
+		coolCore: new THREE.Color(theme?.coolCore ?? "#2255ff"),
+		coolEdge: new THREE.Color(theme?.coolEdge ?? "#8844ff"),
+		warmCore: new THREE.Color(theme?.warmCore ?? "#ff4422"),
+		warmEdge: new THREE.Color(theme?.warmEdge ?? "#ffaa00"),
+		rippleColor: new THREE.Color(theme?.rippleColor ?? "#44ddff"),
+		glowIntensity: theme?.glowIntensity ?? 1.2,
 	};
 }
+
+const themeColors = getThemeColors();
+const heightConfig = musicPlayerConfig.visualizer?.height;
 
 function addRipple(x: number, z: number, strength: number, isWhite: boolean) {
 	const idx = rippleIndex;
@@ -185,6 +179,15 @@ const vertexShader = `
     uniform float uSmoothness;
     uniform float uDensity;
     uniform float uEnergy;
+    uniform float uHeightIdle;
+    uniform float uHeightSubBass;
+    uniform float uHeightBass;
+    uniform float uHeightLowMid;
+    uniform float uHeightMid;
+    uniform float uHeightHighMid;
+    uniform float uHeightEnergy;
+    uniform float uHeightRipple;
+    uniform float uHeightRippleAccent;
 
     struct Ripple {
       vec2 pos;
@@ -244,31 +247,31 @@ const vertexShader = `
       float wave = sin(pos2D.x * 0.15 + pos2D.y * 0.1 - uTime * 0.6) * 0.5 + 0.5;
 
       float globalFalloff = smoothstep(50.0, 25.0, centerDist);
-      float idleElevation = mix(baseNoise, wave, uSmoothness * 0.5 + 0.2) * 0.6 * globalFalloff;
+      float idleElevation = mix(baseNoise, wave, uSmoothness * 0.5 + 0.2) * uHeightIdle * globalFalloff;
 
       float subRegion = smoothstep(20.0, 0.0, centerDist);
-      float subLift = uSubBass * subRegion * 4.0;
+      float subLift = uSubBass * subRegion * uHeightSubBass;
 
       float bassNoise = snoise(pos2D * 0.1 - vec2(0.0, uTime * 0.2));
       float bassRegion = smoothstep(30.0, 5.0, centerDist + bassNoise * 5.0);
-      float bassLift = uBass * bassRegion * (smoothstep(0.0, 1.0, rnd + uDensity * 0.5)) * 3.0;
+      float bassLift = uBass * bassRegion * (smoothstep(0.0, 1.0, rnd + uDensity * 0.5)) * uHeightBass;
 
       float lowMidNoise = snoise(pos2D * 0.05 + vec2(uTime * 0.1, 0.0));
-      float lowMidLift = uLowMid * (lowMidNoise * 0.5 + 0.5) * 2.0;
+      float lowMidLift = uLowMid * (lowMidNoise * 0.5 + 0.5) * uHeightLowMid;
 
       float riverFlow = sin(pos2D.x * 0.2 + pos2D.y * 0.2 + snoise(pos2D * 0.1) * 2.0 - uTime * 2.0);
-      float midLift = uMid * max(0.0, riverFlow) * 2.5;
+      float midLift = uMid * max(0.0, riverFlow) * uHeightMid;
 
       float highMidRegion = smoothstep(10.0, 35.0, centerDist);
       float highMidLift = 0.0;
       if (fract(rnd * 13.3) > 0.8) {
-        highMidLift = uHighMid * highMidRegion * fract(rnd * 7.7) * 2.0;
+        highMidLift = uHighMid * highMidRegion * fract(rnd * 7.7) * uHeightHighMid;
       }
 
       float audioElevation = subLift + bassLift + lowMidLift + midLift + highMidLift;
 
       if (rnd > 0.99) {
-        audioElevation += uEnergy * 4.0;
+        audioElevation += uEnergy * uHeightEnergy;
       }
 
       audioElevation *= globalFalloff;
@@ -289,13 +292,13 @@ const vertexShader = `
           float curSpeed = speed;
           float curWidth = width;
           float curFadeDist = 15.0;
-          float elevationScale = 3.0;
+          float elevationScale = uHeightRipple;
 
           if (uRipples[i].rippleType > 0.5) {
             curSpeed = 20.0;
             curWidth = 1.0;
             curFadeDist = 8.0;
-            elevationScale = 1.0;
+            elevationScale = uHeightRippleAccent;
           }
 
           float waveRadius = timeSince * curSpeed;
@@ -448,7 +451,6 @@ const fragmentShader = `
   `;
 
 function createTerrainMaterial() {
-	const theme = getThemeColors(isDark);
 	return new THREE.ShaderMaterial({
 		vertexShader,
 		fragmentShader,
@@ -469,14 +471,23 @@ function createTerrainMaterial() {
 			uDensity: { value: 0 },
 			uEnergy: { value: 0 },
 			uRipples: { value: ripples },
-			uBaseColor1: { value: theme.base1 },
-			uBaseColor2: { value: theme.base2 },
-			uCoolCore: { value: theme.coolCore },
-			uCoolEdge: { value: theme.coolEdge },
-			uWarmCore: { value: theme.warmCore },
-			uWarmEdge: { value: theme.warmEdge },
-			uRippleColor: { value: theme.rippleColor },
-			uGlowIntensity: { value: theme.glowIntensity },
+			uHeightIdle: { value: heightConfig?.idle ?? 0.6 },
+			uHeightSubBass: { value: heightConfig?.subBass ?? 4.0 },
+			uHeightBass: { value: heightConfig?.bass ?? 3.0 },
+			uHeightLowMid: { value: heightConfig?.lowMid ?? 2.0 },
+			uHeightMid: { value: heightConfig?.mid ?? 2.5 },
+			uHeightHighMid: { value: heightConfig?.highMid ?? 2.0 },
+			uHeightEnergy: { value: heightConfig?.energy ?? 4.0 },
+			uHeightRipple: { value: heightConfig?.ripple ?? 3.0 },
+			uHeightRippleAccent: { value: heightConfig?.rippleAccent ?? 1.0 },
+			uBaseColor1: { value: themeColors.base1.clone() },
+			uBaseColor2: { value: themeColors.base2.clone() },
+			uCoolCore: { value: themeColors.coolCore.clone() },
+			uCoolEdge: { value: themeColors.coolEdge.clone() },
+			uWarmCore: { value: themeColors.warmCore.clone() },
+			uWarmEdge: { value: themeColors.warmEdge.clone() },
+			uRippleColor: { value: themeColors.rippleColor.clone() },
+			uGlowIntensity: { value: themeColors.glowIntensity },
 		},
 		transparent: true,
 		side: THREE.DoubleSide,
@@ -488,15 +499,16 @@ function init() {
 	const height = container.clientHeight;
 
 	scene = new THREE.Scene();
-	const theme = getThemeColors(isDark);
-	const backgroundColor = useLightBackground
-		? lightBackgroundColor
-		: theme.fogColor;
-	scene.background = backgroundColor;
-	scene.fog = new THREE.Fog(backgroundColor, 25, 80);
+	scene.background = backgroundTargetColor;
+	scene.fog = new THREE.Fog(backgroundTargetColor, 25, 80);
 
 	camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 200);
-	camera.position.set(0, 25, 35);
+	const cameraPosition = musicPlayerConfig.visualizer?.camera?.position;
+	camera.position.set(
+		cameraPosition?.x ?? 0,
+		cameraPosition?.y ?? 32,
+		cameraPosition?.z ?? 52,
+	);
 
 	renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 	renderer.setSize(width, height);
@@ -508,8 +520,9 @@ function init() {
 	controls = new OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.05;
-	controls.autoRotate = true;
-	controls.autoRotateSpeed = 0.3;
+	controls.autoRotate = musicPlayerConfig.visualizer?.autoRotate ?? true;
+	controls.autoRotateSpeed =
+		musicPlayerConfig.visualizer?.autoRotateSpeed ?? 0.3;
 	controls.enablePan = false;
 	controls.minDistance = 10;
 	controls.maxDistance = 80;
@@ -603,14 +616,14 @@ function init() {
 	renderer.domElement.addEventListener("pointerdown", onPointerDown);
 	renderer.domElement.addEventListener("pointerup", onPointerUp);
 
-	function onResize() {
+	onResize = () => {
 		if (!container || !camera || !renderer) return;
 		const w = container.clientWidth;
 		const h = container.clientHeight;
 		camera.aspect = w / h;
 		camera.updateProjectionMatrix();
 		renderer.setSize(w, h);
-	}
+	};
 	window.addEventListener("resize", onResize);
 }
 
@@ -638,34 +651,42 @@ function animate() {
 	terrainMaterial.uniforms.uEnergy.value = audioData.energy;
 	terrainMaterial.uniforms.uRipples.value = ripples;
 
-	const theme = getThemeColors(isDark);
-	terrainMaterial.uniforms.uBaseColor1.value.lerp(theme.base1, 3 * delta);
-	terrainMaterial.uniforms.uBaseColor2.value.lerp(theme.base2, 3 * delta);
-	terrainMaterial.uniforms.uCoolCore.value.lerp(theme.coolCore, 3 * delta);
-	terrainMaterial.uniforms.uCoolEdge.value.lerp(theme.coolEdge, 3 * delta);
-	terrainMaterial.uniforms.uWarmCore.value.lerp(theme.warmCore, 3 * delta);
-	terrainMaterial.uniforms.uWarmEdge.value.lerp(theme.warmEdge, 3 * delta);
+	terrainMaterial.uniforms.uBaseColor1.value.lerp(themeColors.base1, 3 * delta);
+	terrainMaterial.uniforms.uBaseColor2.value.lerp(themeColors.base2, 3 * delta);
+	terrainMaterial.uniforms.uCoolCore.value.lerp(
+		themeColors.coolCore,
+		3 * delta,
+	);
+	terrainMaterial.uniforms.uCoolEdge.value.lerp(
+		themeColors.coolEdge,
+		3 * delta,
+	);
+	terrainMaterial.uniforms.uWarmCore.value.lerp(
+		themeColors.warmCore,
+		3 * delta,
+	);
+	terrainMaterial.uniforms.uWarmEdge.value.lerp(
+		themeColors.warmEdge,
+		3 * delta,
+	);
 	terrainMaterial.uniforms.uRippleColor.value.lerp(
-		theme.rippleColor,
+		themeColors.rippleColor,
 		3 * delta,
 	);
 	terrainMaterial.uniforms.uGlowIntensity.value = THREE.MathUtils.lerp(
 		terrainMaterial.uniforms.uGlowIntensity.value,
-		theme.glowIntensity,
+		themeColors.glowIntensity,
 		3 * delta,
 	);
 
 	if (scene.fog instanceof THREE.Fog) {
-		scene.fog.color.lerp(
-			useLightBackground ? lightBackgroundColor : theme.fogColor,
-			3 * delta,
-		);
+		scene.fog.color.lerp(backgroundTargetColor, 3 * delta);
 		scene.background = scene.fog.color;
 	}
 
 	const meteorMat = meteorMesh.material as THREE.MeshBasicMaterial;
 	const meteorColor = new THREE.Color()
-		.copy(theme.warmCore)
+		.copy(themeColors.warmCore)
 		.lerp(new THREE.Color(0xffffff), 0.7);
 	meteorMat.color.lerp(meteorColor, 3 * delta);
 
@@ -730,7 +751,7 @@ function animate() {
 
 function cleanup() {
 	if (animationId) cancelAnimationFrame(animationId);
-	window.removeEventListener("resize", onResize);
+	if (onResize) window.removeEventListener("resize", onResize);
 	if (renderer) {
 		renderer.dispose();
 		if (container && renderer.domElement.parentNode === container) {

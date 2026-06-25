@@ -1,17 +1,21 @@
 <script lang="ts">
 import { onDestroy, onMount } from "svelte";
+import { musicPlayerConfig } from "@/config/musicConfig";
 import { AudioAnalyzer } from "./AudioAnalyzer";
 import LyricsOverlay from "./LyricsOverlay.svelte";
 import ThreeScene from "./ThreeScene.svelte";
 import VisualizerControls from "./VisualizerControls.svelte";
 
 const audioAnalyzer = new AudioAnalyzer();
-const isDark = true; // 固定使用深色主题
 let sceneReady = $state(false);
-let useLightBackground = $state(false);
+let backgroundColor = $state(
+	musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15",
+);
 
-function syncPageTheme() {
-	useLightBackground = !document.documentElement.classList.contains("dark");
+function syncPageBackground() {
+	backgroundColor = document.documentElement.classList.contains("dark")
+		? (musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15")
+		: (musicPlayerConfig.visualizer?.background?.light ?? "#ffffff");
 }
 
 function connectAudio() {
@@ -35,9 +39,9 @@ function audioCtxState() {
 }
 
 onMount(() => {
-	syncPageTheme();
+	syncPageBackground();
 
-	const themeObserver = new MutationObserver(syncPageTheme);
+	const themeObserver = new MutationObserver(syncPageBackground);
 	themeObserver.observe(document.documentElement, {
 		attributes: true,
 		attributeFilter: ["class"],
@@ -77,15 +81,14 @@ onDestroy(() => {
 });
 </script>
 
-<div class="music-visualizer" class:music-visualizer--dark={isDark}>
+<div class="music-visualizer" style={`background: ${backgroundColor};`}>
 	{#if sceneReady}
 		<VisualizerControls />
 		<LyricsOverlay />
 	{/if}
 	<ThreeScene
 		{audioAnalyzer}
-		{isDark}
-		{useLightBackground}
+		{backgroundColor}
 		onSceneReady={() => (sceneReady = true)}
 	/>
 </div>

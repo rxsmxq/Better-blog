@@ -58,4 +58,54 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 			},
 		],
 	},
+
+	// 可视化器配置
+	visualizer: {
+		background: {
+			dark: "#0a0a15",
+			light: "#2D2D2D",
+		},
+		camera: {
+			position: {
+				x: 0,
+				y: 32,
+				z: 52,
+			},
+		},
+		autoRotate: true,
+		autoRotateSpeed: 0.3,
+		height: {
+			// 静态地形起伏高度，不播放时也会有轻微波动
+			idle: 0.6,
+			// 超低频高度，主要影响中央区域的大起伏
+			subBass: 4.0,
+			// 低频高度，主要跟随鼓点和低音起伏
+			bass: 3.0,
+			// 中低频高度，补充地形整体层次
+			lowMid: 2.0,
+			// 中频高度，影响流动感较强的区域
+			mid: 2.5,
+			// 中高频高度，影响外围零散跳动
+			highMid: 2.0,
+			// 高能量瞬间的随机尖峰高度
+			energy: 4.0,
+			// 普通点击/音频涟漪高度
+			ripple: 3.0,
+			// 白色强调涟漪高度
+			rippleAccent: 1.0,
+		},
+		// 想要红色：用 #ff4444
+		// 想要透明度：别塞进 rippleColor，单独加一个 rippleOpacity 或 rippleAlpha
+		theme: {
+			base1: "#050810",
+			base2: "#0a0f1a",
+			coolCore: "#2255ff",
+			coolEdge: "#8844ff",
+			warmCore: "#ff4422",
+			warmEdge: "#ffaa00",
+			rippleColor: "#44ddff",
+			fogColor: "#050810",
+			glowIntensity: 1.2,
+		},
+	},
 };

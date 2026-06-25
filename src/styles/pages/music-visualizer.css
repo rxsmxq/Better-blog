@@ -65,14 +65,6 @@ html:has(.music-visualizer-page) .footer {
 		linear-gradient(180deg, rgba(0, 6, 18, 0.82) 0%, transparent 22%, transparent 72%, rgba(0, 0, 0, 0.55) 100%);
 }
 
-.music-visualizer--dark {
-	background: linear-gradient(to bottom, #0a0a15 0%, #0d1020 40%, #0f1425 100%);
-}
-
-:root:not(.dark) .music-visualizer--dark {
-	background: #fff;
-}
-
 .mv-three-container {
 	width: 100%;
 	height: 100%;

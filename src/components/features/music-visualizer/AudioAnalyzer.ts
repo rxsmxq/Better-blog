@@ -69,8 +69,6 @@ export class AudioAnalyzer {
 	private beatHistoryIndex = 0;
 	private meteorCooldown = 0;
 
-	constructor() {}
-
 	setEvents(events: AudioAnalyzerEvents) {
 		this.events = events;
 	}
