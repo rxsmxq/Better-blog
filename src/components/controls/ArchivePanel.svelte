@@ -325,7 +325,7 @@ onMount(() => {
 });
 </script>
 
-<div class="archive-panel card-base px-3 py-6 md:px-10 md:py-8" bind:this={panelEl}>
+<div class="archive-panel card-base" bind:this={panelEl}>
 
 	<!-- 筛选器摘要 -->
 	{#if primaryFilter}
@@ -618,7 +618,7 @@ onMount(() => {
 /* ── 文章链接 ── */
 .ap-post-link {
 	display: flex; align-items: center; gap: 0.6rem;
-	flex: 1; min-height: 2.25rem; padding: 0.2rem 0.5rem 0.2rem 0;
+	flex: 1; min-height: 2.25rem; padding: 0.2rem 0.5rem;
 	margin-left: 0;
 	border-radius: 0.5rem; text-decoration: none; overflow: hidden;
 }
