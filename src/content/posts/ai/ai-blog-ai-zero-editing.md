@@ -27,6 +27,7 @@ draft: false
 4. 代码必须各种红绿测试
 5. 持续优化
 
+![](./image/ai-blog-ai-zero-editing.assets/ai-blog-ai-zero-editing-20260626124924.webp)
 ## 2、原型图
 
 咋先说不是什么设计大师，也不是按企业规范。新手就不用在 Figma / Google AI Studio / Google Stitch 和 IDE 之间反复对齐。
@@ -102,7 +103,7 @@ draft: false
 
 ### TDD是神
 
-![](./image/ai-blog-ai-zero-editing.assets/ai-blog-ai-zero-editing-20260620163427.png)
+![](./image/ai-blog-ai-zero-editing.assets/ai-blog-ai-zero-editing-20260620163427.webp)
 
 ## 4、开发
 
@@ -166,8 +167,11 @@ draft: false
 
 ## 博客设计原则
 
-[顾大佬说的很对](https://blog.olinl.com/posts/astro-todo/)
+[谈谈不受欢迎的博客技术特征 - 纸鹿摸鱼处](https://blog.zhilu.site/2025/unpopular-blog-tech)
+而本站也很大遵循该原则，因为热爱AI绘画，所以只在首页展示AI绘画作品，其他页面则专注于文章内容呈现。后续也会继续遵循该原则。
 
-而本站也很大遵循该原则，因为热爱AI绘画，所以只在首页展示AI绘画作品，其他页面则专注于文章内容呈现。后续也会继续遵循该原则。保持博客风格统一：文章页面专注阅读，相册首页专注视觉，各司其职，互不干扰。
+保持博客风格统一：文章页面专注阅读，相册首页专注视觉，各司其职，互不干扰。
+
+![](./image/ai-blog-ai-zero-editing.assets/ai-blog-ai-zero-editing-20260626125933.webp)
 
 也希望各位读者能喜欢本站的设计风格，也能在设计自己的博客时参考本站的设计原则。
