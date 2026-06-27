@@ -243,6 +243,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "星遐蝶梦",
+		imgurl: "https://blog.casto.top/assets/images/avatar.png",
+		desc: "星穹漫遐，蝶携清梦。",
+		siteurl: "https://blog.casto.top/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
