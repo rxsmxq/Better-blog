@@ -1,6 +1,8 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
 
 type ArticleListView = "list" | "grid";
 
@@ -224,7 +226,9 @@ $effect(() => {
 								onfocus={() => selectPost(entry.index)}
 							>
 								<span class="post-card-title article-list-card__title">
-									<span class="article-list-card__title-text">{entry.post.pinned ? "PIN · " : ""}{entry.post.title}</span>
+									<span class="article-list-card__title-text">
+										{entry.post.title}
+									</span>
 									{#if entry.post.password}
 										<span class="article-list-card__lock" aria-label="加密文章">
 											<Icon icon="material-symbols:lock-outline" size="lg" />
@@ -233,6 +237,9 @@ $effect(() => {
 								</span>
 
 								<span class="article-list-card__meta">
+									{#if entry.post.pinned}
+										<span class="article-list-card__pinned-badge"><Icon icon="material-symbols:pinboard" />{i18n(I18nKey.pinned)}</span>
+									{/if}
 									<span class="article-list-card__meta-item">
 										<Icon icon="material-symbols:calendar-month-rounded" size="lg" />
 										<time datetime={entry.post.publishedIso}>
@@ -284,13 +291,19 @@ $effect(() => {
 							onclick={() => selectPostWithTransition((currentPage - 1) * postsPerPage + index)}
 						>
 							<span class="article-list-row__title">
-								{post.pinned ? "PIN · " : ""}{post.title}
-							</span>
+									{post.title}
+								</span>
 							<span class="article-list-row__meta">
-								<time datetime={post.publishedIso}>{post.publishedText}</time>
-								<span class="article-list-row__divider" aria-hidden="true">/</span>
-								<span>{post.category}</span>
-							</span>
+									{#if post.pinned}
+										<span class="article-list-row__pinned-badge">{i18n(I18nKey.pinned)}</span>
+									{/if}
+									<span class="article-list-row__meta-item article-list-row__meta-item--date">
+										<time datetime={post.publishedIso}>{post.publishedText}</time>
+									</span>
+									<span class="article-list-row__meta-item article-list-row__meta-item--category">
+										<span>{post.category}</span>
+									</span>
+								</span>
 							<span class="article-list-row__tags">
 								{#if post.tags.length > 0}
 									{#each post.tags.slice(0, 3) as tag (tag.name)}
@@ -322,7 +335,9 @@ $effect(() => {
 				>
 					<div class="article-detail-card__heading">
 						<span class="article-detail-card__title">
-							<span class="article-detail-card__title-text">{displayedPost.title}</span>
+							<span class="article-detail-card__title-text">
+									{displayedPost.title}
+								</span>
 						</span>
 						{#if displayedPost.password}
 							<span class="article-detail-card__lock" aria-label="加密文章">
@@ -332,13 +347,19 @@ $effect(() => {
 					</div>
 
 					<div class="article-detail-card__meta">
-						<span class="article-detail-card__category">
-							{displayedPost.category}
+						{#if displayedPost.pinned}
+							<span class="article-detail-card__pinned-badge"><Icon icon="material-symbols:pinboard" />{i18n(I18nKey.pinned)}</span>
+						{/if}
+						<span class="article-detail-card__meta-item">
+							<Icon icon="material-symbols:calendar-month-rounded" size="lg" />
+							<time class="article-detail-card__time" datetime={displayedPost.publishedIso}>
+								{displayedPost.publishedText}
+							</time>
 						</span>
-						<span class="article-detail-card__separator" aria-hidden="true">|</span>
-						<time class="article-detail-card__time" datetime={displayedPost.publishedIso}>
-							{displayedPost.publishedText}
-						</time>
+						<span class="article-detail-card__meta-item">
+							<Icon icon="material-symbols:book-2-outline-rounded" size="lg" />
+							<span class="article-detail-card__category">{displayedPost.category}</span>
+						</span>
 					</div>
 
 					<div class="article-detail-card__tags" aria-label="标签集合">

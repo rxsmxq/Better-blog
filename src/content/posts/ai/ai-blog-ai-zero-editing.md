@@ -4,6 +4,7 @@ published: 2026-06-14
 description: 这个博客如何用 AI 从零搭建：定风格、写原型图、生成代码规范、持续优化的完整流程。
 tags: [AI, 前端, 博客]
 category: ai
+pinned: true
 draft: false
 ---
 # 这个博客《纯AI零人工修改》
