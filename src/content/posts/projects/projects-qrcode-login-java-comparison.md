@@ -3,7 +3,7 @@ title: 登录 | 扫码登录 | 对比文档
 published: 2026-05-01
 description: 对比短轮询、长轮询、WebSocket、SSE 四种扫码登录方案，给出基于 WebSocket + Redis 的企业级实现及安全防御。
 tags: [扫码登录, 认证, WebSocket]
-category: projects
+category: 实践笔记
 draft: false
 ---
 

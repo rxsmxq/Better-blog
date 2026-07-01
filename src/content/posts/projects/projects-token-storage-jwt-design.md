@@ -3,7 +3,7 @@ title: 登录 | 前后端 token 存储方案 | 设计文档
 published: 2026-05-04
 description: ZSK-Cloud 从单 Token 演进为 Access+Refresh 双令牌的认证体系设计，采用 HttpOnly Cookie 存储 + Redis 白名单吊销机制。
 tags: [JWT, 认证, 安全]
-category: projects
+category: 实践笔记
 draft: false
 ---
 

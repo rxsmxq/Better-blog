@@ -3,7 +3,7 @@ title: redis | 三种交互数据缓存设计方案 | 对比文档
 published: 2026-05-13
 description: 基于 Redis 的交互数据缓存设计，对比 Set+MQ、Set+定时扫描、Bitmap+MQ 三种方案的适用边界与兜底降级策略。
 tags: [Redis, 缓存设计, Bitmap, 高性能]
-category: projects
+category: 实践笔记
 draft: false
 ---
 

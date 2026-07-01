@@ -3,7 +3,7 @@ title: MinIO | 文件存储签名 URL 有效期机制 | 学习文档
 published: 2026-05-01
 description: MinIO 签名 URL 的工作原理、7 天有效期限制及安全考量，对比预签名上传与下载的两种访问模式。
 tags: [MinIO, 文件存储, 安全]
-category: projects
+category: 实践笔记
 draft: false
 ---
 

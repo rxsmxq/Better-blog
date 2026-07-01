@@ -3,7 +3,7 @@ title: 登录 | 滑块验证码、登录与注册完整流程 | 设计文档
 published: 2026-05-02
 description: zsk-auth 认证模块的登录与注册完整流程，涵盖滑块验证码防刷、RSA 加密传输、BCrypt 哈希存储、邮箱验证码身份核验等安全机制。
 tags: [认证, 登录, 安全]
-category: projects
+category: 实践笔记
 draft: false
 ---
 
