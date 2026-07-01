@@ -25,6 +25,7 @@
 @import './components/home-portfolio-shutter.css';
 @import './components/home-ticker.css';
 @import './components/floating-dock.css';
+@import './components/mobile-dock.css';
 @import './components/friend-card.css';
 @import './components/widget-layout.css';
 @import './components/pagination.css';
