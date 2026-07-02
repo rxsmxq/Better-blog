@@ -1,16 +1,10 @@
 ---
 import Live2DWidget from "@components/features/Live2DWidget.astro";
-import PrivacyModal from "@components/features/PrivacyModal.astro";
 import SpineModel from "@components/features/SpineModel.astro";
 import Footer from "@components/layout/Footer.astro";
 import Navbar from "@components/layout/Navbar.astro";
 import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
-import type { MarkdownHeading } from "astro";
-import AISearch from "@/components/controls/AISearch.svelte";
-import FloatingDock from "@/components/controls/FloatingDock.astro";
-import SearchModal from "@/components/controls/SearchModal.svelte";
 import CategoryBar from "@/components/layout/CategoryBar.astro";
-import MobileDock from "@/components/layout/MobileDock.astro";
 
 import { live2dModelConfig, navBarConfig, siteConfig } from "@/config";
 import { LinkPresets } from "@/constants/link-presets";
@@ -31,7 +25,6 @@ interface Props {
 	setOGTypeArticle?: boolean;
 	postSlug?: string;
 	postCategory?: string;
-	headings?: MarkdownHeading[];
 	bannerPostMeta?: {
 		title: string;
 		published: Date;
@@ -49,7 +42,6 @@ const {
 	setOGTypeArticle,
 	postSlug,
 	postCategory,
-	headings = [],
 	bannerPostMeta: _bannerPostMeta,
 } = Astro.props;
 
@@ -124,25 +116,8 @@ const navLinks = navBarConfig.links.map((item) => {
 	</div>
 </div>
 
-<FloatingDock headings={headings} />
-
-{/* 移动端底部悬浮 Dock — 仅 ≤768px 显示，Swup 容器外持久化 */}
-<MobileDock />
-
-<AISearch client:load />
-
-<SearchModal
-	client:load
-	placeholders={[
-		"搜索文章、标签、分类...",
-		"输入关键词开始搜索",
-		"试试搜索「Astro」或「Svelte」",
-		"按 ESC 关闭搜索面板",
-		"Ctrl+K 快速切换AI搜索/普通搜索",
-	]}
-/>
-
-<PrivacyModal />
+{/* 全局持久化组件（FloatingDock / MobileDock / AISearch / SearchModal / PrivacyModal）
+    已下沉至 Layout.astro，确保所有页面（含自定义布局页）共享 */}
 
 </Layout>
 <!-- 样式已迁移至 src/styles/layout/grid.css -->

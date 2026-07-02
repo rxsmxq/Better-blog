@@ -8,7 +8,12 @@ import FloatingLyrics from "@components/features/FloatingLyrics.astro";
 import FontManager from "@components/features/FontManager.astro";
 import MusicManager from "@components/features/MusicManager.astro";
 import PageLoader from "@components/features/PageLoader.astro";
+import PrivacyModal from "@components/features/PrivacyModal.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
+import MobileDock from "@components/layout/MobileDock.astro";
+import AISearch from "@/components/controls/AISearch.svelte";
+import FloatingDock from "@/components/controls/FloatingDock.astro";
+import SearchModal from "@/components/controls/SearchModal.svelte";
 
 import { expressiveCodeConfig, homeConfig, siteConfig } from "@/config";
 import { PAGE_WIDTH } from "@/constants/constants";
@@ -202,6 +207,21 @@ const siteLang = lang.replace("_", "-");
     <MusicManager />
     <FloatingLyrics />
     <slot />
+    {/* 全局持久化组件 — Swup 容器外，所有页面共享（CLAUDE.md 4.2） */}
+    <FloatingDock />
+    <MobileDock />
+    <AISearch client:load />
+    <SearchModal
+      client:load
+      placeholders={[
+        "搜索文章、标签、分类...",
+        "输入关键词开始搜索",
+        "试试搜索「Astro」或「Svelte」",
+        "按 ESC 关闭搜索面板",
+        "Ctrl+K 快速切换AI搜索/普通搜索",
+      ]}
+    />
+    <PrivacyModal />
     <FancyboxManager />
   </body>
 </html>
