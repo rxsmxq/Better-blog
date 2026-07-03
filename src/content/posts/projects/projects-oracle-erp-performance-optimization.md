@@ -1,5 +1,5 @@
 ---
-title: Oracle | erp、mrp、性能优化 | 设计文档
+title: Oracle | ERP性能优化
 published: 2026-01-02
 description: Oracle ERP 因 SHRINK 操作导致聚簇因子恶化的性能排查与优化，涵盖 AWR 分析、索引重建及查询调优。
 tags: [Oracle, 数据库, 性能优化]
@@ -7,7 +7,7 @@ category: 实践笔记
 draft: false
 ---
 
-# Oracle | erp、mrp、性能优化 | 设计文档
+# Oracle | ERP性能优化
 
 ---
 

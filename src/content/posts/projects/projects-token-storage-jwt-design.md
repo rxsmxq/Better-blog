@@ -1,13 +1,13 @@
 ---
-title: 登录 | 前后端 token 存储方案 | 设计文档
+title: 登录 | 前后端 token 存储方案
 published: 2026-05-04
 description: ZSK-Cloud 从单 Token 演进为 Access+Refresh 双令牌的认证体系设计，采用 HttpOnly Cookie 存储 + Redis 白名单吊销机制。
 tags: [JWT, 认证, 安全]
-category: 实践笔记
+category: 设计文档
 draft: false
 ---
 
-# 登录 | 前后端 token 存储方案 | 设计文档
+# 登录 | 前后端 token 存储方案
 
 > 核心结论：ZSK-Cloud 采用 RS256 非对称签名的 Access Token + Refresh Token 双令牌方案。Access Token 与 Refresh Token 均通过 HttpOnly Cookie 下发，利用 Redis Set 维护白名单实现主动吊销；前端 Pinia 仅缓存非敏感用户状态，不持有任何 Token。
 

@@ -1,12 +1,12 @@
 ---
-title: NapCat + AstrBot | 部署文档
+title: QQ 机器人 | NapCat + AstrBot
 published: 2026-05-12
 description: 使用 Docker Compose 一站式部署 NapCat + AstrBot，从零搭建 AI QQ 机器人，含 OneBot 11 协议对接与风控替代方案。
 tags: [AI, Bot, 部署]
-category: ai
+category: 部署文档
 draft: false
 ---
-# NapCat + AstrBot | 部署文档
+# QQ 机器人 | NapCat + AstrBot
 
 直接使用 AstrBot 虽然也能跑起来，但 AstrBot 本身并不直接对接 QQ 协议。它需要一个 **协议端** 来充当 QQ 客户端的角色，而 NapCat 就是目前最稳定、社区最活跃的 OneBot 11 协议实现之一。
 

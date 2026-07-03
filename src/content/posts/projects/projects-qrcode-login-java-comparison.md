@@ -1,5 +1,5 @@
 ---
-title: 登录 | 扫码登录 | 对比文档
+title: 登录 | 扫码登录
 published: 2026-05-01
 description: 对比短轮询、长轮询、WebSocket、SSE 四种扫码登录方案，给出基于 WebSocket + Redis 的企业级实现及安全防御。
 tags: [扫码登录, 认证, WebSocket]
@@ -7,7 +7,7 @@ category: 实践笔记
 draft: false
 ---
 
-# 登录 | 扫码登录 | 对比文档
+# 登录 | 扫码登录
 
 > 核心思路：PC 端生成带唯一标识的二维码，手机端扫码确认后，服务端更新 Redis 状态，PC 端通过 WebSocket 实时感知状态变更并获取 Token。评审重点：二维码状态机的 5 种状态转换是否完整、WebSocket 与长轮询的降级策略是否可靠、安全防御是否覆盖二维码劫持和重放攻击。
 

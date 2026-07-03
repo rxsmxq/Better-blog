@@ -1,13 +1,13 @@
 ---
-title: 登录 | 第三方登录 | 设计文档
+title: 登录 | 第三方登录
 published: 2026-05-03
 description: GitHub、微信、QQ 三种第三方登录的 OAuth2 授权码流程设计，涵盖回调处理、策略模式代码结构及多环境配置。
 tags: [OAuth2, 认证, 登录]
-category: 实践笔记
+category: 设计文档
 draft: false
 ---
 
-# 登录 | 第三方登录 | 设计文档
+# 登录 | 第三方登录
 
 本文档记录 GitHub、微信、QQ 三种第三方登录的完整流程、代码结构及多环境配置清单。
 

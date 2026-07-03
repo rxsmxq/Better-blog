@@ -1,13 +1,13 @@
 ---
-title: skill | 收集 | 学习文档
+title: Skill学习 | 收集
 published: 2026-04-12
 description: 收集实用的 AI Agent Skill，涵盖工程化工作流、技能创建器、技术图表生成等开发辅助工具。
 tags: [AI, Skill, Agent]
-category: ai
+category: 学习文档
 draft: false
 ---
 
-# skill | 收集 | 学习文档
+# Skill学习 | 收集
 
 > [!NOTE] 提示
 > 在拿到陌生的SKILL时候，一定要让AI先解释一下，再开始使用。否则很有可能染上赛博花柳。

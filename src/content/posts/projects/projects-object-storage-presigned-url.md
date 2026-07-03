@@ -1,17 +1,17 @@
 ---
-title: MinIO | 文件存储签名 URL 有效期机制 | 学习文档
+title: MinIO | 文件存储签名 URL 有效期机制
 published: 2026-05-01
 description: MinIO 签名 URL 的工作原理、7 天有效期限制及安全考量，对比预签名上传与下载的两种访问模式。
-tags: [MinIO, 文件存储, 安全]
-category: 实践笔记
+tags: [MinIO, 对象存储, 安全]
+category: 学习文档
 draft: false
 ---
 
-# MinIO | 文件存储签名 URL 有效期机制 | 学习文档
+# MinIO | 对象存储签名 URL 有效期机制
 
 ## 一、背景
 
-在文件存储（OSS / S3 / MinIO）中，文件默认是私有的——只有拥有 AccessKey 的用户才能访问。但在实际业务中，我们经常需要让前端或第三方临时访问某个文件，比如：
+在对象存储（OSS / S3 / MinIO）中，文件默认是私有的——只有拥有 AccessKey 的用户才能访问。但在实际业务中，我们经常需要让前端或第三方临时访问某个文件，比如：
 
 - 用户在浏览器中预览上传的图片
 - 下载链接分享给外部用户

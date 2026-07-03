@@ -1,5 +1,5 @@
 ---
-title: Umami | Vercel + Neon 部署 Umami | 部署文档
+title: Umami | Vercel + Neon 部署
 published: 2026-05-07
 description: 使用 Vercel + Neon 免费部署 Umami 网站统计，记录 Prisma 7 适配、自定义域名绑定及通过 Share API 拉取站点 UV/PV 的接入方式。
 tags: [Umami, 部署, Vercel]
@@ -7,7 +7,7 @@ category: 部署文档
 draft: false
 ---
 
-# Umami | Vercel + Neon 部署 Umami | 部署文档
+# Umami | Vercel + Neon 部署
 
 > 用 Vercel + Neon 免费部署 Umami，并通过 Share API 在博客首页展示 UV/PV。个人博客（< 10 万 PV/月）零成本运行。
 

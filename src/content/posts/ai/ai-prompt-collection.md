@@ -1,13 +1,13 @@
 ---
-title: prompt 收录 | 学习文档
+title: Prompt 收录
 published: 2026-06-19
 description: 日常使用 AI 的提示词整合，涵盖前端开发规范、代码约束、组件约束等实用 Prompt 模板。
 tags: [AI, Prompt]
-category: ai
+category: 学习文档
 draft: false
 ---
 
-# prompt 收录 | 学习文档
+# Prompt 收录
 
 ## 规范限制
 
