@@ -282,31 +282,9 @@
 }
 
 @media (max-width: 768px) {
-	.live2d-widget {
-		transform: scale(0.85);
-		transform-origin: bottom left;
-	}
-
-	.live2d-toolbar {
-		right: auto;
-		left: 50%;
-		top: -44px;
-		flex-direction: row;
-		gap: 6px;
-		transform: translateX(-50%) translateY(8px);
-		opacity: 0;
-		pointer-events: none;
-		transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.live2d-widget:hover .live2d-toolbar,
-	.live2d-widget.mobile-toolbar-visible .live2d-toolbar {
-		opacity: 1;
-		pointer-events: auto;
-		transform: translateX(-50%) translateY(0);
-	}
-
-	.live2d-widget::after {
-		display: none;
+	/* 移动端不加载 Live2D，直接隐藏 widget 和 trigger */
+	.live2d-widget,
+	.live2d-trigger {
+		display: none !important;
 	}
 }
