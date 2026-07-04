@@ -46,18 +46,9 @@ async function resolveHeroImage(src?: string) {
 	return optimizeHeroImage(image);
 }
 
-const workAvatarEntries = Object.entries(imageFiles)
-	.filter(([filePath]) => filePath.includes("/avatar_sb/"))
-	.sort(([a], [b]) => a.localeCompare(b));
-
-const workAvatarUrls = await Promise.all(
-	workAvatarEntries.map(async ([, loadImage]) =>
-		optimizeHeroImage(await loadImage()),
-	),
-);
-
 const avatarUrl =
-	workAvatarUrls[0] ?? (await resolveHeroImage(homeConfig.avatar));
+	(await resolveHeroImage(homeConfig.avatarOnWork ?? "")) ||
+	(await resolveHeroImage(homeConfig.avatar));
 const avatarOffUrl = homeConfig.avatarOffWork
 	? await resolveHeroImage(homeConfig.avatarOffWork)
 	: avatarUrl;
@@ -82,7 +73,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 
 <section class="home-hero home-hero--motion-pending" id="home-hero"
 	data-avatar={avatarUrl}
-	data-avatar-pool={JSON.stringify(workAvatarUrls)}
 	data-avatar-off={avatarOffUrl}
 	data-work-hours={JSON.stringify(workHours)}
 >
@@ -599,22 +589,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 		const avatarEl = avatar;
 		const badgeEl = badge;
 		const statusTextEl = statusText;
-		let selectedWorkAvatar = "";
-
-		function getWorkAvatarUrl() {
-			if (selectedWorkAvatar) return selectedWorkAvatar;
-			try {
-				const pool = JSON.parse(heroEl.dataset.avatarPool || "[]");
-				if (Array.isArray(pool) && pool.length > 0) {
-					selectedWorkAvatar = pool[Math.floor(Math.random() * pool.length)];
-					return selectedWorkAvatar;
-				}
-			} catch {
-				// Keep the configured avatar fallback when the pool data is malformed.
-			}
-			selectedWorkAvatar = heroEl.dataset.avatar || "";
-			return selectedWorkAvatar;
-		}
 
 		const workHoursData = heroEl.dataset.workHours;
 		let workHours = { start: 9, end: 18, workDays: [1, 2, 3, 4, 5] };
@@ -632,7 +606,9 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 			const day = now.getDay();
 			const isWorkday = workHours.workDays.includes(day);
 			const isWorking = isWorkday && hour >= workHours.start && hour < workHours.end;
-			const nextAvatar = isWorking ? getWorkAvatarUrl() : heroEl.dataset.avatarOff;
+			const nextAvatar = isWorking
+				? heroEl.dataset.avatar
+				: heroEl.dataset.avatarOff;
 
 			if (nextAvatar && avatarEl.getAttribute("src") !== nextAvatar) {
 				avatarEl.setAttribute("src", nextAvatar);

@@ -8,8 +8,11 @@ export const homeConfig: HomeConfig = {
 	// 3. 远程 URL："https://example.com/avatar.jpg"
 	avatar: "assets/images/avatar.webp",
 
+	// 上班时间头像（为空则使用上方 avatar）
+	avatarOnWork: "assets/images/avatar-work-on.webp",
+
 	// 下班时间头像（为空则始终使用上方 avatar）
-	avatarOffWork: "assets/images/avatar2.webp",
+	avatarOffWork: "assets/images/avatar-work-off.webp",
 
 	// 名字
 	name: "MmzMing",

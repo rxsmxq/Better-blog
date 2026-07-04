@@ -247,6 +247,7 @@ export type HomePortfolioShutterConfig = {
 
 export type HomeConfig = {
 	avatar?: string;
+	avatarOnWork?: string;
 	avatarOffWork?: string;
 	name: string;
 	displayName?: string; // 首页展示名字（如 MmMing）
