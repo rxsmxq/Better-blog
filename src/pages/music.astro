@@ -1,39 +1,12 @@
 ---
 import MusicVisualizer from "@components/features/music-visualizer/MusicVisualizer.svelte";
-import Navbar from "@components/layout/Navbar.astro";
-import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
-import Layout from "@layouts/Layout.astro";
-import { navBarConfig, siteConfig } from "@/config";
-import { LinkPresets } from "@/constants/link-presets";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-
-const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
-const navLinks = navBarConfig.links.map((item) => {
-	if (typeof item === "number") return LinkPresets[item];
-	return item;
-});
 ---
 
-<Layout title={i18n(I18nKey.music) + " - 3D可视化"} description="音乐地形可视化，沉浸式音乐体验">
-	<div
-		id="top-row"
-		class="music-visualizer-top-row z-50 pointer-events-none"
-		class:list={[
-			navbarWidthFull ? "w-full" : "w-full max-w-(--page-width) px-0 md:px-4",
-		]}
-	>
-		<div id="navbar-wrapper" class="pointer-events-auto bg-transparent">
-			<Navbar />
-		</div>
-	</div>
-
-	<NavMenuPanel links={navLinks} />
-
-	<main id="swup-container" class="music-visualizer-swup transition-swup-main">
-		<h1 class="sr-only">{i18n(I18nKey.music)}</h1>
-		<div class="music-visualizer-page">
+<MainGridLayout title={i18n(I18nKey.music) + " - 3D可视化"} description="音乐地形可视化，沉浸式音乐体验">
+	<div class="music-visualizer-page">
 		<MusicVisualizer client:only="svelte" />
-		</div>
-	</main>
-</Layout>
+	</div>
+</MainGridLayout>

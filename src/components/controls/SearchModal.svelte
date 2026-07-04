@@ -2,6 +2,7 @@
 import { navigateToPage } from "@utils/navigation-utils";
 import { onMount, tick } from "svelte";
 import type { SearchResult } from "@/global";
+import { bindSearchModalController } from "@/utils/search-modal-controller";
 import { url as formatUrl, getSearchUrl } from "@/utils/url-utils";
 
 // --- Props ---
@@ -283,16 +284,17 @@ onMount(() => {
 
 	document.addEventListener("keydown", handleGlobalKeyDown);
 
-	// Listen for custom event from navbar button
 	const handleToggle = () => {
 		if (visible) close();
 		else open();
 	};
-	window.addEventListener("toggle-search-modal", handleToggle);
+	const unbindSearchModalController = bindSearchModalController(window, {
+		toggle: handleToggle,
+	});
 
 	return () => {
 		document.removeEventListener("keydown", handleGlobalKeyDown);
-		window.removeEventListener("toggle-search-modal", handleToggle);
+		unbindSearchModalController();
 		stopPlaceholderAnimation();
 	};
 });

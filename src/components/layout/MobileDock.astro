@@ -105,6 +105,8 @@ const showSpine = !!spineModelConfig?.enable;
 <!-- 样式已迁移至 src/styles/components/mobile-dock.css -->
 
 <script>
+	import { requestSearchModalToggle } from "@/utils/search-modal-controller";
+
 	(function initMobileDock() {
 		const dockEl = document.getElementById("mobile-dock");
 		const overlayEl = document.getElementById("mobile-dock-overlay");
@@ -174,10 +176,10 @@ const showSpine = !!spineModelConfig?.enable;
 			}
 		});
 
-		// ── 搜索（触发隐藏的 Navbar 搜索按钮） ──
+		// ── 搜索：走全局 SearchModal 控制器，不依赖被移动端 CSS 隐藏的 Navbar ──
 		document.getElementById("mobile-dock-search-btn")?.addEventListener("click", (e) => {
 			e.stopPropagation();
-			document.getElementById("nav-search-btn")?.click();
+			requestSearchModalToggle();
 		});
 
 		// ── 菜单（触发隐藏的 Navbar 汉堡按钮） ──

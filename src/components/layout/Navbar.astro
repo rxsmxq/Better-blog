@@ -112,6 +112,8 @@ if (isLocalSrcLogo) {
 <!-- 样式已迁移至 src/styles/layout/navbar-new.css -->
 
 <script>
+import { requestSearchModalToggle } from "@/utils/search-modal-controller";
+
 let _hoverSliderAbortController: AbortController | null = null;
 let _hoverSliderMouseEnterHandlers: Array<[Element, (e: Event) => void]> = [];
 
@@ -258,7 +260,7 @@ document.getElementById("navbar")?.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement)?.closest?.("#nav-search-btn");
     if (!btn) return;
     e.stopPropagation();
-    window.dispatchEvent(new CustomEvent("toggle-search-modal"));
+    requestSearchModalToggle();
 });
 </script>
 

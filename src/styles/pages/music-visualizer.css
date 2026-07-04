@@ -5,12 +5,7 @@
 	overflow: hidden;
 }
 
-.music-visualizer-swup {
-	min-height: 100vh !important;
-	padding: 0 !important;
-}
-
-.music-visualizer-top-row {
+html:has(.music-visualizer-page) #top-row {
 	position: fixed;
 	top: 0;
 	left: 50%;
@@ -19,24 +14,39 @@
 	margin-inline: auto;
 }
 
+html:has(.music-visualizer-page) #content-wrapper {
+	opacity: 1 !important;
+	transform: none !important;
+	animation: none !important;
+}
+
+html:has(.music-visualizer-page) #swup-container {
+	min-height: 100vh !important;
+	padding: 0 !important;
+}
+
+html:has(.music-visualizer-page).is-leaving #swup-container.transition-swup-main,
+html:has(.music-visualizer-page).is-rendering #swup-container.transition-swup-main {
+	animation: none !important;
+	filter: none !important;
+	opacity: 1 !important;
+	transform: none !important;
+}
+
 html:has(.music-visualizer-page),
 body:has(.music-visualizer-page) {
 	overflow: hidden !important;
 }
 
-html:has(.music-visualizer-page) #main-grid-wrapper,
 html:has(.music-visualizer-page) #left-sidebar-dynamic,
 html:has(.music-visualizer-page) #right-sidebar-dynamic,
+html:has(.music-visualizer-page) #category-bar-wrapper,
 html:has(.music-visualizer-page) #floating-dock,
 html:has(.music-visualizer-page) #live2d-widget,
 html:has(.music-visualizer-page) #spine-model-container,
 html:has(.music-visualizer-page) .floating-dock,
 html:has(.music-visualizer-page) #floating-lyrics-container {
 	display: none !important;
-}
-
-html:has(.music-visualizer-page) #swup-container {
-	padding: 0 !important;
 }
 
 html:has(.music-visualizer-page) #progress-bar,
@@ -1014,7 +1024,7 @@ html:has(.music-visualizer-page) .footer {
 }
 
 @media (max-width: 768px) {
-	.music-visualizer-top-row {
+	html:has(.music-visualizer-page) #top-row {
 		width: 100%;
 	}
 
