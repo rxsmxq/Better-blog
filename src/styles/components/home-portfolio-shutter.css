@@ -184,11 +184,10 @@
 	z-index: 7;
 	bottom: 0;
 	left: 50%;
-	width: auto;
-	max-width: 100%;
+	width: 100%;
 	height: clamp(40vh, 55vh, 70vh);
 	object-fit: contain;
-	object-position: center bottom;
+	object-position: 50% bottom;
 	transform: translateX(-50%);
 }
 
