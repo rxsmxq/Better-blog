@@ -245,6 +245,23 @@ export type HomePortfolioShutterConfig = {
 	interlude: HomePortfolioShutterInterlude;
 };
 
+export type HomeDisplayLayerConfig = {
+	/** 是否启用展示层（移动端与 prefers-reduced-motion 下始终隐藏） */
+	enabled: boolean;
+	/** 左侧垂直大字 */
+	kicker: string;
+	/** 中间垂直主标题（建议英文，纵向显示） */
+	title: string;
+	/** 右侧英文长句，作为副释义 */
+	description: string;
+	/** pin 滚动距离（px），最终值取该值与「最小视口倍数」中的较大者 */
+	scrollDistance: number;
+	/** 柱子最终宽度（初始垂直线水平扩展到该宽度后停留） */
+	pillarFinalWidth: string;
+	/** 底部发射图（水平居中、垂直底部），线条从其上方往上延展，柱子扩展后覆盖它 */
+	emitterImage?: string;
+};
+
 export type HomeConfig = {
 	avatar?: string;
 	avatarOnWork?: string;
@@ -276,6 +293,8 @@ export type HomeConfig = {
 		contactImage: string;
 		skillsImage: string;
 	};
+	/** 展示层：垂直线 → 长柱 → 字体显隐 → 柱子扩全屏，衔接百叶窗 */
+	displayLayer: HomeDisplayLayerConfig;
 	portfolioShutter: HomePortfolioShutterConfig;
 	skills?: {
 		name: string;

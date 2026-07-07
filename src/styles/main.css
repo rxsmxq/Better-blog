@@ -23,6 +23,7 @@
 @import './components/home-section.css';
 @import './components/home-hero.css';
 @import './components/home-data-layer.css';
+@import './components/home-display-layer.css';
 @import './components/home-portfolio-shutter.css';
 @import './components/home-ticker.css';
 @import './components/floating-dock.css';

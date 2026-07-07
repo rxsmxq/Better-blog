@@ -53,6 +53,18 @@ export const homeConfig: HomeConfig = {
 		skillsImage: "/assets/images/home/home-data-4.webp",
 	},
 
+	// 展示层：垂直线 → 长柱 → 字体显隐 → 柱子扩全屏 → 衔接百叶窗
+	displayLayer: {
+		enabled: true,
+		kicker: "展示",
+		title: "CRYSTALLIZE GALLERY",
+		description:
+			"Where fleeting visions crystallize into permanence — each frame a frozen breath of time, each work a memory hardened into light.",
+		scrollDistance: 4000,
+		pillarFinalWidth: "18vw",
+		emitterImage: "/assets/images/home-truncated/td.webp",
+	},
+
 	portfolioShutter: {
 		enabled: true,
 		kicker: "The End",

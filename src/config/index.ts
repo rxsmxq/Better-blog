@@ -23,6 +23,7 @@ export type {
 	GalleryConfig,
 	HolidayItem,
 	HomeConfig,
+	HomeDisplayLayerConfig,
 	HomePortfolioShutterConfig,
 	HomePortfolioShutterInterlude,
 	HomePortfolioShutterPanel,
