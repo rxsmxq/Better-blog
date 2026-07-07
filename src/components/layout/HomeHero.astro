@@ -57,11 +57,6 @@ const heroBioText = Array.isArray(homeConfig.bio)
 	? homeConfig.bio[0] || ""
 	: homeConfig.bio || "";
 
-const heroSpeech = homeConfig.hero.speech ?? {
-	text: "菲比啾比？",
-	english: "If you feel tired, you might as well have a glass of juice?",
-};
-
 const heroRightPanel = homeConfig.hero.rightPanel ?? {
 	pill: "BLOG",
 	title: "博客",
@@ -69,6 +64,12 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 	subtitle: "CREATIVE",
 	microText: "システム起動完了",
 };
+
+// 将 displayName 拆成逐字 span，用于逐字入场动画与 cqw 缩放
+const nameLetters = Array.from(homeConfig.displayName || "");
+
+const mobileBackground =
+	homeConfig.hero.backgroundImageMobile || homeConfig.hero.backgroundImage;
 ---
 
 <section class="home-hero home-hero--motion-pending" id="home-hero"
@@ -76,33 +77,44 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 	data-avatar-off={avatarOffUrl}
 	data-work-hours={JSON.stringify(workHours)}
 >
-	<!-- 背景层 -->
-	<img class="home-hero__video" src={homeConfig.hero.backgroundImage} alt="" />
+	<!-- 背景层：移动端 / 桌面端通过 <picture> 服务端切换 -->
+	<picture class="home-hero__video-picture">
+		<source media="(max-width: 768px)" srcset={mobileBackground} />
+		<img class="home-hero__video" src={homeConfig.hero.backgroundImage} alt="" />
+	</picture>
 
 	<!-- 全屏内容容器 -->
 	<div class="home-hero__canvas-container" id="main-canvas">
-		<!-- 装饰角标 -->
-		<div class="home-hero__bracket home-hero__bracket--tl"></div>
-		<div class="home-hero__bracket home-hero__bracket--br"></div>
-		<div class="home-hero__bottom-line" aria-hidden="true"></div>
-		<div class="home-hero__left-line" aria-hidden="true"></div>
+		<!-- 外四角取景框 -->
+		<div class="home-hero__viewfinder" aria-hidden="true">
+			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--tl"></div>
+			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--tr"></div>
+			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--bl"></div>
+			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--br"></div>
+		</div>
 
-		<!-- 左侧面板 -->
+		<!-- 拍摄参数面板 -->
+		<div class="home-hero__camera-params" aria-hidden="true">
+			<span>MNL</span>
+			<span>1/125</span>
+			<span>OPEN</span>
+			<span>3dB</span>
+		</div>
+
+		<!-- 中心对焦框（相机效果） -->
+		<div class="home-hero__focus-frame" aria-hidden="true">
+			<div class="home-hero__focus-corner home-hero__focus-corner--tl"></div>
+			<div class="home-hero__focus-corner home-hero__focus-corner--tr"></div>
+			<div class="home-hero__focus-corner home-hero__focus-corner--bl"></div>
+			<div class="home-hero__focus-corner home-hero__focus-corner--br"></div>
+			<div class="home-hero__focus-dot"></div>
+		</div>
+
+		<!-- 左侧面板（吞并原中栏，87%） -->
 		<section class="home-hero__left-panel">
 			<div class="home-hero__profile">
 				<div class="home-hero__identity-row">
-					<!-- 名字 + 职业 组合 -->
-					<div class="home-hero__name-group">
-						{homeConfig.occupation && (
-							<p class="home-hero__occupation">{homeConfig.occupation}</p>
-						)}
-						{homeConfig.displayName && (
-							<h1 class="home-hero__name">{homeConfig.displayName}</h1>
-						)}
-						<div class="home-hero__name-badge">{homeConfig.nameBadge || ""}</div>
-					</div>
-
-					<!-- 头像 + 状态 -->
+					<!-- 头像（左侧，放大） + 状态 -->
 					<div class="home-hero__avatar-group">
 						<div class="home-hero__avatar-wrapper">
 							<img
@@ -118,50 +130,42 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 							<span class="home-hero__status-text">上班中</span>
 						</div>
 					</div>
-				</div>
 
-				{heroBioText && (
-					<div class="home-hero__motto-wrapper">
-						<p class="home-hero__motto-text">{heroBioText}</p>
-					</div>
-				)}
-			</div>
-		</section>
-
-		<!-- 中央区 -->
-		<section class="home-hero__center-panel">
-			<div class="home-hero__art-window"></div>
-			<!-- 悬浮人物 -->
-			<div class="home-hero__character-root" id="character-layer">
-				<div class="home-hero__character-reveal">
-					<div class="home-hero__character-motion">
-						<img
-							src={homeConfig.hero.characterImage}
-							alt="character"
-							class="home-hero__character-img"
-							loading="eager"
-						/>
+					<!-- 名字 + 职业 + 幽灵徽章 -->
+					<div class="home-hero__name-group">
+						{homeConfig.occupation && (
+							<p class="home-hero__occupation">{homeConfig.occupation}</p>
+						)}
+						{homeConfig.displayName && (
+							<h1 class="home-hero__name home-hero__name--rainbow">
+								{nameLetters.map((letter, i) => (
+									<span class="home-hero__name-letter" data-letter-index={i}>{letter}</span>
+								))}
+							</h1>
+						)}
+						<div class="home-hero__name-badge">{homeConfig.nameBadge || ""}</div>
 					</div>
 				</div>
 			</div>
-			<div class="home-hero__speech" aria-label="Character message">
-				<p class="home-hero__speech-text">
-					<span class="home-hero__speech-type">{heroSpeech.text}</span>
-				</p>
-				<p class="home-hero__speech-en">
-					<span class="home-hero__speech-type">{heroSpeech.english}</span>
-				</p>
-				<img
-					src={homeConfig.hero.speechAccentImage}
-					alt=""
-					class="home-hero__speech-accent"
-					loading="eager"
-					aria-hidden="true"
-				/>
-			</div>
 		</section>
 
-		<!-- 右侧面板 -->
+		<!-- 对话框（放大·视窗水平居中·放简介，左对齐，底部定位，打字机效果） -->
+		{heroBioText && (
+			<div class="home-hero__speech" aria-label="Bio">
+				<div class="home-hero__speech-inner">
+					<p class="home-hero__speech-text" data-speech-text>{heroBioText}</p>
+					<img
+						src={homeConfig.hero.speechAccentImage}
+						alt=""
+						class="home-hero__speech-accent"
+						loading="eager"
+						aria-hidden="true"
+					/>
+				</div>
+			</div>
+		)}
+
+		<!-- 右侧面板（比例与样式保持不变） -->
 		<aside class="home-hero__right-panel">
 			<div class="home-hero__pill">{heroRightPanel.pill}</div>
 			<div class="home-hero__vertical-wrap">
@@ -211,28 +215,121 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 		});
 	}
 
+	function splitSpeechText() {
+		const speechText = document.querySelector<HTMLElement>("[data-speech-text]");
+		if (!speechText || speechText.dataset.split === "true") return;
+		const text = speechText.textContent || "";
+		speechText.innerHTML = "";
+		for (const char of text) {
+			const span = document.createElement("span");
+			span.className = "home-hero__speech-char";
+			span.textContent = char === " " ? "\u00A0" : char;
+			speechText.appendChild(span);
+		}
+		speechText.dataset.split = "true";
+	}
+
+	function restoreSpeechText() {
+		const speechText = document.querySelector<HTMLElement>("[data-speech-text]");
+		if (!speechText || speechText.dataset.split !== "true") return;
+		const chars = speechText.querySelectorAll(".home-hero__speech-char");
+		const text = Array.from(chars)
+			.map((char) => char.textContent?.replace("\u00A0", " ") ?? "")
+			.join("");
+		speechText.textContent = text;
+		delete speechText.dataset.split;
+	}
+
+	// ============================================
+	// 标题 Hatching Shader 效果
+	// ============================================
+	async function initHeroHatch(heroTitleReady: Promise<void>, token: number) {
+		const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
+		if (!nameEl) return;
+		if (prefersReducedMotion() || isMobile()) return;
+
+		await heroTitleReady;
+
+		// 再次检查元素是否仍在 DOM（Swup 可能已切走页面）
+		if (token !== initToken || !document.contains(nameEl)) return;
+
+		destroyHeroHatch();
+
+		// VFX canvas 默认 z-index 为 9999 且挂载到 document.body，会盖住弹窗与浮动组件。
+		// 这里把 canvas 挂到 hero 内部（hero 已 isolation: isolate），并降低 z-index 到 hero 内部层级。
+		const heroEl = document.getElementById("home-hero") ?? undefined;
+		const vfx = VFX.init({
+			pixelRatio: Math.min(window.devicePixelRatio, 1.5),
+			zIndex: 10,
+			wrapper: heroEl,
+		});
+		if (!vfx) return;
+		vfxInstance = vfx;
+
+		heroHatchEffect = new HatchEffect({
+			color: "#ffffff",
+			angle: 45,
+			spacing: 2.5,
+			lineWidth: 2,
+			angleJitter: 0.5,
+			offsetJitter: 2,
+			spacingJitter: 0.5,
+			seed: 0,
+			speed: 8,
+			roundCap: true,
+			soft: 0,
+			originalColor: true,
+			bypass: false,
+		});
+
+		try {
+			await vfx.addHTML(nameEl, { effect: heroHatchEffect });
+		} catch { /* ignore */ }
+	}
+
+	function destroyHeroHatch() {
+		if (vfxInstance) {
+			const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
+			if (nameEl) {
+				try { vfxInstance.remove(nameEl); } catch { /* ignore */ }
+			}
+		}
+		if (heroHatchEffect) {
+			heroHatchEffect.dispose();
+			heroHatchEffect = null;
+		}
+		if (vfxInstance) {
+			vfxInstance.destroy();
+			vfxInstance = null;
+		}
+	}
+
+	// ============================================
+	// 初始化与清理（Swup 兼容）
+	// ============================================
 	function initHeroOpening() {
 		const hero = document.getElementById("home-hero");
 		if (!hero) return Promise.resolve();
 		if (prefersReducedMotion() || isMobile()) {
+			restoreSpeechText();
 			hero.classList.remove("home-hero--motion-pending");
 			hero.classList.add("home-hero--motion-ready");
 			return Promise.resolve();
 		}
 
+		splitSpeechText();
+
 		const occupation = hero.querySelector(".home-hero__occupation");
-		const name = hero.querySelector(".home-hero__name");
+		const nameLetters = hero.querySelectorAll(".home-hero__name-letter");
 		const badge = hero.querySelector(".home-hero__name-badge");
 		const avatar = hero.querySelector(".home-hero__avatar-group");
-		const motto = hero.querySelector(".home-hero__motto-text");
-		const artWindow = hero.querySelector(".home-hero__art-window");
-		const characterMotion = hero.querySelector(".home-hero__character-motion");
-		const speech = hero.querySelector(".home-hero__speech");
-		const speechLines = hero.querySelectorAll(".home-hero__speech-type");
+		const speech = hero.querySelector(".home-hero__speech-inner");
+		const speechChars = hero.querySelectorAll(".home-hero__speech-char");
 		const rightPanel = hero.querySelector(".home-hero__right-panel");
-		const brackets = hero.querySelectorAll(".home-hero__bracket");
-		const bottomLine = hero.querySelector(".home-hero__bottom-line");
-		const leftLine = hero.querySelector(".home-hero__left-line");
+		const focusFrame = hero.querySelector(".home-hero__focus-frame");
+		const viewfinderCorners = hero.querySelectorAll(".home-hero__viewfinder-corner");
+		const focusDot = hero.querySelector(".home-hero__focus-dot");
+		const cameraParams = hero.querySelector(".home-hero__camera-params");
 
 		hero.classList.add("home-hero--motion-ready");
 
@@ -247,79 +344,94 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 		});
 
 		heroOpeningTimeline
-			.fromTo(brackets, {
+			// 1. 外四角取景框依次展开
+			.fromTo(viewfinderCorners, {
 				autoAlpha: 0,
-				scale: 0.5,
+				scale: 0.3,
 			}, {
 				autoAlpha: 1,
 				scale: 1,
-				duration: 0.8,
-				stagger: 0.1,
+				duration: 0.7,
+				stagger: 0.08,
 				ease: "expo.out",
-			}, 0.18)
-			.fromTo(bottomLine, {
+			}, 0.1)
+			// 2. 中心对焦框从放大到锁定
+			.fromTo(focusFrame, {
 				autoAlpha: 0,
-				scaleX: 0,
-				transformOrigin: "0% 50%",
+				scale: 1.7,
 			}, {
 				autoAlpha: 1,
-				scaleX: 1,
-				duration: 1.2,
+				scale: 1,
+				duration: 0.85,
 				ease: "expo.out",
-			}, 0.34)
-			.fromTo(leftLine, {
+			}, 0.45)
+			.to(focusFrame, {
+				scale: 0.9,
+				duration: 0.2,
+				ease: "power2.inOut",
+			}, "-=0.1")
+			.to(focusFrame, {
+				scale: 1,
+				duration: 0.28,
+				ease: "power2.out",
+			})
+			// 3. 中心焦点闪烁出现
+			.fromTo(focusDot, {
 				autoAlpha: 0,
-				scaleY: 0,
-				transformOrigin: "50% 100%",
+				scale: 0,
 			}, {
 				autoAlpha: 1,
-				scaleY: 1,
-				duration: 1.2,
-				ease: "expo.out",
-			}, 0.34)
-			.fromTo(occupation, {
+				scale: 1,
+				duration: 0.25,
+				ease: "back.out(2.5)",
+			}, "-=0.05")
+			// 4. 拍摄参数面板滑入
+			.fromTo(cameraParams, {
 				autoAlpha: 0,
-				y: 48,
-				clipPath: "inset(0 0 100% 0)",
-			}, {
-				autoAlpha: 1,
-				y: 0,
-				clipPath: "inset(0 0 0% 0)",
-				duration: 0.92,
-				ease: "expo.out",
-			}, 0.82)
-			.fromTo(name, {
-				autoAlpha: 0,
-				x: -78,
-				scaleX: 0.78,
-				clipPath: "inset(0 100% 0 0)",
-				transformOrigin: "0% 50%",
+				x: -16,
 			}, {
 				autoAlpha: 1,
 				x: 0,
-				scaleX: 1,
-				clipPath: "inset(0 0% 0 0)",
-				duration: 1.18,
+				duration: 0.6,
+				ease: "expo.out",
+			}, 0.95)
+			.fromTo(occupation, {
+				autoAlpha: 0,
+				y: 48,
+			}, {
+				autoAlpha: 1,
+				y: 0,
+				duration: 0.92,
+				ease: "expo.out",
+			}, 0.82)
+			.fromTo(nameLetters, {
+				autoAlpha: 0,
+				y: 60,
+				scale: 0.82,
+			}, {
+				autoAlpha: 1,
+				y: 0,
+				scale: 1,
+				duration: 0.92,
+				stagger: 0.08,
 				ease: "expo.out",
 				onComplete: () => resolveHeroTitleReady(),
 			}, 0.98)
 			.fromTo(badge, {
 				autoAlpha: 0,
-				x: -42,
-				y: 14,
-				scaleX: 0.7,
+				y: 18,
+				scale: 0.7,
 				transformOrigin: "0% 50%",
 			}, {
 				autoAlpha: 1,
-				x: 0,
 				y: 0,
-				scaleX: 1,
+				scale: 1,
 				duration: 0.78,
 				ease: "expo.out",
-			}, 1.34)
+			}, 1.34 + nameLetters.length * 0.08)
 			.fromTo(avatar, {
 				autoAlpha: 0,
-				x: 54,
+				x: -54,
 				y: 12,
 				scale: 0.82,
 				clipPath: "circle(0% at 50% 50%)",
@@ -333,38 +445,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 				ease: "expo.out",
 				clearProps: "clipPath",
 			}, 1.45)
-			.fromTo(artWindow, {
-				autoAlpha: 0,
-				x: "7vw",
-				clipPath: "inset(0 0 0 100%)",
-			}, {
-				autoAlpha: 1,
-				x: "1vw",
-				clipPath: "inset(0 0 0 0%)",
-				duration: 1.25,
-				ease: "expo.out",
-				clearProps: "clipPath",
-			}, 1.15)
-			.fromTo(characterMotion, {
-				autoAlpha: 0,
-				y: 58,
-				rotationX: 68,
-				scaleX: 1.03,
-				scaleY: 0.72,
-				transformPerspective: 900,
-				filter: "blur(10px) saturate(1.1)",
-				transformOrigin: "50% 100%",
-			}, {
-				autoAlpha: 1,
-				y: 0,
-				rotationX: 0,
-				scaleX: 1,
-				scaleY: 1,
-				filter: "blur(0px) saturate(1)",
-				duration: 1.56,
-				ease: "expo.out",
-				clearProps: "transform,filter,visibility",
-			}, 1.42)
 			.fromTo(rightPanel, {
 				autoAlpha: 0,
 				x: 60,
@@ -374,19 +454,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 				duration: 0.95,
 				ease: "power3.out",
 			}, 1.66)
-			.fromTo(motto, {
-				autoAlpha: 0,
-				y: 68,
-				filter: "blur(14px)",
-				clipPath: "inset(0 0 100% 0)",
-			}, {
-				autoAlpha: 1,
-				y: 0,
-				filter: "blur(0px)",
-				clipPath: "inset(0 0 0% 0)",
-				duration: 1.15,
-				ease: "expo.out",
-			}, 1.72)
 			.fromTo(speech, {
 				autoAlpha: 0,
 				y: 34,
@@ -401,14 +468,15 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 				duration: 0.92,
 				ease: "expo.out",
 				clearProps: "filter",
-			}, 2.62)
-			.fromTo(speechLines, {
-				clipPath: "inset(0 100% 0 0)",
+			}, 2.12)
+			.fromTo(speechChars, {
+				autoAlpha: 0,
 			}, {
-				clipPath: "inset(0 0% 0 0)",
-				duration: 1.05,
-				ease: "steps(18)",
-			}, 3.08);
+				autoAlpha: 1,
+				duration: 0.05,
+				stagger: 0.05,
+				ease: "none",
+			}, 2.22);
 
 		hero.classList.remove("home-hero--motion-pending");
 		return heroTitleReady;
@@ -428,8 +496,8 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 			const title = section.querySelector(".home-section-title, [data-motion-title]");
 			const cards = section.querySelectorAll(".card-base, .post-card-wrapper, .home-pending, .stats-container, [data-motion-card]");
 			const images = section.querySelectorAll(
-			"img[data-home-motion-image]:not([data-shutter-image]):not([data-shutter-final-midground]):not([data-shutter-final-foreground]), [data-home-motion-image]:not([data-shutter-image]):not([data-shutter-final-midground]):not([data-shutter-final-foreground])",
-		);
+				"img[data-home-motion-image]:not([data-shutter-image]):not([data-shutter-final-midground]):not([data-shutter-final-foreground]), [data-home-motion-image]:not([data-shutter-image]):not([data-shutter-final-midground]):not([data-shutter-final-foreground])",
+			);
 			if (!title && cards.length === 0 && images.length === 0) return;
 
 			const tl = gsap.timeline({
@@ -508,70 +576,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 	}
 
 	// ============================================
-	// 鼠标视差 + 人物浮动
-	// ============================================
-	let rafId: number | null = null;
-	let mouseX = 0;
-	let mouseY = 0;
-	let charX = 0;
-	let charY = 0;
-	let mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
-	let parallaxRunning = false;
-
-	function initParallax() {
-		if (isMobile()) return;
-		const charLayer = document.getElementById("character-layer");
-		if (!charLayer) return;
-
-		mouseMoveHandler = (e: MouseEvent) => {
-			mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-			mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-			// 鼠标移动时重新启动 rAF 循环
-			if (!parallaxRunning) {
-				parallaxRunning = true;
-				rafId = requestAnimationFrame(update);
-			}
-		};
-
-		document.addEventListener("mousemove", mouseMoveHandler);
-
-		function update() {
-			const targetX = mouseX * 18;
-			const targetY = mouseY * 12;
-
-			charX += (targetX - charX) * 0.08;
-			charY += (targetY - charY) * 0.08;
-
-			if (charLayer) {
-				charLayer.style.transform = `translate(${charX}px, ${charY}px)`;
-			}
-
-			// 收敛检测：差值足够小时暂停循环，鼠标移动时重新启动
-			if (Math.abs(targetX - charX) < 0.01 && Math.abs(targetY - charY) < 0.01) {
-				parallaxRunning = false;
-				rafId = null;
-				return;
-			}
-
-			rafId = requestAnimationFrame(update);
-		}
-
-		parallaxRunning = true;
-		rafId = requestAnimationFrame(update);
-	}
-
-	function destroyParallax() {
-		if (mouseMoveHandler) {
-			document.removeEventListener("mousemove", mouseMoveHandler);
-			mouseMoveHandler = null;
-		}
-		if (rafId) {
-			cancelAnimationFrame(rafId);
-			rafId = null;
-		}
-	}
-
-	// ============================================
 	// 上下班头像与状态牌
 	// ============================================
 	function initWorkStatus() {
@@ -629,70 +633,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 	}
 
 	// ============================================
-	// 标题 Hatching Shader 效果
-	// ============================================
-	async function initHeroHatch(heroTitleReady: Promise<void>, token: number) {
-		const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
-		if (!nameEl) return;
-		if (prefersReducedMotion() || isMobile()) return;
-
-		await heroTitleReady;
-
-		// 再次检查元素是否仍在 DOM（Swup 可能已切走页面）
-		if (token !== initToken || !document.contains(nameEl)) return;
-
-		destroyHeroHatch();
-
-		// VFX canvas 默认 z-index 为 9999 且挂载到 document.body，会盖住弹窗与浮动组件。
-		// 这里把 canvas 挂到 hero 内部（hero 已 isolation: isolate），并降低 z-index 到 hero 内部层级。
-		const heroEl = document.getElementById("home-hero") ?? undefined;
-		const vfx = VFX.init({
-			pixelRatio: Math.min(window.devicePixelRatio, 1.5),
-			zIndex: 10,
-			wrapper: heroEl,
-		});
-		if (!vfx) return;
-		vfxInstance = vfx;
-
-		heroHatchEffect = new HatchEffect({
-			color: "#ffffff",
-			angle: 45,
-			spacing: 2.5,
-			lineWidth: 2,
-			angleJitter: 0.5,
-			offsetJitter: 2,
-			spacingJitter: 0.5,
-			seed: 0,
-			speed: 8,
-			roundCap: true,
-			soft: 0,
-			originalColor: false,
-			bypass: false,
-		});
-
-		try {
-			await vfx.addHTML(nameEl, { effect: heroHatchEffect });
-		} catch { /* ignore */ }
-	}
-
-	function destroyHeroHatch() {
-		if (vfxInstance) {
-			const nameEl = document.querySelector<HTMLElement>(".home-hero__name");
-			if (nameEl) {
-				try { vfxInstance.remove(nameEl); } catch { /* ignore */ }
-			}
-		}
-		if (heroHatchEffect) {
-			heroHatchEffect.dispose();
-			heroHatchEffect = null;
-		}
-		if (vfxInstance) {
-			vfxInstance.destroy();
-			vfxInstance = null;
-		}
-	}
-
-	// ============================================
 	// 初始化与清理（Swup 兼容）
 	// ============================================
 	let initToken = 0;
@@ -701,7 +641,6 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 		cleanup();
 		const token = initToken;
 		const heroOpeningReady = initHeroOpening();
-		initParallax();
 		initWorkStatus();
 		void initHeroHatch(heroOpeningReady, token);
 
@@ -713,18 +652,17 @@ const heroRightPanel = homeConfig.hero.rightPanel ?? {
 
 	function cleanup() {
 		killHomeMotion();
-		destroyParallax();
 		destroyWorkStatus();
 		destroyHeroHatch();
 	}
 
 	async function scheduleHomeInit() {
-		const token = ++initToken;
+		++initToken;
 		cleanup();
 		if (!document.getElementById("home-hero")) return;
 
 		await waitForPageLoaderHidden();
-		if (token !== initToken || !document.getElementById("home-hero")) return;
+		if (!document.getElementById("home-hero")) return;
 
 		init();
 	}

@@ -24,19 +24,15 @@ export const homeConfig: HomeConfig = {
 	nameBadge: "B站：Mmz明崽",
 
 	// 职业/身份标签
-	occupation: "[(伪)全栈工程师[啥都干工程师] / 技术博主]",
+	occupation: "[(伪)全栈工程师[全干工程师] / 技术博主]",
 
 	// 个人签名（支持多条，会循环打字+删除效果）
 	bio: ["且视他人之疑目如盏盏鬼火，大胆地去走你的夜路"],
 
 	hero: {
 		backgroundImage: "/assets/images/home/home.webp",
-		characterImage: "/assets/images/home/home2.webp",
+		backgroundImageMobile: "/assets/images/home/home-mobile.webp",
 		speechAccentImage: "/assets/images/home/home2-1.webp",
-		speech: {
-			text: "菲比啾比？",
-			english: "Cheers to a hard day at work!",
-		},
 		rightPanel: {
 			pill: "BLOG",
 			title: "博客",

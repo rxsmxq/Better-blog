@@ -280,7 +280,8 @@ export type HomeConfig = {
 	bio?: string | string[];
 	hero: {
 		backgroundImage: string;
-		characterImage: string;
+		backgroundImageMobile?: string;
+		characterImage?: string;
 		speechAccentImage: string;
 		speech?: {
 			text: string;
