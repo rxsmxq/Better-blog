@@ -14,6 +14,36 @@ html:has(.music-visualizer-page) #top-row {
 	margin-inline: auto;
 }
 
+/* 音乐页面背景为深色可视化，强制导航栏使用暗色风格（无论当前主题） */
+html:has(.music-visualizer-page) .navbar-seg {
+	background: color-mix(in oklch, oklch(0.12 0 0) 55%, transparent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+html:has(.music-visualizer-page) .navbar-logo,
+html:has(.music-visualizer-page) .navbar-logo-text,
+html:has(.music-visualizer-page) .dropdown-trigger,
+html:has(.music-visualizer-page) .dropdown-container > a,
+html:has(.music-visualizer-page) .nav-search-btn,
+html:has(.music-visualizer-page) .nav-search-btn__shortcut,
+html:has(.music-visualizer-page) #nav-menu-switch {
+	color: oklch(0.92 0 0);
+}
+
+html:has(.music-visualizer-page) .navbar-hover-highlight {
+	background-color: color-mix(in oklch, oklch(0.92 0 0) 12%, transparent);
+}
+
+html:has(.music-visualizer-page) .dropdown-content-wrapper {
+	background: color-mix(in oklch, oklch(0.12 0 0) 85%, transparent);
+	border-color: oklch(0.25 0 0);
+}
+
+html:has(.music-visualizer-page) .dropdown-content-wrapper .dropdown-item,
+html:has(.music-visualizer-page) .dropdown-content-wrapper .dropdown-item span {
+	color: oklch(0.92 0 0);
+}
+
 html:has(.music-visualizer-page) #content-wrapper {
 	opacity: 1 !important;
 	transform: none !important;
@@ -525,14 +555,14 @@ html:has(.music-visualizer-page) .footer {
 	border-radius: 14px;
 	background: linear-gradient(
 		135deg,
-		rgba(255, 255, 255, 0.54),
-		rgba(218, 242, 255, 0.34) 48%,
-		rgba(255, 255, 255, 0.46)
+		rgba(8, 18, 32, 0.72),
+		rgba(6, 16, 30, 0.52) 48%,
+		rgba(8, 18, 32, 0.64)
 	);
-	backdrop-filter: blur(34px) saturate(1.72) brightness(1.12);
-	-webkit-backdrop-filter: blur(34px) saturate(1.72) brightness(1.12);
-	box-shadow: 0 28px 96px rgba(0, 15, 32, 0.24);
-	color: rgba(5, 14, 28, 0.78);
+	backdrop-filter: blur(34px) saturate(1.4);
+	-webkit-backdrop-filter: blur(34px) saturate(1.4);
+	box-shadow: 0 28px 96px rgba(0, 0, 0, 0.42);
+	color: rgba(240, 245, 255, 0.86);
 }
 
 .music-visualizer__btn {
@@ -554,21 +584,21 @@ html:has(.music-visualizer-page) .footer {
 }
 
 .music-visualizer__btn:hover {
-	background: rgba(5, 14, 28, 0.08);
-	color: #05070d;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
 	transform: translateY(-1px);
 }
 
 .music-visualizer__btn--playlist {
 	position: relative;
-	color: rgba(5, 14, 28, 0.72);
+	color: rgba(255, 255, 255, 0.72);
 }
 
 .music-visualizer__btn--playlist::before {
 	position: absolute;
 	inset: 7px;
 	border-radius: inherit;
-	background: rgba(5, 14, 28, 0.1);
+	background: rgba(255, 255, 255, 0.12);
 	content: "";
 	opacity: 0;
 	transform: scale(0.72);
@@ -590,11 +620,11 @@ html:has(.music-visualizer-page) .footer {
 }
 
 .music-visualizer__btn--playlist.music-visualizer__btn--active {
-	color: #05070d;
+	color: #fff;
 }
 
 .music-visualizer__btn--playlist:hover {
-	color: #05070d;
+	color: #fff;
 }
 
 .music-visualizer__btn--playlist.music-visualizer__btn--active svg {
@@ -610,14 +640,14 @@ html:has(.music-visualizer-page) .footer {
 .music-visualizer__btn--play {
 	width: 50px;
 	height: 50px;
-	background: rgba(255, 255, 255, 0.92);
-	color: #05070d;
-	box-shadow: 0 12px 30px rgba(0, 20, 42, 0.2);
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
 .music-visualizer__btn--play:hover {
-	background: #fff;
-	color: #05070d;
+	background: rgba(255, 255, 255, 0.24);
+	color: #fff;
 }
 
 .music-visualizer__track-summary {
@@ -636,9 +666,9 @@ html:has(.music-visualizer-page) .footer {
 	flex: 0 0 44px;
 	overflow: hidden;
 	border-radius: 6px;
-	background: rgba(5, 14, 28, 0.08);
-	color: rgba(5, 14, 28, 0.46);
-	box-shadow: 0 8px 24px rgba(0, 20, 42, 0.14);
+	background: rgba(255, 255, 255, 0.1);
+	color: rgba(255, 255, 255, 0.62);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
 }
 
 .music-visualizer__current-cover img {
@@ -664,13 +694,13 @@ html:has(.music-visualizer-page) .footer {
 .music-visualizer__track-name {
 	font-size: 14px;
 	font-weight: 700;
-	color: rgba(5, 14, 28, 0.92);
+	color: rgba(255, 255, 255, 0.92);
 }
 
 .music-visualizer__track-artist {
 	margin-top: 2px;
 	font-size: 11px;
-	color: rgba(5, 14, 28, 0.5);
+	color: rgba(255, 255, 255, 0.56);
 }
 
 .music-visualizer__progress-wrapper {
@@ -685,7 +715,7 @@ html:has(.music-visualizer-page) .footer {
 	flex: 0 0 auto;
 	font-size: 11px;
 	font-variant-numeric: tabular-nums;
-	color: rgba(5, 14, 28, 0.48);
+	color: rgba(255, 255, 255, 0.5);
 	text-align: center;
 }
 
@@ -694,7 +724,7 @@ html:has(.music-visualizer-page) .footer {
 	position: relative;
 	height: 5px;
 	border-radius: 9999px;
-	background: rgba(5, 14, 28, 0.18);
+	background: rgba(255, 255, 255, 0.18);
 	cursor: pointer;
 	overflow: hidden;
 }

@@ -1,108 +1,123 @@
 /* ============================================
-   导航栏 — 来自 Navbar.astro
-   pill 容器、Logo、导航菜单、hover 指示器
+   导航栏 — 三段式椭圆 + 常驻磨砂玻璃
+   左段（logo+标题→球）、中段（紧凑导航，不变）、右段（搜索+快捷键→球）
    ============================================ */
 
-/* ── pill 容器内边距 ── */
-.navbar-pill {
-	background: transparent;
-	border: none;
-	border-radius: 9999px;
-	box-shadow: none;
-	backdrop-filter: none;
-	-webkit-backdrop-filter: none;
-	padding: 0.5rem 0.75rem;
+/* ── 三段式容器 ── */
+.navbar-segments {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 100%;
-	max-width: 100%;
+	max-width: var(--page-width, 1200px);
+	min-height: 2.75rem;
 	margin-inline: auto;
-	will-change: max-width, border-radius, padding;
+	position: relative;
+}
+
+/* ── 椭圆段通用样式：常驻磨砂玻璃 ── */
+.navbar-seg {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border-radius: 9999px;
+	padding: 0.25rem 0.5rem;
+	background: color-mix(in oklch, var(--card-bg) 60%, transparent);
+	backdrop-filter: blur(12px) saturate(1.2);
+	-webkit-backdrop-filter: blur(12px) saturate(1.2);
+	border: none;
+	box-shadow: 0 2px 8px color-mix(in oklch, var(--deep-text) 4%, transparent);
+	will-change: max-width, padding, border-radius, left, transform;
 	transform: translateZ(0);
 	-webkit-transform: translateZ(0);
 	backface-visibility: hidden;
 	-webkit-backface-visibility: hidden;
 	transition:
 		max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
 		border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-		padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+		transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-:root.dark .navbar-pill {
-	background: transparent;
-	border: none;
-	box-shadow: none;
+:root.dark .navbar-seg {
+	background: color-mix(in oklch, var(--card-bg) 55%, transparent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* 覆盖旧导航样式的默认透明态；滚动后仍由 #navbar.scrolled > div 和液态玻璃层接管。 */
-#navbar > .navbar-pill {
-	background: transparent;
-	border: none;
-	border-radius: 9999px;
-	box-shadow: none;
-	backdrop-filter: none;
-	-webkit-backdrop-filter: none;
+/* 首页 Hero 区域：亮色主题下使用半透明白色磨砂玻璃，避免透明背景叠加深色 Hero 图 */
+html:has(.home-hero):not(.dark) .navbar-seg {
+	background: color-mix(in oklch, var(--float-panel-bg) 72%, transparent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-:root.dark #navbar > .navbar-pill {
-	background: transparent;
-	border: none;
-	box-shadow: none;
+/* 左段：默认贴最左 */
+.navbar-seg--left {
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	justify-content: flex-start;
 }
 
-/* 滚动后内边距收紧 + 居中缩放 */
-#navbar.scrolled .navbar-pill {
-	width: 100%;
-	max-width: min(72%, 860px);
-	margin-inline: auto;
-	border-radius: 9999px;
-	padding: 0.35rem 0.5rem;
+/* 中段：绝对定位居中，永远不受左右段宽度变化影响 */
+.navbar-seg--center {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	justify-content: center;
+	z-index: 20;
+	/* 中段不参与 flex 布局，宽度变化不影响它 */
+	transition: padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 移动端：简化 pill 过渡，减少复合开销 */
+/* 右段：默认贴最右 */
+.navbar-seg--right {
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	justify-content: flex-end;
+	gap: 0.25rem;
+}
+
+/* 移动端：中段隐藏，左右段恢复 flex 排列 */
 @media (max-width: 1023px) {
-	.navbar-pill {
-		transition:
-			max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-			border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-			padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-			background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
-			border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
-			box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
-		will-change: max-width, border-radius, padding;
+	.navbar-segments {
+		justify-content: space-between;
 	}
-
-	.navbar-glass-layer {
-		opacity: 0;
-		transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+	.navbar-seg--left,
+	.navbar-seg--right {
+		position: relative;
+		left: auto;
+		right: auto;
+		top: auto;
+		transform: none;
 	}
-
-	#navbar.scrolled .navbar-glass-layer {
-		opacity: 1 !important;
-		transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+	.navbar-seg--center {
+		display: none;
 	}
-}
-
-/* ── 内层 flex 行 ── */
-.navbar-inner {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	width: 100%;
-	max-width: var(--page-width, 1200px);
-	margin-inline: auto;
-	padding: 0.25rem 0.75rem;
-	position: relative;
+	#navbar.scrolled .navbar-seg--left,
+	#navbar.scrolled .navbar-seg--right {
+		left: auto;
+		right: auto;
+		transform: none;
+	}
 }
 
 /* ── Logo ── */
 .navbar-logo {
 	display: flex;
 	align-items: center;
-	height: 2.75rem;
-	padding: 0 0.5rem;
+	height: 2.25rem;
+	padding: 0 0.25rem;
 	font-weight: 600;
 	position: relative;
 	z-index: 10;
-	flex-shrink: 0;
 	text-decoration: none;
 	color: var(--deep-text);
 }
@@ -114,13 +129,7 @@
 	background-color: transparent !important;
 }
 
-/* logo 图片 */
-.navbar-logo img,
-.navbar-logo picture img {
-	transition: filter 0.3s ease;
-}
-
-/* logo 文字：滚动后淡出收缩 */
+/* logo 文字：滚动后淡出收缩（左段成球） */
 .navbar-logo-text {
 	display: inline-block;
 	max-width: 12rem;
@@ -128,46 +137,46 @@
 	white-space: nowrap;
 	opacity: 1;
 	transform: translateX(0);
-	will-change: opacity, transform;
+	will-change: opacity, transform, max-width;
 	transition:
 		opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
 		transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-		max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+		max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+		margin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#navbar.scrolled .navbar-seg--left {
+	width: 2.25rem;
+	min-width: 2.25rem;
+	max-width: 2.25rem;
+	height: 2.25rem;
+	min-height: 2.25rem;
+	max-height: 2.25rem;
+	padding: 0;
+	border-radius: 9999px;
+	overflow: hidden;
 }
 
 #navbar.scrolled .navbar-logo-text {
 	max-width: 0;
 	opacity: 0;
-	transform: translateX(-8px);
+	transform: translateX(-6px);
 	margin-left: 0 !important;
 }
 
-/* 移动端：logo 文字使用 GPU 友好的 transform，避免 max-width 布局抖动 */
-@media (max-width: 1023px) {
-	.navbar-logo-text {
-		transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		will-change: transform, opacity;
-	}
-
-	#navbar.scrolled .navbar-logo-text {
-		opacity: 0;
-		transform: translateX(-8px) scale(0.95);
-		max-width: 12rem;
-		margin-left: 0 !important;
-	}
+#navbar.scrolled .navbar-logo {
+	padding: 0;
+	width: 100%;
+	justify-content: center;
 }
 
-/* ── 中间导航菜单 ── */
+/* ── 中段导航菜单 ── */
 .navbar-nav {
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	transform: translate(-50%, -50%);
 	display: none;
 	align-items: center;
-	gap: 0.25rem;
+	gap: 0.125rem;
 	white-space: nowrap;
-	z-index: 20;
+	position: relative;
 }
 
 @media (min-width: 1024px) {
@@ -176,48 +185,41 @@
 	}
 }
 
-/* ── 右侧工具栏 ── */
-.navbar-right {
-	position: relative;
-	z-index: 30;
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 0.25rem;
-}
-.navbar-right .btn-plain {
+/* ── 右段：搜索按钮 + 快捷键徽章 ── */
+.navbar-right .btn-plain,
+.navbar-seg--right .btn-plain {
 	background-color: transparent !important;
 }
-.navbar-right .btn-plain::before {
+.navbar-right .btn-plain::before,
+.navbar-seg--right .btn-plain::before {
 	background-color: transparent !important;
 	scale: 0.85;
 }
-.navbar-right .btn-plain:hover::before {
+.navbar-right .btn-plain:hover::before,
+.navbar-seg--right .btn-plain:hover::before {
 	background-color: transparent !important;
 }
 
-/* ── 搜索按钮 + 快捷键徽章 ── */
 .nav-search-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.375rem;
-	padding-inline: 0.625rem;
+	padding-inline: 0.5rem;
 }
 
 .nav-search-btn__shortcut {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 1.5rem;
-	height: 1.25rem;
-	padding: 0 0.375rem;
-	font-size: 0.7rem;
+	min-width: 1.4rem;
+	height: 1.15rem;
+	padding: 0 0.3rem;
+	font-size: 0.65rem;
 	font-weight: 600;
 	line-height: 1;
 	color: var(--deep-text);
-	background: color-mix(in oklch, var(--deep-text) 6%, transparent);
-	border: 1px solid var(--line-divider);
-	border-radius: 0.375rem;
+	background: transparent;
+	border: none;
 	opacity: 0.75;
 	white-space: nowrap;
 	overflow: hidden;
@@ -225,19 +227,37 @@
 		max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
 		opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
 		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		padding-inline 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-		border-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+		padding-inline 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 收缩状态：只保留图标 */
+/* 收缩状态：右段成球，只保留搜索图标 */
+#navbar.scrolled .navbar-seg--right {
+	width: 2.25rem;
+	min-width: 2.25rem;
+	max-width: 2.25rem;
+	height: 2.25rem;
+	min-height: 2.25rem;
+	max-height: 2.25rem;
+	padding: 0;
+	border-radius: 9999px;
+	overflow: hidden;
+}
+
 #navbar.scrolled .nav-search-btn__shortcut {
 	max-width: 0;
 	min-width: 0;
 	opacity: 0;
-	transform: translateX(-8px);
+	transform: translateX(-6px);
 	padding-inline: 0;
 	border-width: 0;
 	pointer-events: none;
+}
+
+#navbar.scrolled .nav-search-btn {
+	padding-inline: 0;
+	width: 100%;
+	justify-content: center;
+	gap: 0;
 }
 
 /* 移动端：徽章始终隐藏（空间紧凑） */
@@ -247,25 +267,68 @@
 	}
 }
 
-/* ── hover 滑动边框指示器 ── */
-.navbar-hover-border {
+/* 移动端：滚动收缩不触发（左右段保持展开） */
+@media (max-width: 1023px) {
+	#navbar.scrolled .navbar-seg--left,
+	#navbar.scrolled .navbar-seg--right {
+		width: auto;
+		min-width: auto;
+		max-width: none;
+		height: auto;
+		min-height: auto;
+		max-height: none;
+		padding: 0.25rem 0.5rem;
+	}
+	#navbar.scrolled .navbar-logo-text {
+		max-width: 12rem;
+		opacity: 1;
+		transform: translateX(0);
+	}
+	#navbar.scrolled .navbar-logo {
+		padding: 0 0.25rem;
+		width: auto;
+	}
+	#navbar.scrolled .nav-search-btn {
+		padding-inline: 0.5rem;
+		width: auto;
+	}
+	#navbar.scrolled .navbar-segments {
+		justify-content: space-between;
+	}
+	#navbar.scrolled .navbar-seg--center {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+	}
+}
+
+/* ── hover 滑动高亮指示器（无边框，纯背景） ── */
+.navbar-hover-highlight {
 	position: absolute;
-	height: 2.5rem;
+	height: 2.25rem;
 	border-radius: 9999px;
-	border: 1.5px solid oklch(0.35 0 0);
-	background-color: transparent;
+	border: none;
+	background-color: color-mix(in oklch, var(--deep-text) 8%, transparent);
 	opacity: 0;
-	transition: left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	transition:
+		left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+		width 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+		height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+		top 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+		opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+		background-color 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 	pointer-events: none;
-	z-index: 0;
+	z-index: -1;
 }
 
-:root.dark .navbar-hover-border {
-	border-color: oklch(0.6 0 0);
+/* 选中态：更深一层背景 */
+.navbar-nav.nav-has-active .navbar-hover-highlight {
+	background-color: color-mix(in oklch, var(--deep-text) 12%, transparent);
 }
 
-.navbar-nav:hover .navbar-hover-border,
-.navbar-nav.nav-has-active .navbar-hover-border {
+.navbar-nav:hover .navbar-hover-highlight,
+.navbar-nav.nav-has-active .navbar-hover-highlight {
 	opacity: 1;
 }
 
@@ -280,25 +343,7 @@
 }
 
 /* ============================================
- * 过渡工具类（从 navbar.css 迁移）
- * ============================================ */
-@utility navbar-surface-transition {
-	will-change: max-width, border-radius, padding;
-	transform: translateZ(0);
-	-webkit-transform: translateZ(0);
-	backface-visibility: hidden;
-	-webkit-backface-visibility: hidden;
-	transition:
-		max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-		border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-		background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
-		border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
-		box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
-		margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================
- * navbar-wrapper：滚动后背景变透明（从 navbar.css 迁移）
+ * navbar-wrapper：滚动后背景变透明
  * ============================================ */
 #navbar-wrapper {
 	will-change: background-color;
@@ -312,36 +357,10 @@
 }
 
 /* ============================================
- * 液态玻璃背景层：滚动后显示（从 navbar.css 迁移）
- * ============================================ */
-.navbar-glass-layer {
-	opacity: 0;
-	transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0s;
-}
-
-#navbar.scrolled .navbar-glass-layer {
-	opacity: 1 !important;
-	transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.35s;
-}
-
-/* ============================================
- * 通用滚动阴影（从 navbar.css 迁移）
- * ============================================ */
-#navbar.navbar-sticky-shadow > div {
-	box-shadow: var(--shadow-navbar) !important;
-}
-
-:root.dark #navbar.navbar-sticky-shadow > div {
-	box-shadow: var(--shadow-navbar-dark) !important;
-}
-
-/* ============================================
- * 全宽导航栏适配（从 navbar.css 迁移）
+ * 全宽导航栏适配
  * ============================================ */
 @media (min-width: 1024px) {
-	#navbar-wrapper #navbar[data-full-width="true"] > div,
-	#navbar-wrapper #navbar[data-full-width="true"].scrolled > div {
-		border-radius: 9999px !important;
+	#navbar-wrapper #navbar[data-full-width="true"] .navbar-segments {
 		width: 100% !important;
 		max-width: none !important;
 		margin: 0 !important;
@@ -349,10 +368,6 @@
 }
 
 /* ============================================
- * 小于1280px时隐藏导航栏菜单图标（从 navbar.css 迁移）
+ * 小于1280px时隐藏一级导航触发器图标（仅 active 时显示由 dropdown-menu.css 控制）
+ * 这里仅控制非 active 的默认隐藏逻辑由 dropdown-menu.css 统一处理
  * ============================================ */
-@media (max-width: 1279px) {
-	.navbar-icon {
-		display: none !important;
-	}
-}

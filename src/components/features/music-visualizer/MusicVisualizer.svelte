@@ -12,12 +12,6 @@ let backgroundColor = $state(
 	musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15",
 );
 
-function syncPageBackground() {
-	backgroundColor = document.documentElement.classList.contains("dark")
-		? (musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15")
-		: (musicPlayerConfig.visualizer?.background?.light ?? "#ffffff");
-}
-
 function connectAudio() {
 	const audio = document.getElementById(
 		"firefly-music-audio",
@@ -39,14 +33,6 @@ function audioCtxState() {
 }
 
 onMount(() => {
-	syncPageBackground();
-
-	const themeObserver = new MutationObserver(syncPageBackground);
-	themeObserver.observe(document.documentElement, {
-		attributes: true,
-		attributeFilter: ["class"],
-	});
-
 	const mgr = window.__fireflyMusic;
 	if (!mgr) {
 		const waitForMgr = () => {
@@ -71,7 +57,6 @@ onMount(() => {
 	document.addEventListener("click", handleFirstClick);
 
 	return () => {
-		themeObserver.disconnect();
 		document.removeEventListener("click", handleFirstClick);
 	};
 });

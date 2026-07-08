@@ -63,12 +63,12 @@ const navLinks = navBarConfig.links.map((item) => {
 
 <slot slot="head" name="head"></slot>
 
-{/* Navbar — 极简 sticky 顶栏 */}
+{/* Navbar — 三段式椭圆 sticky 顶栏，顶部留距 */}
 <div
 	id="top-row"
 	class="z-50 pointer-events-none relative mx-auto"
 	class:list={[
-		"sticky top-0 left-0 right-0 z-80",
+		"sticky top-0 left-0 right-0 z-80 pt-2.5",
 		navbarWidthFull ? "w-full" : "w-full max-w-(--page-width) px-0 md:px-4",
 	]}
 >
