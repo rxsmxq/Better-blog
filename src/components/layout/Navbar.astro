@@ -359,6 +359,8 @@ document.getElementById("navbar")?.addEventListener("click", (e) => {
 	import.meta.env.PROD && (
 		<script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
 			async function loadPagefind() {
+				if (window.__pagefindLoading || window.pagefind) return;
+				window.__pagefindLoading = true;
 				try {
 					const response = await fetch(scriptUrl, { method: 'HEAD' });
 					if (!response.ok) throw new Error(`Pagefind script not found: ${response.status}`);
@@ -375,11 +377,20 @@ document.getElementById("navbar")?.addEventListener("click", (e) => {
 					document.dispatchEvent(new CustomEvent('pagefindloaderror'));
 				}
 			}
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', loadPagefind);
-			} else {
+			// 延迟到首次用户交互才加载：纯浏览/跳出的访客不会拉取 Pagefind
+			// 运行时与索引；任何交互意图都会触发后台预载，确保搜索时已就绪。
+			const _pfEvents = ['pointerdown', 'keydown', 'touchstart'];
+			function _pfOnInteract() {
+				_pfEvents.forEach((evt) =>
+					document.removeEventListener(evt, _pfOnInteract, { capture: true })
+				);
 				loadPagefind();
 			}
+			_pfEvents.forEach((evt) =>
+				document.addEventListener(evt, _pfOnInteract, { capture: true, passive: true })
+			);
+			// 供搜索控制器在程序化打开时兜底调用
+			window.__loadPagefind = loadPagefind;
 		</script>
 	)
 }

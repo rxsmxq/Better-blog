@@ -1,5 +1,5 @@
 ---
-import { Picture } from "astro:assets";
+import { getImage, Picture } from "astro:assets";
 import * as path from "node:path";
 import type { ImageMetadata } from "astro";
 import { coverImageConfig } from "@/config";
@@ -23,6 +23,7 @@ interface Props {
 	layout?: ResponsiveImageLayout;
 	formats?: ImageFormat[];
 	loading?: "lazy" | "eager";
+	fetchpriority?: "high" | "low" | "auto";
 	apiUrls?: string[];
 }
 
@@ -36,6 +37,7 @@ const {
 	layout = "constrained",
 	formats = getImageFormats(),
 	loading = "lazy",
+	fetchpriority = "auto",
 	apiUrls = [],
 } = Astro.props;
 
@@ -119,6 +121,42 @@ const remoteReferrerPolicy =
 	!isLocal && shouldAddNoReferrer(isPublic ? url(src) : src)
 		? "no-referrer"
 		: undefined;
+
+// 当 fetchpriority 不是 auto 时，需改用原生 <picture>/<img>，因为 Astro 的
+// <Picture> 不会把 fetchpriority 透传到最终 <img>（参照 ImageWrapper.astro）
+const needsNativeImg = fetchpriority !== "auto";
+const coverWidth = preview ? 400 : 1200;
+const coverHeight = preview ? 300 : 800;
+
+let optimizedImg: Awaited<ReturnType<typeof getImage>> | null = null;
+let optimizedSources: { srcset: string; type: string }[] = [];
+if (needsNativeImg && isLocal && img) {
+	const originalSrc = img;
+	optimizedSources = await Promise.all(
+		formats.map(async (format) => {
+			const optimized = await getImage({
+				src: originalSrc,
+				format,
+				widths,
+				sizes,
+				quality,
+				layout,
+			});
+			return {
+				srcset: optimized.srcSet.attribute,
+				type: `image/${format}`,
+			};
+		}),
+	);
+	optimizedImg = await getImage({
+		src: originalSrc,
+		format: fallbackFormat,
+		widths,
+		sizes,
+		quality,
+		layout,
+	});
+}
 ---
 
 <div
@@ -174,14 +212,34 @@ const remoteReferrerPolicy =
 	)}
 
 	<!-- 本地图片 -->
-	{isLocal && img && (
+	{isLocal && img && needsNativeImg && optimizedImg && (
+		<picture>
+			{optimizedSources.map((source) => (
+				<source srcset={source.srcset} type={source.type} {...(sizes ? { sizes } : {})} />
+			))}
+			<img
+				src={optimizedImg.src}
+				srcset={optimizedImg.srcSet.attribute}
+				alt={alt || ""}
+				class={imageClass}
+				style={imageStyle}
+				width={coverWidth}
+				height={coverHeight}
+				loading={loading}
+				fetchpriority={fetchpriority}
+				decoding="async"
+				data-cover-img
+			/>
+		</picture>
+	)}
+	{isLocal && img && !needsNativeImg && (
 		<Picture
 			src={img}
 			alt={alt || ""}
 			class={imageClass}
 			style={imageStyle}
-			width={preview ? 400 : 1200}
-			height={preview ? 300 : 800}
+			width={coverWidth}
+			height={coverHeight}
 			loading={loading}
 			formats={formats}
 			fallbackFormat={fallbackFormat}
@@ -200,9 +258,10 @@ const remoteReferrerPolicy =
 			alt={alt || ""}
 			class={imageClass}
 			style={imageStyle}
-			width={preview ? 400 : 1200}
-			height={preview ? 300 : 800}
+			width={coverWidth}
+			height={coverHeight}
 			loading={loading}
+			fetchpriority={fetchpriority}
 			decoding="async"
 			data-cover-img
 			data-remote="true"

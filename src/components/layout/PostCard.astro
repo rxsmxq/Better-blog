@@ -26,6 +26,7 @@ interface Props {
 	password?: boolean;
 	style: string;
 	loading?: "lazy" | "eager";
+	fetchpriority?: "high" | "low" | "auto";
 }
 const {
 	entry,
@@ -40,6 +41,7 @@ const {
 	password,
 	style,
 	loading = "lazy",
+	fetchpriority = "auto",
 } = Astro.props;
 const className = Astro.props.class;
 
@@ -173,6 +175,7 @@ const descriptionText = description || remarkPluginFrontmatter.excerpt || "";
           class="w-full h-full transition-transform duration-300 group-hover:scale-110 group-active:scale-115"
           preview={true}
           loading={loading}
+          fetchpriority={fetchpriority}
           apiUrls={apiUrls}
         />
       </a>

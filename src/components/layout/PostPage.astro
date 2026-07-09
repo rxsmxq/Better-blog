@@ -72,6 +72,7 @@ const categories = await getCategoryList();
         pinned={entry.data.pinned}
         password={!!entry.data.password}
         loading={index < 2 ? "eager" : "lazy"}
+        fetchpriority={index === 0 ? "high" : "auto"}
         class:list="onload-animation post-card-item"
         style={`animation-delay: calc(var(--content-delay) + ${delay++ * interval}ms);`}
       />

@@ -210,9 +210,9 @@ const siteLang = lang.replace("_", "-");
     {/* 全局持久化组件 — Swup 容器外，所有页面共享（CLAUDE.md 4.2） */}
     <FloatingDock />
     <MobileDock />
-    <AISearch client:load />
+    <AISearch client:idle />
     <SearchModal
-      client:load
+      client:idle
       placeholders={[
         "搜索文章、标签、分类...",
         "输入关键词开始搜索",

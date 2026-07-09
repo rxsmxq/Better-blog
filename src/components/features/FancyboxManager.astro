@@ -98,16 +98,23 @@ import "@/styles/fancybox-custom.css";
 
   // 监听 data-fancybox 元素动态出现（如 client:visible 懒水合的 Svelte 组件）
   let observer: MutationObserver | null = null;
+  let observerTimer: ReturnType<typeof setTimeout> | null = null;
+  function stopObserving() {
+    if (observer) { observer.disconnect(); observer = null; }
+    if (observerTimer) { clearTimeout(observerTimer); observerTimer = null; }
+  }
   function observeFancyboxElements() {
-    if (observer) observer.disconnect();
+    stopObserving();
     observer = new MutationObserver(() => {
       if (document.querySelector("[data-fancybox]")) {
         setup();
-        observer?.disconnect();
-        observer = null;
+        stopObserving();
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    // 兜底：若一段时间内没有出现 fancybox 元素，停止全页监听，避免长期占用；
+    // 下次 Swup 导航（content:replace）会重新 arm。
+    observerTimer = setTimeout(stopObserving, 5000);
   }
 
   // 初始化
@@ -115,7 +122,10 @@ import "@/styles/fancybox-custom.css";
   observeFancyboxElements();
 
   // Swup 生命周期整合
-  document.addEventListener("swup:visit:start", cleanupFancybox);
+  document.addEventListener("swup:visit:start", () => {
+    cleanupFancybox();
+    stopObserving();
+  });
   document.addEventListener("swup:content:replace", () => {
     setup();
     observeFancyboxElements();

@@ -981,7 +981,14 @@ function initTrigger() {
 		}
 
 		// 首次初始化（脚本第一次执行）
-		await initialize();
+		// 用 requestIdleCallback 延后，避免 pixi/live2d 加载与首屏渲染争抢主线程；
+		// 回访用户（缓存可见）此前每页都在此处同步拉取 pixi，改为空闲时初始化。
+		const startInitialize = () => { initialize(); };
+		if (typeof requestIdleCallback === "function") {
+			requestIdleCallback(startInitialize, { timeout: 2000 });
+		} else {
+			setTimeout(startInitialize, 200);
+		}
 	}
 
 	function cleanup() {

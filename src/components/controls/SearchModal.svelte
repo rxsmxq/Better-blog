@@ -244,7 +244,8 @@ function handleResultClick(e: MouseEvent, url: string) {
 // --- Global keyboard shortcut (Ctrl+K / Cmd+K) ---
 // 统一处理：默认打开普通搜索，再次按切换到 AI 搜索，再按关闭
 function handleGlobalKeyDown(e: KeyboardEvent) {
-	if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+	// 用 e.code(物理按键)判断，不受 Caps Lock / 输入法 / 键盘布局导致的大小写影响
+	if ((e.ctrlKey || e.metaKey) && e.code === "KeyK") {
 		e.preventDefault();
 		const aiOpen = !!window.__aiSearchOpen;
 		if (aiOpen) {
