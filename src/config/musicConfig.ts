@@ -62,8 +62,8 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	// 可视化器配置
 	visualizer: {
 		background: {
-			dark: "#0a0a15",
-			light: "#2D2D2D",
+			dark: "#000000",
+			light: "#000000",
 		},
 		camera: {
 			position: {

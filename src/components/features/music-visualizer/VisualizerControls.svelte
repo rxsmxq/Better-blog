@@ -41,6 +41,8 @@ declare global {
 	}
 }
 
+const MODE_LABELS = ["列表循环", "单曲循环", "随机播放"];
+
 let currentTrack: Track | null = $state(null);
 let playlist: Track[] = $state([]);
 let currentIndex = $state(0);
@@ -54,43 +56,51 @@ let progress = $state(0);
 let initialized = $state(false);
 let rightPanelMode = $state<"tools" | "playlist">("tools");
 let playlistListEl: HTMLDivElement;
-let progressTrackEl = $state<HTMLDivElement | null>(null);
-let volumeTrackEl = $state<HTMLDivElement | null>(null);
 let isDraggingProgress = $state(false);
 let isDraggingVolume = $state(false);
 let progressTrackHover = $state(false);
-let volumeTrackHover = $state(false);
+let modeHintPulse = $state(false);
+let modeHintTimer: ReturnType<typeof setTimeout> | undefined;
 
-function getPercentFromPointer(track: HTMLElement, clientX: number) {
+// Clip boundary (user units) for the accent-filled portion of the wave.
+const volumePercent = $derived(Math.round((isMuted ? 0 : volume) * 100));
+
+// 未加载（未初始化 / 无曲目）或未播放时，进度条不可拖拽
+const progressDisabled = $derived(!initialized || !currentTrack || !isPlaying);
+
+function getPercentFromPointerX(track: HTMLElement, clientX: number) {
 	const rect = track.getBoundingClientRect();
 	return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
 }
 
-function seekFromClientX(clientX: number) {
-	if (!progressTrackEl) return;
-	const percent = getPercentFromPointer(progressTrackEl, clientX);
+function getPercentFromPointerY(track: HTMLElement, clientY: number) {
+	const rect = track.getBoundingClientRect();
+	return Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height));
+}
+
+// ── Progress (seek) — shared by desktop wave + mobile timeline ──
+function seekFromEvent(track: HTMLElement, clientX: number) {
+	const percent = getPercentFromPointerX(track, clientX);
 	progress = percent * 100;
 	window.__fireflyMusic?.seek(percent);
 }
 
-function setVolumeFromClientX(clientX: number) {
-	if (!volumeTrackEl) return;
-	const val = getPercentFromPointer(volumeTrackEl, clientX);
-	volume = val;
-	isMuted = false;
-	window.__fireflyMusic?.setVolume(val);
-}
-
 function onProgressPointerDown(e: PointerEvent) {
-	const track = e.currentTarget as HTMLDivElement;
+	const track = e.currentTarget as HTMLElement;
 	track.setPointerCapture(e.pointerId);
 	isDraggingProgress = true;
-	seekFromClientX(e.clientX);
+	seekFromEvent(track, e.clientX);
+}
+
+// 桌面进度条：未加载或未播放时不可拖拽
+function onDesktopProgressPointerDown(e: PointerEvent) {
+	if (progressDisabled) return;
+	onProgressPointerDown(e);
 }
 
 function onProgressPointerMove(e: PointerEvent) {
 	if (!isDraggingProgress) return;
-	seekFromClientX(e.clientX);
+	seekFromEvent(e.currentTarget as HTMLElement, e.clientX);
 }
 
 function onProgressPointerUp(e: PointerEvent) {
@@ -105,19 +115,59 @@ function onProgressPointerUp(e: PointerEvent) {
 	}
 }
 
+// ── Volume (horizontal) — mobile bottom dock ──
+function setVolumeFromX(track: HTMLElement, clientX: number) {
+	const val = getPercentFromPointerX(track, clientX);
+	volume = val;
+	isMuted = false;
+	window.__fireflyMusic?.setVolume(val);
+}
+
 function onVolumePointerDown(e: PointerEvent) {
-	const track = e.currentTarget as HTMLDivElement;
+	const track = e.currentTarget as HTMLElement;
 	track.setPointerCapture(e.pointerId);
 	isDraggingVolume = true;
-	setVolumeFromClientX(e.clientX);
+	setVolumeFromX(track, e.clientX);
 }
 
 function onVolumePointerMove(e: PointerEvent) {
 	if (!isDraggingVolume) return;
-	setVolumeFromClientX(e.clientX);
+	setVolumeFromX(e.currentTarget as HTMLElement, e.clientX);
 }
 
 function onVolumePointerUp(e: PointerEvent) {
+	if (!isDraggingVolume) return;
+	isDraggingVolume = false;
+	if (e.currentTarget instanceof HTMLElement) {
+		try {
+			e.currentTarget.releasePointerCapture(e.pointerId);
+		} catch {
+			/* already released */
+		}
+	}
+}
+
+// ── Volume (vertical) — desktop hover popover ──
+function setVolumeFromY(track: HTMLElement, clientY: number) {
+	const val = getPercentFromPointerY(track, clientY);
+	volume = val;
+	isMuted = false;
+	window.__fireflyMusic?.setVolume(val);
+}
+
+function onVolumeVPointerDown(e: PointerEvent) {
+	const track = e.currentTarget as HTMLElement;
+	track.setPointerCapture(e.pointerId);
+	isDraggingVolume = true;
+	setVolumeFromY(track, e.clientY);
+}
+
+function onVolumeVPointerMove(e: PointerEvent) {
+	if (!isDraggingVolume) return;
+	setVolumeFromY(e.currentTarget as HTMLElement, e.clientY);
+}
+
+function onVolumeVPointerUp(e: PointerEvent) {
 	if (!isDraggingVolume) return;
 	isDraggingVolume = false;
 	if (e.currentTarget instanceof HTMLElement) {
@@ -142,33 +192,43 @@ function syncPlaylistScroll() {
 }
 
 function togglePlay() {
-	const mgr = window.__fireflyMusic;
-	if (mgr) mgr.togglePlay();
+	window.__fireflyMusic?.togglePlay();
 }
 
 function playNext() {
-	const mgr = window.__fireflyMusic;
-	if (mgr) mgr.playNext();
+	window.__fireflyMusic?.playNext();
 }
 
 function playPrev() {
-	const mgr = window.__fireflyMusic;
-	if (mgr) mgr.playPrev();
+	window.__fireflyMusic?.playPrev();
 }
 
 function cycleMode() {
-	const mgr = window.__fireflyMusic;
-	if (mgr) mgr.cyclePlayMode();
+	// cyclePlayMode emits `fm:mode` synchronously, so `playMode` is already the
+	// new value by the time this returns — flash the hint for what it became.
+	window.__fireflyMusic?.cyclePlayMode();
+	flashModeHint();
+}
+
+function flashModeHint() {
+	modeHintPulse = true;
+	clearTimeout(modeHintTimer);
+	modeHintTimer = setTimeout(() => {
+		modeHintPulse = false;
+	}, 1600);
 }
 
 function toggleMute() {
-	const mgr = window.__fireflyMusic;
-	if (mgr) mgr.toggleMute();
+	window.__fireflyMusic?.toggleMute();
 }
 
 function playTrack(index: number) {
-	const mgr = window.__fireflyMusic;
-	if (mgr) mgr.playTrackByIndex(index);
+	window.__fireflyMusic?.playTrackByIndex(index);
+}
+
+function openPlaylist() {
+	rightPanelMode = "playlist";
+	setTimeout(syncPlaylistScroll, 0);
 }
 
 function togglePlaylist() {
@@ -247,6 +307,7 @@ onMount(() => {
 });
 
 onDestroy(() => {
+	clearTimeout(modeHintTimer);
 	window.removeEventListener("fm:init", onInit);
 	window.removeEventListener("fm:track", onTrack as EventListener);
 	window.removeEventListener("fm:play-state", onPlayState as EventListener);
@@ -258,15 +319,17 @@ onDestroy(() => {
 
 <div class="music-visualizer__side-panel" data-panel-mode={rightPanelMode}>
 	{#if rightPanelMode === "tools"}
-		<section class="music-visualizer__tools-panel" aria-label="音乐工具">
+		<section class="music-visualizer__card" aria-label="音乐播放器">
+			<!-- 层 1 · 胶片旋转动效（点击跳转歌单） -->
 			<button
 				type="button"
 				class="music-visualizer__record"
 				class:music-visualizer__record--playing={isPlaying}
 				class:music-visualizer__record--loading={!initialized}
-				onclick={togglePlay}
-				title={isPlaying ? "暂停" : "播放"}
-				aria-label={isPlaying ? "暂停" : "播放"}
+				onclick={openPlaylist}
+				title="查看歌单"
+				aria-label="查看歌单"
+				aria-controls="music-visualizer-playlist-panel"
 			>
 				<span class="music-visualizer__record-disc" aria-hidden="true">
 					<span class="music-visualizer__record-grooves"></span>
@@ -287,20 +350,176 @@ onDestroy(() => {
 					<span class="music-visualizer__record-shine"></span>
 				</span>
 				<span class="music-visualizer__record-overlay" aria-hidden="true">
-					{#if isPlaying}
-						<Icon icon="material-symbols:pause-rounded" size="2xl" />
-					{:else}
-						<Icon icon="material-symbols:play-arrow-rounded" size="2xl" />
-					{/if}
+					<Icon icon="material-symbols:queue-music-rounded" size="2xl" />
+					<span class="music-visualizer__record-overlay-text">歌单</span>
 				</span>
 			</button>
 
+			<!-- 移动端保留：曲目标题（桌面隐藏） -->
 			<div class="music-visualizer__mobile-track">
 				<span class="music-visualizer__record-title">
 					{currentTrack?.name || "未播放"}
 				</span>
 			</div>
 
+			<!-- 层 2 · 歌名 + 作曲人（桌面） -->
+			<div class="music-visualizer__now">
+				<div class="music-visualizer__now-title">
+					{currentTrack?.name || "未播放"}
+				</div>
+				<div class="music-visualizer__now-artist">
+					{currentTrack?.artist || "—"}
+				</div>
+			</div>
+
+			<!-- 层 3 · 进度条（桌面） -->
+			<div class="music-visualizer__progress-block">
+				<span class="music-visualizer__progress-time">{currentTimeStr}</span>
+				<div
+					class="music-visualizer__progress-track"
+					class:is-hover={progressTrackHover}
+					class:is-dragging={isDraggingProgress}
+					class:is-disabled={progressDisabled}
+					class:is-playing={isPlaying}
+					style={`--mv-progress: ${progress}%`}
+					onpointerdown={onDesktopProgressPointerDown}
+					onpointermove={onProgressPointerMove}
+					onpointerup={onProgressPointerUp}
+					onpointercancel={onProgressPointerUp}
+					onmouseenter={() => (progressTrackHover = true)}
+					onmouseleave={() => (progressTrackHover = false)}
+					role="slider"
+					tabindex="0"
+					aria-label="进度"
+					aria-valuemin="0"
+					aria-valuemax="100"
+					aria-valuenow={Math.round(progress)}
+					aria-disabled={progressDisabled}
+				>
+					<div class="music-visualizer__progress-rail">
+						<div class="music-visualizer__progress-aurora"></div>
+					</div>
+					<div
+						class="music-visualizer__progress-thumb"
+						style={`left: ${progress}%`}
+					></div>
+				</div>
+				<span class="music-visualizer__progress-time">{durationStr}</span>
+			</div>
+
+			<!-- 层 4 · 工具栏（桌面） -->
+			<div class="music-visualizer__toolbar" aria-label="播放控制">
+				<div class="music-visualizer__tool-wrap" role="group">
+					<span
+						class="music-visualizer__tool-hint"
+						class:is-visible={modeHintPulse}
+						aria-hidden="true"
+					>
+						{MODE_LABELS[playMode]}
+					</span>
+					<button
+						type="button"
+						class="music-visualizer__tool-btn"
+						class:is-active={playMode !== 0}
+						onclick={cycleMode}
+						title={MODE_LABELS[playMode]}
+						aria-label={MODE_LABELS[playMode]}
+					>
+						{#if playMode === 0}
+							<Icon icon="material-symbols:repeat-rounded" size="lg" />
+						{:else if playMode === 1}
+							<Icon icon="material-symbols:repeat-one-rounded" size="lg" />
+						{:else}
+							<Icon icon="material-symbols:shuffle-rounded" size="lg" />
+						{/if}
+					</button>
+				</div>
+
+				<button
+					type="button"
+					class="music-visualizer__tool-btn"
+					onclick={playPrev}
+					title="上一首"
+					aria-label="上一首"
+				>
+					<Icon icon="material-symbols:skip-previous-rounded" size="xl" />
+				</button>
+
+				<button
+					type="button"
+					class="music-visualizer__tool-btn music-visualizer__tool-btn--play"
+					onclick={togglePlay}
+					title={isPlaying ? "暂停" : "播放"}
+					aria-label={isPlaying ? "暂停" : "播放"}
+				>
+					{#if isPlaying}
+						<Icon icon="material-symbols:pause-rounded" size="2xl" />
+					{:else}
+						<Icon icon="material-symbols:play-arrow-rounded" size="2xl" />
+					{/if}
+				</button>
+
+				<button
+					type="button"
+					class="music-visualizer__tool-btn"
+					onclick={playNext}
+					title="下一首"
+					aria-label="下一首"
+				>
+					<Icon icon="material-symbols:skip-next-rounded" size="xl" />
+				</button>
+
+				<div
+					class="music-visualizer__tool-wrap music-visualizer__volume-wrap"
+					role="group"
+				>
+					<div
+						class="music-visualizer__volume-pop"
+						class:is-visible={isDraggingVolume}
+					>
+						<span class="music-visualizer__volume-value">{volumePercent}</span>
+						<div
+							class="music-visualizer__volume-vtrack"
+							class:is-dragging={isDraggingVolume}
+							onpointerdown={onVolumeVPointerDown}
+							onpointermove={onVolumeVPointerMove}
+							onpointerup={onVolumeVPointerUp}
+							onpointercancel={onVolumeVPointerUp}
+							role="slider"
+							tabindex="0"
+							aria-label="音量"
+							aria-valuemin="0"
+							aria-valuemax="100"
+							aria-valuenow={volumePercent}
+						>
+							<div class="music-visualizer__volume-vrail"></div>
+							<div
+								class="music-visualizer__volume-vfill"
+								style={`height: ${volumePercent}%`}
+							></div>
+							<div
+								class="music-visualizer__volume-vthumb"
+								style={`bottom: ${volumePercent}%`}
+							></div>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="music-visualizer__tool-btn"
+						onclick={toggleMute}
+						title="音量"
+						aria-label="音量"
+					>
+						{#if isMuted || volume === 0}
+							<Icon icon="material-symbols:volume-off-rounded" size="lg" />
+						{:else}
+							<Icon icon="material-symbols:volume-up-rounded" size="lg" />
+						{/if}
+					</button>
+				</div>
+			</div>
+
+			<!-- 移动端保留：紧凑工具行（桌面隐藏） -->
 			<div class="music-visualizer__tool-row">
 				<button
 					type="button"
@@ -368,22 +587,22 @@ onDestroy(() => {
 			<div class="music-visualizer__playlist-stage">
 				<div class="music-visualizer__playlist-timeline"></div>
 				<div class="music-visualizer__playlist-header">
-					<button
-						type="button"
-						class="music-visualizer__btn music-visualizer__btn--playlist music-visualizer__btn--active"
-						onclick={togglePlaylist}
-						title="返回工具"
-						aria-label="返回工具"
-						aria-controls="music-visualizer-playlist-panel"
-						aria-expanded={rightPanelMode === "playlist"}
-					>
-						<Icon icon="material-symbols:arrow-back" size="lg" />
-					</button>
 					<div>
 						<div class="music-visualizer__playlist-kicker">PLAYLIST</div>
 						<div class="music-visualizer__playlist-title">歌单切换</div>
 					</div>
 					<div class="music-visualizer__playlist-count">{playlist.length}</div>
+					<button
+						type="button"
+						class="music-visualizer__playlist-back"
+						onclick={togglePlaylist}
+						title="返回播放器"
+						aria-label="返回播放器"
+						aria-controls="music-visualizer-playlist-panel"
+						aria-expanded={rightPanelMode === "playlist"}
+					>
+						<Icon icon="material-symbols:close-rounded" size="md" />
+					</button>
 				</div>
 
 				<div
@@ -418,16 +637,6 @@ onDestroy(() => {
 										{track.artist}
 									</div>
 								</div>
-								<div
-									class="music-visualizer__playlist-play-state"
-									aria-hidden="true"
-								>
-									{#if i === currentIndex && isPlaying}
-										<Icon icon="material-symbols:pause-rounded" size="lg" />
-									{:else}
-										<Icon icon="material-symbols:play-arrow-rounded" size="lg" />
-									{/if}
-								</div>
 								{#if i === currentIndex}
 									<div class="music-visualizer__playlist-eq" aria-hidden="true">
 										<span></span>
@@ -444,53 +653,9 @@ onDestroy(() => {
 	{/if}
 </div>
 
+<!-- 移动端保留：底部播放控制条（桌面隐藏） -->
 <div class="music-visualizer__bottom-dock" aria-label="播放控制">
 	<div class="music-visualizer__bottom-dock-inner">
-		<div class="music-visualizer__volume-block">
-			<button
-				type="button"
-				class="music-visualizer__dock-btn music-visualizer__dock-btn--mute"
-				onclick={toggleMute}
-				title="音量"
-				aria-label="音量"
-			>
-				{#if isMuted || volume === 0}
-					<Icon icon="material-symbols:volume-off-rounded" size="md" />
-				{:else}
-					<Icon icon="material-symbols:volume-up-rounded" size="md" />
-				{/if}
-			</button>
-			<div
-				bind:this={volumeTrackEl}
-				class="music-visualizer__timeline-track music-visualizer__timeline-track--volume"
-				class:is-hover={volumeTrackHover}
-				class:is-dragging={isDraggingVolume}
-				onpointerdown={onVolumePointerDown}
-				onpointermove={onVolumePointerMove}
-				onpointerup={onVolumePointerUp}
-				onpointercancel={onVolumePointerUp}
-				onmouseenter={() => (volumeTrackHover = true)}
-				onmouseleave={() => (volumeTrackHover = false)}
-				role="slider"
-				aria-label="音量"
-				aria-valuemin="0"
-				aria-valuemax="100"
-				aria-valuenow={Math.round((isMuted ? 0 : volume) * 100)}
-			>
-				<div class="music-visualizer__timeline-rail"></div>
-				<div
-					class="music-visualizer__timeline-fill"
-					style={`width: ${isMuted ? 0 : volume * 100}%`}
-				></div>
-				<div
-					class="music-visualizer__timeline-thumb"
-					style={`left: ${isMuted ? 0 : volume * 100}%`}
-				></div>
-			</div>
-		</div>
-
-		<div class="music-visualizer__dock-divider" aria-hidden="true"></div>
-
 		<button
 			type="button"
 			class="music-visualizer__transport-btn"
@@ -504,7 +669,6 @@ onDestroy(() => {
 		<div class="music-visualizer__timeline-block">
 			<span class="music-visualizer__time">{currentTimeStr}</span>
 			<div
-				bind:this={progressTrackEl}
 				class="music-visualizer__timeline-track"
 				class:is-hover={progressTrackHover}
 				class:is-dragging={isDraggingProgress}
@@ -512,8 +676,6 @@ onDestroy(() => {
 				onpointermove={onProgressPointerMove}
 				onpointerup={onProgressPointerUp}
 				onpointercancel={onProgressPointerUp}
-				onmouseenter={() => (progressTrackHover = true)}
-				onmouseleave={() => (progressTrackHover = false)}
 				role="slider"
 				aria-label="进度"
 				aria-valuemin="0"
@@ -542,39 +704,5 @@ onDestroy(() => {
 		>
 			<Icon icon="material-symbols:skip-next-rounded" size="xl" />
 		</button>
-
-		<div class="music-visualizer__dock-divider" aria-hidden="true"></div>
-
-		<div class="music-visualizer__dock-tools" aria-label="音乐工具">
-			<button
-				type="button"
-				class="music-visualizer__dock-btn"
-				class:is-active={rightPanelMode === "playlist"}
-				onclick={togglePlaylist}
-				title="歌单"
-				aria-label="歌单"
-				aria-controls="music-visualizer-playlist-panel"
-				aria-expanded={rightPanelMode === "playlist"}
-			>
-				<Icon icon="material-symbols:queue-music-rounded" size="md" />
-			</button>
-
-			<button
-				type="button"
-				class="music-visualizer__dock-btn"
-				class:is-active={playMode !== 0}
-				onclick={cycleMode}
-				title="播放模式"
-				aria-label="播放模式"
-			>
-				{#if playMode === 0}
-					<Icon icon="material-symbols:repeat-rounded" size="md" />
-				{:else if playMode === 1}
-					<Icon icon="material-symbols:repeat-one-rounded" size="md" />
-				{:else}
-					<Icon icon="material-symbols:shuffle-rounded" size="md" />
-				{/if}
-			</button>
-		</div>
 	</div>
 </div>

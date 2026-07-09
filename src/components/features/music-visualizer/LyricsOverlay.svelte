@@ -29,6 +29,23 @@ const statusText = $derived(
 );
 const hasLyrics = $derived(lyrics.length > 0);
 
+// 将文本拆分为单个字符（保留空格），用于逐字发光
+function splitChars(text: string): string[] {
+	return Array.from(text);
+}
+
+// 根据当前行的播放时长计算逐字扫词的步进延迟，使扫词节奏与旋律同步
+function charStep(text: string): number {
+	const count = Array.from(text).length;
+	if (count <= 0) return 0.05;
+	if (currentIndex < 0 || !lyrics[currentIndex]) return 0.05;
+	const current = lyrics[currentIndex];
+	const next = lyrics[currentIndex + 1];
+	const dur = next && next.time > current.time ? next.time - current.time : 2.4;
+	const step = dur / (count + 2);
+	return Math.min(Math.max(step, 0.03), 0.1);
+}
+
 function syncLyricOffset() {
 	if (!containerEl || !trackEl || lyrics.length === 0) {
 		offsetY = 0;
@@ -100,16 +117,27 @@ onDestroy(() => {
 			style={`transform: translateY(${offsetY}px)`}
 		>
 			{#each lyrics as line, i}
-				<div
-					class="music-visualizer__lyric-line"
-					class:music-visualizer__lyric-line--active={i === currentIndex}
-					class:music-visualizer__lyric-line--past={i < currentIndex}
-					data-lyric-index={i}
-				>
-					<span class="music-visualizer__lyric-marker"></span>
+			<div
+				class="music-visualizer__lyric-line"
+				class:music-visualizer__lyric-line--active={i === currentIndex}
+				class:music-visualizer__lyric-line--past={i < currentIndex}
+				data-lyric-index={i}
+			>
+				<span class="music-visualizer__lyric-marker"></span>
+				{#if i === currentIndex}
+					<span class="music-visualizer__lyric-text music-visualizer__lyric-text--ktv">
+						{#each splitChars(line.text) as char, j}
+							<span
+								class="music-visualizer__lyric-char"
+								style={`animation-delay: ${(j * charStep(line.text)).toFixed(3)}s`}
+							>{char}</span>
+						{/each}
+					</span>
+				{:else}
 					<span class="music-visualizer__lyric-text">{line.text}</span>
-				</div>
-			{/each}
+				{/if}
+			</div>
+		{/each}
 		</div>
 		{:else}
 			<div class="music-visualizer__lyrics-empty" aria-live="polite">
