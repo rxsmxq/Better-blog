@@ -384,10 +384,10 @@ html:has(.music-visualizer-page) .footer {
 	position: relative;
 	width: 100%;
 	height: 100%;
+	padding-inline: var(--lyrics-stage-padding-left) 16px;
 	transform: rotateY(18deg) rotateX(4deg) translateZ(-36px);
 	transform-origin: left center;
 	transform-style: preserve-3d;
-	padding-inline: var(--lyrics-stage-padding-left) 16px;
 }
 
 .music-visualizer__lyrics-timeline {
@@ -538,33 +538,6 @@ html:has(.music-visualizer-page) .footer {
 		0 0 18px rgba(39, 226, 255, 0.46);
 }
 
-.music-visualizer__controls {
-	position: fixed;
-	left: 50%;
-	right: auto;
-	bottom: max(24px, env(safe-area-inset-bottom));
-	z-index: 55;
-	display: grid;
-	grid-template-columns: minmax(210px, 310px) minmax(220px, 380px) auto;
-	align-items: center;
-	gap: 14px;
-	width: min(86vw, 940px);
-	padding: 12px 16px;
-	transform: translateX(-50%);
-	border: none;
-	border-radius: 14px;
-	background: linear-gradient(
-		135deg,
-		rgba(8, 18, 32, 0.72),
-		rgba(6, 16, 30, 0.52) 48%,
-		rgba(8, 18, 32, 0.64)
-	);
-	backdrop-filter: blur(34px) saturate(1.4);
-	-webkit-backdrop-filter: blur(34px) saturate(1.4);
-	box-shadow: 0 28px 96px rgba(0, 0, 0, 0.42);
-	color: rgba(240, 245, 255, 0.86);
-}
-
 .music-visualizer__btn {
 	display: inline-flex;
 	align-items: center;
@@ -637,53 +610,6 @@ html:has(.music-visualizer-page) .footer {
 	outline-offset: 3px;
 }
 
-.music-visualizer__btn--play {
-	width: 50px;
-	height: 50px;
-	background: rgba(255, 255, 255, 0.16);
-	color: #fff;
-	box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-}
-
-.music-visualizer__btn--play:hover {
-	background: rgba(255, 255, 255, 0.24);
-	color: #fff;
-}
-
-.music-visualizer__track-summary {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	min-width: 0;
-}
-
-.music-visualizer__current-cover {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 44px;
-	height: 44px;
-	flex: 0 0 44px;
-	overflow: hidden;
-	border-radius: 6px;
-	background: rgba(255, 255, 255, 0.1);
-	color: rgba(255, 255, 255, 0.62);
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
-}
-
-.music-visualizer__current-cover img {
-	display: block;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-}
-
-.music-visualizer__track-info {
-	min-width: 0;
-}
-
-.music-visualizer__track-name,
-.music-visualizer__track-artist,
 .music-visualizer__playlist-name,
 .music-visualizer__playlist-artist {
 	overflow: hidden;
@@ -691,16 +617,166 @@ html:has(.music-visualizer-page) .footer {
 	white-space: nowrap;
 }
 
-.music-visualizer__track-name {
-	font-size: 14px;
-	font-weight: 700;
-	color: rgba(255, 255, 255, 0.92);
+.music-visualizer__side-panel {
+	position: fixed;
+	top: 50%;
+	right: clamp(28px, 4.2vw, 76px);
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: min(34vw, 520px);
+	min-width: 360px;
+	height: min(70vh, 720px);
+	color: rgba(240, 245, 255, 0.88);
+	transform: translateY(-50%);
 }
 
-.music-visualizer__track-artist {
-	margin-top: 2px;
-	font-size: 11px;
-	color: rgba(255, 255, 255, 0.56);
+.music-visualizer__tools-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 28px;
+	width: 100%;
+	height: 100%;
+	pointer-events: auto;
+}
+
+.music-visualizer__record {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: clamp(198px, 22vw, 330px);
+	aspect-ratio: 1;
+	padding: 0;
+	border: none;
+	border-radius: 9999px;
+	background: transparent;
+	color: #fff;
+	cursor: pointer;
+	filter: drop-shadow(0 22px 44px rgba(0, 0, 0, 0.36));
+}
+
+.music-visualizer__record-title {
+	display: none;
+}
+
+.music-visualizer__mobile-track {
+	display: none;
+}
+
+.music-visualizer__btn--mobile-play {
+	display: none;
+}
+
+.music-visualizer__record:focus-visible {
+	outline: 2px solid rgba(39, 226, 255, 0.72);
+	outline-offset: 8px;
+}
+
+.music-visualizer__record-disc {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	border-radius: inherit;
+	background:
+		radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.84) 0 8%, transparent 8.4%),
+		radial-gradient(circle at 50% 50%, transparent 0 28%, rgba(255, 255, 255, 0.13) 29%, transparent 30%),
+		radial-gradient(circle at 50% 50%, transparent 0 43%, rgba(255, 255, 255, 0.1) 44%, transparent 45%),
+		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+	box-shadow:
+		inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+		inset 0 0 36px rgba(0, 0, 0, 0.52),
+		0 0 34px rgba(39, 226, 255, 0.16);
+	animation: music-visualizer-record-spin 14s linear infinite;
+	animation-play-state: paused;
+}
+
+.music-visualizer__record--playing .music-visualizer__record-disc {
+	animation-play-state: running;
+}
+
+.music-visualizer__record-image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.music-visualizer__record-placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	color: rgba(255, 255, 255, 0.72);
+	font-size: 3.5rem;
+}
+
+.music-visualizer__record-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: inherit;
+	background: rgba(0, 0, 0, 0.34);
+	color: rgba(255, 255, 255, 0.94);
+	opacity: 0;
+	transform: scale(0.92);
+	transition:
+		opacity 180ms ease,
+		transform 220ms ease;
+}
+
+.music-visualizer__record-overlay .inline-icon {
+	font-size: clamp(5rem, 8vw, 8rem);
+}
+
+.music-visualizer__record:hover .music-visualizer__record-overlay,
+.music-visualizer__record:focus-visible .music-visualizer__record-overlay {
+	opacity: 1;
+	transform: scale(1);
+}
+
+@keyframes music-visualizer-record-spin {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.music-visualizer__tool-row {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	pointer-events: auto;
+}
+
+.music-visualizer__bottom-progress {
+	position: fixed;
+	left: 50%;
+	right: auto;
+	bottom: max(24px, env(safe-area-inset-bottom));
+	z-index: 55;
+	display: grid;
+	grid-template-columns: 44px minmax(220px, 620px) 44px;
+	align-items: center;
+	gap: 12px;
+	width: min(78vw, 760px);
+	transform: translateX(-50%);
+	color: rgba(240, 245, 255, 0.82);
+	pointer-events: auto;
 }
 
 .music-visualizer__progress-wrapper {
@@ -743,7 +819,6 @@ html:has(.music-visualizer-page) .footer {
 	box-shadow: 0 0 14px rgba(39, 226, 255, 0.38);
 }
 
-.music-visualizer__controls-buttons,
 .music-visualizer__volume-group {
 	display: flex;
 	align-items: center;
@@ -751,33 +826,46 @@ html:has(.music-visualizer-page) .footer {
 }
 
 .music-visualizer__volume-group {
+	position: relative;
 	gap: 0;
 }
 
-.music-visualizer__volume-bar {
-	width: 64px;
+.music-visualizer__volume-group::before {
+	position: absolute;
+	right: 0;
+	bottom: 100%;
+	left: 0;
+	height: 16px;
+	content: "";
 }
 
-.music-visualizer__playlist-panel {
-	position: fixed;
-	top: 50%;
-	right: clamp(28px, 4.2vw, 76px);
-	z-index: 50;
-	display: flex;
-	flex-direction: column;
-	width: min(42vw, 720px);
-	min-width: 520px;
-	height: min(70vh, 720px);
-	padding: 0;
-	color: #fff;
+.music-visualizer__volume-bar {
+	position: absolute;
+	bottom: calc(100% + 8px);
+	left: 50%;
+	width: 96px;
 	opacity: 0;
 	pointer-events: none;
-	transform: translate3d(22px, -50%, 0) scale(0.98);
-	transform-origin: right center;
+	transform: translate(-50%, 8px);
 	transition:
-		opacity 220ms ease,
-		transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
-	will-change: opacity, transform;
+		opacity 180ms ease,
+		transform 220ms ease;
+}
+
+.music-visualizer__volume-group:hover .music-visualizer__volume-bar,
+.music-visualizer__volume-group:focus-within .music-visualizer__volume-bar {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translate(-50%, 0);
+}
+
+.music-visualizer__playlist-view {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	color: #fff;
+	pointer-events: auto;
 	mask-image: linear-gradient(
 		to bottom,
 		transparent 0%,
@@ -792,14 +880,6 @@ html:has(.music-visualizer-page) .footer {
 		black 88%,
 		transparent 100%
 	);
-	perspective: 1200px;
-	perspective-origin: right center;
-}
-
-.music-visualizer__playlist-panel--open {
-	opacity: 1;
-	pointer-events: none;
-	transform: translate3d(0, -50%, 0) scale(1);
 }
 
 .music-visualizer__playlist-stage {
@@ -809,9 +889,6 @@ html:has(.music-visualizer-page) .footer {
 	width: 100%;
 	height: 100%;
 	padding: 18px 0 18px 18px;
-	transform: rotateY(-18deg) rotateX(4deg) translateZ(-36px);
-	transform-origin: right center;
-	transform-style: preserve-3d;
 }
 
 .music-visualizer__playlist-timeline {
@@ -874,7 +951,7 @@ html:has(.music-visualizer-page) .footer {
 	height: calc(100% - 62px);
 	padding: 6px 0 32px 0;
 	overflow-y: auto;
-	pointer-events: none;
+	pointer-events: auto;
 	scrollbar-width: none;
 	scroll-behavior: smooth;
 }
@@ -1021,6 +1098,10 @@ html:has(.music-visualizer-page) .footer {
 	color: rgb(39, 226, 255);
 }
 
+.music-visualizer__playlist-play-state {
+	display: none;
+}
+
 .music-visualizer__playlist-eq span {
 	width: 3px;
 	height: 8px;
@@ -1061,96 +1142,127 @@ html:has(.music-visualizer-page) .footer {
 	.music-visualizer__lyrics {
 		left: 14px;
 		right: 14px;
-		top: 45%;
+		top: 42%;
 		width: auto;
 		height: 42vh;
 	}
 
 	.music-visualizer__lyrics-stage {
-		--lyrics-timeline-x: 27px;
-		--lyrics-stage-padding-left: 20px;
-		padding-inline: var(--lyrics-stage-padding-left) 8px;
-		transform: rotateY(10deg) translateZ(-24px);
+		--lyrics-timeline-x: 50%;
+		--lyrics-stage-padding-left: 0px;
+		padding-inline: 18px;
+		transform: none;
+	}
+
+	.music-visualizer__lyrics-timeline,
+	.music-visualizer__lyric-marker {
+		display: none;
 	}
 
 	.music-visualizer__lyric-line {
 		min-height: 48px;
-		padding-left: calc(var(--lyrics-marker-x) + 23px);
+		padding: 10px 0;
 		font-size: 14px;
+		text-align: center;
 	}
 
 	.music-visualizer__lyric-line--active {
-		font-size: 20px;
+		font-size: clamp(22px, 6.8vw, 30px);
+		line-height: 1.32;
+	}
+
+	.music-visualizer__lyric-line--active .music-visualizer__lyric-text {
+		transform: scale(1.02);
+		transform-origin: center;
 	}
 
 	.music-visualizer__lyrics-empty {
+		justify-content: center;
 		min-height: 48px;
-		padding-left: calc(var(--lyrics-marker-x) + 23px);
+		padding-left: 0;
 		font-size: 14px;
+		text-align: center;
 	}
 
-	.music-visualizer__controls {
-		grid-template-columns: auto 1fr auto;
-		gap: 8px;
-		width: calc(100vw - 24px);
-		bottom: max(12px, env(safe-area-inset-bottom));
-		padding: 10px;
-		border-radius: 12px;
-	}
-
-	.music-visualizer__progress-wrapper {
-		grid-column: 1 / -1;
-		grid-row: 2;
-	}
-
-	.music-visualizer__track-info {
-		order: 1;
-	}
-
-	.music-visualizer__track-summary {
-		min-width: 0;
-	}
-
-	.music-visualizer__current-cover {
-		width: 36px;
-		height: 36px;
-		flex-basis: 36px;
-	}
-
-	.music-visualizer__controls-buttons {
-		order: 2;
-	}
-
-	.music-visualizer__volume-group,
-	.music-visualizer__btn--theme {
-		display: none;
-	}
-
-	.music-visualizer__playlist-panel {
+	.music-visualizer__side-panel {
 		top: auto;
 		right: 12px;
-		bottom: 118px;
+		bottom: max(76px, calc(env(safe-area-inset-bottom) + 76px));
 		left: 12px;
 		width: auto;
 		min-width: 0;
 		height: auto;
-		max-height: 32vh;
-		padding: 12px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 6px;
-		background: linear-gradient(180deg, rgba(3, 8, 18, 0.68), rgba(3, 8, 18, 0.38));
-		backdrop-filter: blur(18px);
-		-webkit-backdrop-filter: blur(18px);
-		box-shadow: 0 24px 90px rgba(0, 0, 0, 0.24);
-		transform: translate3d(0, 16px, 0) scale(0.98);
-		transform-origin: bottom center;
-		mask-image: none;
-		-webkit-mask-image: none;
+		max-height: 34vh;
+		transform: none;
 	}
 
-	.music-visualizer__playlist-panel--open {
-		pointer-events: auto;
-		transform: translate3d(0, 0, 0) scale(1);
+	.music-visualizer__tools-panel {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	.music-visualizer__record {
+		display: none;
+	}
+
+	.music-visualizer__mobile-track {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.music-visualizer__mobile-track .music-visualizer__record-title {
+		display: block;
+		min-width: 0;
+		overflow: hidden;
+		color: rgba(255, 255, 255, 0.84);
+		font-size: 13px;
+		font-weight: 700;
+		text-overflow: ellipsis;
+		text-shadow: 0 2px 10px rgba(0, 0, 0, 0.78);
+		white-space: nowrap;
+	}
+
+	.music-visualizer__tool-row {
+		gap: 4px;
+		flex: 0 0 auto;
+	}
+
+	.music-visualizer__btn--mobile-play {
+		display: inline-flex;
+	}
+
+	.music-visualizer__volume-group {
+		display: none;
+	}
+
+	.music-visualizer__bottom-progress {
+		grid-template-columns: 40px minmax(0, 1fr) 40px;
+		gap: 8px;
+		width: calc(100vw - 20px);
+		bottom: max(12px, env(safe-area-inset-bottom));
+	}
+
+	.music-visualizer__progress-wrapper {
+		gap: 6px;
+	}
+
+	.music-visualizer__time {
+		width: 31px;
+		font-size: 10px;
+	}
+
+	.music-visualizer__progress-bar {
+		min-width: 72px;
+	}
+
+	.music-visualizer__playlist-view {
+		max-height: 34vh;
+		mask-image: none;
+		-webkit-mask-image: none;
 	}
 
 	.music-visualizer__playlist-stage {
@@ -1166,7 +1278,6 @@ html:has(.music-visualizer-page) .footer {
 	.music-visualizer__playlist-header {
 		justify-content: space-between;
 		padding: 0 0 12px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		text-align: left;
 	}
 
@@ -1189,7 +1300,7 @@ html:has(.music-visualizer-page) .footer {
 
 	.music-visualizer__playlist-list {
 		height: auto;
-		max-height: calc(32vh - 72px);
+		max-height: calc(34vh - 58px);
 		margin-top: 12px;
 		padding: 0 4px 0 0;
 		pointer-events: auto;
@@ -1271,12 +1382,17 @@ html:has(.music-visualizer-page) .footer {
 @media (prefers-reduced-motion: reduce) {
 	.music-visualizer__btn--playlist::before,
 	.music-visualizer__btn--playlist svg,
-	.music-visualizer__playlist-panel {
+	.music-visualizer__playlist-view,
+	.music-visualizer__record-overlay {
 		transition-duration: 1ms;
 	}
 
 	.music-visualizer__btn--playlist.music-visualizer__btn--active svg {
 		transform: none;
+	}
+
+	.music-visualizer__record-disc {
+		animation: none;
 	}
 }
 
@@ -1285,7 +1401,7 @@ html:has(.music-visualizer-page) .footer {
 		width: min(48vw, 540px);
 	}
 
-	.music-visualizer__playlist-panel {
+	.music-visualizer__side-panel {
 		right: 28px;
 		width: min(38vw, 460px);
 		min-width: 380px;
@@ -1311,8 +1427,7 @@ html:has(.music-visualizer-page) .footer {
 		font-size: 17px;
 	}
 
-	.music-visualizer__controls {
-		width: min(92vw, 860px);
-		grid-template-columns: minmax(190px, 260px) minmax(180px, 1fr) auto;
+	.music-visualizer__bottom-progress {
+		width: min(84vw, 720px);
 	}
 }
