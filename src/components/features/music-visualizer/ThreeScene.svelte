@@ -105,6 +105,7 @@ const dummyScale = new THREE.Vector3();
 
 function getThemeColors() {
 	const theme = musicPlayerConfig.visualizer?.theme;
+	const rippleFallback = theme?.rippleColor ?? "#44ddff";
 	return {
 		base1: new THREE.Color(theme?.base1 ?? "#050810"),
 		base2: new THREE.Color(theme?.base2 ?? "#0a0f1a"),
@@ -112,7 +113,10 @@ function getThemeColors() {
 		coolEdge: new THREE.Color(theme?.coolEdge ?? "#8844ff"),
 		warmCore: new THREE.Color(theme?.warmCore ?? "#ff4422"),
 		warmEdge: new THREE.Color(theme?.warmEdge ?? "#ffaa00"),
-		rippleColor: new THREE.Color(theme?.rippleColor ?? "#44ddff"),
+		rippleCool: new THREE.Color(theme?.rippleCool ?? rippleFallback),
+		rippleWarm: new THREE.Color(
+			theme?.rippleWarm ?? theme?.warmEdge ?? "#ff8844",
+		),
 		glowIntensity: theme?.glowIntensity ?? 1.2,
 	};
 }
@@ -346,7 +350,8 @@ const fragmentShader = `
     uniform vec3 uCoolEdge;
     uniform vec3 uWarmCore;
     uniform vec3 uWarmEdge;
-    uniform vec3 uRippleColor;
+    uniform vec3 uRippleCool;
+    uniform vec3 uRippleWarm;
     uniform float uGlowIntensity;
 
     varying vec2 vUv;
@@ -380,6 +385,8 @@ const fragmentShader = `
 
       float warmBlend = smoothstep(0.0, 1.0, uWarmth * 1.5 + (0.5 - centerDist/70.0));
 
+      vec3 rippleColor = mix(uRippleCool, uRippleWarm, warmBlend);
+
       vec3 zoneCore = mix(coolCore, warmCore, warmBlend);
       vec3 zoneEdge = mix(coolEdge, warmEdge, warmBlend);
 
@@ -391,7 +398,7 @@ const fragmentShader = `
 
       vec3 currentGlow = mix(cBase2, targetGlow, normElevation) * uGlowIntensity * distFade;
 
-      currentGlow = mix(currentGlow, uRippleColor, vRippleAnim.x);
+      currentGlow = mix(currentGlow, rippleColor, vRippleAnim.x);
       currentGlow = mix(currentGlow, vec3(1.0, 1.0, 1.0), vRippleAnim.y);
 
       vec3 bodyColor = mix(cBase1, cBase2, vRelativeY * distFade);
@@ -437,7 +444,7 @@ const fragmentShader = `
         finalColor += currentGlow * rimGlow;
       }
 
-      finalColor += uRippleColor * vRippleAnim.x * 0.5;
+      finalColor += rippleColor * vRippleAnim.x * 0.5;
       finalColor += vec3(1.0, 1.0, 1.0) * vRippleAnim.y * 1.0;
 
       float aerialFog = smoothstep(25.0, 55.0, vDistance);
@@ -486,7 +493,8 @@ function createTerrainMaterial() {
 			uCoolEdge: { value: themeColors.coolEdge.clone() },
 			uWarmCore: { value: themeColors.warmCore.clone() },
 			uWarmEdge: { value: themeColors.warmEdge.clone() },
-			uRippleColor: { value: themeColors.rippleColor.clone() },
+			uRippleCool: { value: themeColors.rippleCool.clone() },
+			uRippleWarm: { value: themeColors.rippleWarm.clone() },
 			uGlowIntensity: { value: themeColors.glowIntensity },
 		},
 		transparent: true,
@@ -669,8 +677,12 @@ function animate() {
 		themeColors.warmEdge,
 		3 * delta,
 	);
-	terrainMaterial.uniforms.uRippleColor.value.lerp(
-		themeColors.rippleColor,
+	terrainMaterial.uniforms.uRippleCool.value.lerp(
+		themeColors.rippleCool,
+		3 * delta,
+	);
+	terrainMaterial.uniforms.uRippleWarm.value.lerp(
+		themeColors.rippleWarm,
 		3 * delta,
 	);
 	terrainMaterial.uniforms.uGlowIntensity.value = THREE.MathUtils.lerp(

@@ -104,6 +104,9 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 			warmCore: "#ff4422",
 			warmEdge: "#ffaa00",
 			rippleColor: "#44ddff",
+			// 波纹冷暖锚点：安静/低频偏冷、明亮/高频偏暖，与地形冷暖同步联动
+			rippleCool: "#44ddff",
+			rippleWarm: "#ff8844",
 			fogColor: "#050810",
 			glowIntensity: 1.2,
 		},

@@ -754,6 +754,10 @@ export type MusicVisualizerThemeConfig = {
 	warmCore: string;
 	warmEdge: string;
 	rippleColor: string;
+	/** 冷色波纹锚点（安静/低频时）。缺省回退到 rippleColor */
+	rippleCool?: string;
+	/** 暖色波纹锚点（明亮/高频时）。缺省回退到 warmEdge */
+	rippleWarm?: string;
 	fogColor: string;
 	glowIntensity: number;
 };
