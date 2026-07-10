@@ -53,9 +53,24 @@ const avatarOffUrl = homeConfig.avatarOffWork
 	? await resolveHeroImage(homeConfig.avatarOffWork)
 	: avatarUrl;
 
-const heroBioText = Array.isArray(homeConfig.bio)
-	? homeConfig.bio[0] || ""
-	: homeConfig.bio || "";
+// galgame 对话框配置（写死暗黑主题，内容由 config 驱动）
+const dialogueRaw = homeConfig.hero.dialogue;
+const dialogueEnabled = dialogueRaw?.enabled ?? false;
+const dialogueConfig = {
+	speakers: {
+		host:
+			dialogueRaw?.speakers?.host ||
+			homeConfig.displayName ||
+			homeConfig.name ||
+			"",
+		visitor: dialogueRaw?.speakers?.visitor || "访客",
+	},
+	menuTitle: dialogueRaw?.menuTitle || "想聊点什么？",
+	typingSpeed: dialogueRaw?.typingSpeed ?? 45,
+	autoDelay: dialogueRaw?.autoDelay ?? 1600,
+	intro: dialogueRaw?.intro ?? [],
+	topics: dialogueRaw?.topics ?? [],
+};
 
 const heroRightPanel = homeConfig.hero.rightPanel ?? {
 	pill: "BLOG",
@@ -156,18 +171,50 @@ const rainConfig = {
 			</div>
 		</section>
 
-		<!-- 对话框（放大·视窗水平居中·放简介，左对齐，底部定位，打字机效果） -->
-		{heroBioText && (
-			<div class="home-hero__speech" aria-label="Bio">
-				<div class="home-hero__speech-inner">
-					<p class="home-hero__speech-text" data-speech-text>{heroBioText}</p>
-					<img
-						src={homeConfig.hero.speechAccentImage}
-						alt=""
-						class="home-hero__speech-accent"
-						loading="eager"
-						aria-hidden="true"
-					/>
+		<!-- galgame 对话框（放大·视窗水平居中·打字机·话题菜单，写死暗黑主题） -->
+		{dialogueEnabled && (
+			<div
+				class="home-hero__dialogue"
+				id="hero-dialogue"
+				aria-label="对话"
+				data-dialogue={JSON.stringify(dialogueConfig)}
+			>
+				<div class="home-hero__dialogue-box" data-dialogue-box>
+					<!-- 左上角名牌（随说话者切换） -->
+					<div class="home-hero__dialogue-nameplate">
+						<span class="home-hero__dialogue-name" data-dialogue-name>{dialogueConfig.speakers.host}</span>
+						<span class="home-hero__dialogue-spark" aria-hidden="true">✨</span>
+					</div>
+
+					<!-- 右上角控制按钮 -->
+					<div class="home-hero__dialogue-controls">
+						<button type="button" class="home-hero__dialogue-btn" data-dialogue-action="back">
+							<span class="home-hero__dialogue-btn-icon" aria-hidden="true">↩</span>
+							<span>Back</span>
+						</button>
+						<button type="button" class="home-hero__dialogue-btn" data-dialogue-action="auto" aria-pressed="false">
+							<span class="home-hero__dialogue-btn-icon" aria-hidden="true">▶</span>
+							<span>Auto</span>
+						</button>
+						<button type="button" class="home-hero__dialogue-btn" data-dialogue-action="hide">
+							<span class="home-hero__dialogue-btn-icon" aria-hidden="true">✕</span>
+							<span>Hide</span>
+						</button>
+					</div>
+
+					<!-- 正文：台词 + 话题菜单 -->
+					<div class="home-hero__dialogue-body" data-dialogue-click>
+						<p class="home-hero__dialogue-text" data-dialogue-text></p>
+						<ul class="home-hero__dialogue-menu" data-dialogue-menu hidden></ul>
+					</div>
+
+					<!-- 底部推进指示 -->
+					<div class="home-hero__dialogue-footer">
+						<button type="button" class="home-hero__dialogue-advance" data-dialogue-advance>
+							<span data-dialogue-advance-label>下一句</span>
+							<span class="home-hero__dialogue-advance-caret" aria-hidden="true">▾</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		)}
@@ -238,29 +285,296 @@ const rainConfig = {
 		});
 	}
 
-	function splitSpeechText() {
-		const speechText = document.querySelector<HTMLElement>("[data-speech-text]");
-		if (!speechText || speechText.dataset.split === "true") return;
-		const text = speechText.textContent || "";
-		speechText.innerHTML = "";
-		for (const char of text) {
-			const span = document.createElement("span");
-			span.className = "home-hero__speech-char";
-			span.textContent = char === " " ? "\u00A0" : char;
-			speechText.appendChild(span);
+	// ============================================
+	// galgame \u5BF9\u8BDD\u6846\u63A7\u5236\u5668\uFF08\u6253\u5B57\u673A + \u4E24\u7EA7\u8BDD\u9898\u5BFC\u822A\uFF09
+	// ============================================
+	type DialogueLine = { speaker?: "host" | "visitor"; text: string };
+	type DialogueTopic = { title: string; lines: DialogueLine[] };
+	type DialogueConfig = {
+		speakers: { host: string; visitor: string };
+		menuTitle: string;
+		typingSpeed: number;
+		autoDelay: number;
+		intro: DialogueLine[];
+		topics: DialogueTopic[];
+	};
+
+	type DialogueState = {
+		root: HTMLElement;
+		cfg: DialogueConfig;
+		mode: "intro" | "topic" | "menu";
+		topicIndex: number;
+		lineIndex: number;
+		lines: DialogueLine[];
+		typing: boolean;
+		auto: boolean;
+		typeTimer: number | null;
+		autoTimer: number | null;
+		started: boolean;
+		els: {
+			box: HTMLElement;
+			name: HTMLElement;
+			text: HTMLElement;
+			menu: HTMLElement;
+			body: HTMLElement;
+			footer: HTMLElement | null;
+			advance: HTMLElement | null;
+			advanceLabel: HTMLElement | null;
+			autoBtn: HTMLElement | null;
+			trigger: HTMLElement | null;
+		};
+	};
+
+	let dialogue: DialogueState | null = null;
+
+	function clearDialogueTimers(state: DialogueState) {
+		if (state.typeTimer !== null) {
+			window.clearTimeout(state.typeTimer);
+			state.typeTimer = null;
 		}
-		speechText.dataset.split = "true";
+		if (state.autoTimer !== null) {
+			window.clearTimeout(state.autoTimer);
+			state.autoTimer = null;
+		}
 	}
 
-	function restoreSpeechText() {
-		const speechText = document.querySelector<HTMLElement>("[data-speech-text]");
-		if (!speechText || speechText.dataset.split !== "true") return;
-		const chars = speechText.querySelectorAll(".home-hero__speech-char");
-		const text = Array.from(chars)
-			.map((char) => char.textContent?.replace("\u00A0", " ") ?? "")
-			.join("");
-		speechText.textContent = text;
-		delete speechText.dataset.split;
+	function setDialogueName(state: DialogueState, speaker?: "host" | "visitor") {
+		const key = speaker === "visitor" ? "visitor" : "host";
+		state.els.name.textContent = state.cfg.speakers[key] || "";
+		state.els.box.dataset.speaker = key;
+	}
+
+	// \u9010\u5B57\u6253\u5B57\u673A\uFF1B\u6253\u5B8C\u56DE\u8C03
+	function typeDialogueLine(state: DialogueState, line: DialogueLine) {
+		clearDialogueTimers(state);
+		setDialogueName(state, line.speaker);
+		state.els.menu.hidden = true;
+		state.els.text.hidden = false;
+		state.els.text.textContent = "";
+		state.typing = true;
+		state.els.box.dataset.typing = "true";
+
+		const chars = Array.from(line.text);
+		let index = 0;
+		const step = () => {
+			if (!dialogue || dialogue !== state) return;
+			if (index >= chars.length) {
+				state.typing = false;
+				state.els.box.dataset.typing = "false";
+				state.typeTimer = null;
+				onDialogueLineDone(state);
+				return;
+			}
+			state.els.text.textContent += chars[index];
+			index += 1;
+			state.typeTimer = window.setTimeout(step, state.cfg.typingSpeed);
+		};
+		step();
+	}
+
+	// \u7ACB\u5373\u8865\u5168\u5F53\u524D\u53E5\uFF08\u6253\u5B57\u4E2D\u70B9\u51FB\uFF09
+	function finishTyping(state: DialogueState) {
+		if (!state.typing) return;
+		clearDialogueTimers(state);
+		state.els.text.textContent = state.lines[state.lineIndex]?.text ?? "";
+		state.typing = false;
+		state.els.box.dataset.typing = "false";
+		onDialogueLineDone(state);
+	}
+
+	function onDialogueLineDone(state: DialogueState) {
+		const isLast = state.lineIndex >= state.lines.length - 1;
+		if (state.els.advanceLabel) {
+			state.els.advanceLabel.textContent = isLast ? "\u9009\u62E9\u8BDD\u9898" : "\u4E0B\u4E00\u53E5";
+		}
+		if (state.els.footer) state.els.footer.dataset.end = isLast ? "true" : "false";
+		if (state.auto) {
+			state.autoTimer = window.setTimeout(() => {
+				if (dialogue === state) advanceDialogue(state);
+			}, state.cfg.autoDelay);
+		}
+	}
+
+	// \u6E32\u67D3\u8BDD\u9898\u83DC\u5355
+	function showDialogueMenu(state: DialogueState) {
+		clearDialogueTimers(state);
+		state.mode = "menu";
+		state.typing = false;
+		state.els.box.dataset.typing = "false";
+		setDialogueName(state, "host");
+		state.els.text.textContent = state.cfg.menuTitle;
+		state.els.menu.innerHTML = "";
+		state.cfg.topics.forEach((topic, i) => {
+			const li = document.createElement("li");
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "home-hero__dialogue-menu-item";
+			btn.textContent = topic.title;
+			btn.addEventListener("click", (event) => {
+				event.stopPropagation();
+				enterDialogueTopic(state, i);
+			});
+			li.appendChild(btn);
+			state.els.menu.appendChild(li);
+		});
+		state.els.menu.hidden = state.cfg.topics.length === 0;
+		if (state.els.advanceLabel) state.els.advanceLabel.textContent = "\u4E0B\u4E00\u53E5";
+		if (state.els.footer) state.els.footer.dataset.end = "false";
+	}
+
+	function enterDialogueTopic(state: DialogueState, topicIndex: number) {
+		const topic = state.cfg.topics[topicIndex];
+		if (!topic) return;
+		state.mode = "topic";
+		state.topicIndex = topicIndex;
+		state.lineIndex = 0;
+		state.lines = topic.lines;
+		state.els.menu.hidden = true;
+		typeDialogueLine(state, state.lines[0]);
+	}
+
+	function playDialogueLine(state: DialogueState, index: number) {
+		state.lineIndex = index;
+		typeDialogueLine(state, state.lines[index]);
+	}
+
+	// \u63A8\u8FDB\uFF1A\u6253\u5B57\u4E2D\u2192\u8865\u5168\uFF1B\u5426\u5219\u2192\u4E0B\u4E00\u53E5/\u8FDB\u83DC\u5355
+	function advanceDialogue(state: DialogueState) {
+		if (state.mode === "menu") return;
+		if (state.typing) {
+			finishTyping(state);
+			return;
+		}
+		if (state.lineIndex < state.lines.length - 1) {
+			playDialogueLine(state, state.lineIndex + 1);
+		} else {
+			showDialogueMenu(state);
+		}
+	}
+
+	// \u8FD4\u56DE\u4E0A\u4E00\u53E5\uFF1B\u9996\u53E5\u65F6\u56DE\u5230\u8BDD\u9898\u83DC\u5355
+	function backDialogue(state: DialogueState) {
+		if (state.mode === "menu") return;
+		if (state.lineIndex > 0) {
+			playDialogueLine(state, state.lineIndex - 1);
+			return;
+		}
+		if (state.mode === "topic") {
+			showDialogueMenu(state);
+		} else {
+			// intro \u9996\u53E5\uFF1A\u91CD\u65B0\u64AD\u653E\u5F53\u524D\u53E5
+			playDialogueLine(state, 0);
+		}
+	}
+
+	function toggleDialogueAuto(state: DialogueState) {
+		state.auto = !state.auto;
+		state.els.autoBtn?.setAttribute("aria-pressed", String(state.auto));
+		state.els.box.dataset.auto = String(state.auto);
+		if (state.auto && !state.typing && state.mode !== "menu") {
+			onDialogueLineDone(state);
+		} else if (!state.auto && state.autoTimer !== null) {
+			window.clearTimeout(state.autoTimer);
+			state.autoTimer = null;
+		}
+	}
+
+	function setDialogueHidden(state: DialogueState, hidden: boolean) {
+		state.root.dataset.hidden = String(hidden);
+		// 名牌（B站徽章）作为收起后的唤出触发器
+		if (state.els.trigger) {
+			state.els.trigger.classList.toggle("home-hero__name-badge--dialogue-trigger", hidden);
+			state.els.trigger.setAttribute("aria-expanded", String(!hidden));
+		}
+		if (hidden && state.autoTimer !== null) {
+			window.clearTimeout(state.autoTimer);
+			state.autoTimer = null;
+		}
+	}
+
+	function startDialogue(state: DialogueState) {
+		if (state.started) return;
+		state.started = true;
+		if (state.cfg.intro.length > 0) {
+			state.mode = "intro";
+			state.lines = state.cfg.intro;
+			playDialogueLine(state, 0);
+		} else {
+			showDialogueMenu(state);
+		}
+	}
+
+	function initDialogue() {
+		const root = document.getElementById("hero-dialogue");
+		if (!root) return;
+
+		let cfg: DialogueConfig | null = null;
+		try {
+			if (root.dataset.dialogue) cfg = JSON.parse(root.dataset.dialogue) as DialogueConfig;
+		} catch {
+			cfg = null;
+		}
+		if (!cfg) return;
+
+		const box = root.querySelector<HTMLElement>("[data-dialogue-box]");
+		const name = root.querySelector<HTMLElement>("[data-dialogue-name]");
+		const text = root.querySelector<HTMLElement>("[data-dialogue-text]");
+		const menu = root.querySelector<HTMLElement>("[data-dialogue-menu]");
+		const body = root.querySelector<HTMLElement>("[data-dialogue-click]");
+		if (!box || !name || !text || !menu || !body) return;
+
+		destroyDialogue();
+
+		const state: DialogueState = {
+			root,
+			cfg,
+			mode: "intro",
+			topicIndex: 0,
+			lineIndex: 0,
+			lines: cfg.intro,
+			typing: false,
+			auto: false,
+			typeTimer: null,
+			autoTimer: null,
+			started: false,
+			els: {
+				box,
+				name,
+				text,
+				menu,
+				body,
+				footer: root.querySelector<HTMLElement>(".home-hero__dialogue-footer"),
+				advance: root.querySelector<HTMLElement>("[data-dialogue-advance]"),
+				advanceLabel: root.querySelector<HTMLElement>("[data-dialogue-advance-label]"),
+				autoBtn: root.querySelector<HTMLElement>('[data-dialogue-action="auto"]'),
+				trigger: document.querySelector<HTMLElement>(".home-hero__name-badge"),
+			},
+		};
+		dialogue = state;
+
+		// \u6B63\u6587\u533A\u57DF\u70B9\u51FB\u63A8\u8FDB\uFF08\u907F\u5F00\u83DC\u5355\u6309\u94AE\uFF09
+		body.addEventListener("click", () => advanceDialogue(state));
+		state.els.advance?.addEventListener("click", (event) => {
+			event.stopPropagation();
+			advanceDialogue(state);
+		});
+		root.querySelector('[data-dialogue-action="back"]')?.addEventListener("click", () => backDialogue(state));
+		state.els.autoBtn?.addEventListener("click", () => toggleDialogueAuto(state));
+		root.querySelector('[data-dialogue-action="hide"]')?.addEventListener("click", () => setDialogueHidden(state, true));
+		// \u70B9\u51FB\u540D\u724C\uFF08B\u7AD9\u5FBD\u7AE0\uFF09\uFF1A\u4EC5\u5728\u5DF2\u6536\u8D77\u65F6\u5524\u51FA\u5BF9\u8BDD\u6846
+		state.els.trigger?.addEventListener("click", () => {
+			if (state.root.dataset.hidden === "true") setDialogueHidden(state, false);
+		});
+
+		setDialogueName(state, "host");
+		setDialogueHidden(state, false);
+	}
+
+	function destroyDialogue() {
+		if (dialogue) {
+			clearDialogueTimers(dialogue);
+			dialogue = null;
+		}
 	}
 
 	// ============================================
@@ -366,7 +680,7 @@ const rainConfig = {
 		const selectors = [
 			".home-hero__viewfinder-corner",
 			".home-hero__avatar-wrapper",
-			".home-hero__speech-inner",
+			".home-hero__dialogue-box",
 			".home-hero__focus-frame",
 		];
 		for (const selector of selectors) {
@@ -564,20 +878,18 @@ const rainConfig = {
 		const hero = document.getElementById("home-hero");
 		if (!hero) return Promise.resolve();
 		if (prefersReducedMotion() || isMobile()) {
-			restoreSpeechText();
 			hero.classList.remove("home-hero--motion-pending");
 			hero.classList.add("home-hero--motion-ready");
+			// 无入场动画时立即开始对话
+			if (dialogue) startDialogue(dialogue);
 			return Promise.resolve();
 		}
-
-		splitSpeechText();
 
 		const occupation = hero.querySelector(".home-hero__occupation");
 		const nameLetters = hero.querySelectorAll(".home-hero__name-letter");
 		const badge = hero.querySelector(".home-hero__name-badge");
 		const avatar = hero.querySelector(".home-hero__avatar-group");
-		const speech = hero.querySelector(".home-hero__speech-inner");
-		const speechChars = hero.querySelectorAll(".home-hero__speech-char");
+		const speech = hero.querySelector(".home-hero__dialogue-box");
 		const rightPanel = hero.querySelector(".home-hero__right-panel");
 		const focusFrame = hero.querySelector(".home-hero__focus-frame");
 		const viewfinderCorners = hero.querySelectorAll(".home-hero__viewfinder-corner");
@@ -721,15 +1033,11 @@ const rainConfig = {
 				duration: 0.92,
 				ease: "expo.out",
 				clearProps: "filter",
-			}, 2.12)
-			.fromTo(speechChars, {
-				autoAlpha: 0,
-			}, {
-				autoAlpha: 1,
-				duration: 0.05,
-				stagger: 0.05,
-				ease: "none",
-			}, 2.22);
+				onComplete: () => {
+					// 对话框入场完成后开始逐句打字
+					if (dialogue) startDialogue(dialogue);
+				},
+			}, 2.12);
 
 		hero.classList.remove("home-hero--motion-pending");
 		return heroTitleReady;
@@ -893,6 +1201,7 @@ const rainConfig = {
 	function init() {
 		cleanup();
 		const token = initToken;
+		initDialogue();
 		const heroOpeningReady = initHeroOpening();
 		initWorkStatus();
 		void initHeroHatch(heroOpeningReady, token);
@@ -909,6 +1218,7 @@ const rainConfig = {
 		destroyWorkStatus();
 		destroyHeroHatch();
 		destroyHeroRain();
+		destroyDialogue();
 	}
 
 	async function scheduleHomeInit() {

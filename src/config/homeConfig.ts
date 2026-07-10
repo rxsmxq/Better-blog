@@ -33,6 +33,64 @@ export const homeConfig: HomeConfig = {
 		backgroundImage: "/assets/images/home/home.webp",
 		backgroundImageMobile: "/assets/images/home/home-mobile.webp",
 		speechAccentImage: "/assets/images/home/home2-1.webp",
+		// galgame 对话框（写死暗黑主题）。内容全部由此驱动，可自由增删
+		dialogue: {
+			enabled: true,
+			speakers: {
+				host: "哈基墩",
+				visitor: "访客",
+			},
+			menuTitle: "想聊点什么？",
+			typingSpeed: 45,
+			autoDelay: 1600,
+			// 默认逐句播放的简介，末句后弹出话题菜单
+			intro: [
+				{ speaker: "host", text: "欸——客人了喵～随便坐，别客气。" },
+				{ speaker: "host", text: "我是喵墩，老爸在摸鱼，这儿归我管了喵～" },
+				{
+					speaker: "host",
+					text: "对了，得搬上简介了喵~喵找找：且视他人之疑目如盏盏鬼火，大胆地去走你的夜路。",
+				},
+				{ speaker: "host", text: "想打听啥？戳戳下面的话题，喵跟你慢慢唠～" },
+			],
+			// 话题菜单：点击进入逐句对话，末句后返回菜单
+			topics: [
+				{
+					title: "关于我",
+					lines: [
+						{ speaker: "visitor", text: "你爸是哪方面选手呀？" },
+						{
+							speaker: "host",
+							text: "嘛……算个半桶水全栈喵，外加一个不务正业的博客写手。",
+						},
+						{
+							speaker: "host",
+							text: "前端后端都摸一点，俗称「全干工程师」喵～",
+						},
+						{ speaker: "visitor", text: "听起来很忙的样子。" },
+						{
+							speaker: "host",
+							text: "忙归忙，但好玩呀——折腾本身就是浪漫喵～如果你感兴趣也可以加QQ群哦，放心，傻爸爸不会咬人",
+						},
+					],
+				},
+				{
+					title: "博客特色",
+					lines: [
+						{ speaker: "visitor", text: "有什么好玩的功能吗？" },
+						{
+							speaker: "host",
+							text: "有个音乐3D可视化播放，关于界面弹跳球，整站基本是AI搓出来的，喵爪都没动几下。",
+						},
+						{
+							speaker: "host",
+							text: "傻爸爸最近在捣鼓Agent，不知道又要整啥活喵～",
+						},
+						{ speaker: "host", text: "慢慢逛，角落里藏着不少彩蛋呢喵！" },
+					],
+				},
+			],
+		},
 		rightPanel: {
 			pill: "BLOG",
 			title: "博客",

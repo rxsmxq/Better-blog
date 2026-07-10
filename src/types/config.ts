@@ -269,6 +269,43 @@ export type HomeDisplayLayerConfig = {
 	emitterImage?: string;
 };
 
+/** galgame 对话框：单句台词 */
+export type HeroDialogueLine = {
+	/** 说话者：host=站长 / visitor=访客(你)，默认 host。左上角名牌随之切换 */
+	speaker?: "host" | "visitor";
+	/** 台词文本（逐字打字机播放） */
+	text: string;
+};
+
+/** galgame 对话框：话题（点击进入其逐句台词） */
+export type HeroDialogueTopic = {
+	/** 话题菜单标题，如「关于我」 */
+	title: string;
+	/** 该话题的逐句台词 */
+	lines: HeroDialogueLine[];
+};
+
+/** 首页 Hero galgame 对话框配置（写死暗黑主题，config 驱动内容） */
+export type HeroDialogueConfig = {
+	/** 是否启用对话框；关闭则 Hero 不渲染对话框 */
+	enabled?: boolean;
+	/** 说话者名称 */
+	speakers?: {
+		host?: string; // 站长名，如「哈基墩」
+		visitor?: string; // 访客名，如「访客」
+	};
+	/** 默认展示的简介台词，逐句播放；末句后可打开话题菜单 */
+	intro: HeroDialogueLine[];
+	/** 话题列表；点击某话题进入其逐句台词，末句后返回菜单 */
+	topics: HeroDialogueTopic[];
+	/** 话题菜单提示语，默认「想聊点什么？」 */
+	menuTitle?: string;
+	/** 打字机速度（毫秒/字），默认 45 */
+	typingSpeed?: number;
+	/** 自动播放时每句停留时间（毫秒），默认 1600 */
+	autoDelay?: number;
+};
+
 export type HomeConfig = {
 	avatar?: string;
 	avatarOnWork?: string;
@@ -287,6 +324,8 @@ export type HomeConfig = {
 			text: string;
 			english: string;
 		};
+		/** galgame 对话框（写死暗黑主题）。配置后替代底部简介气泡 */
+		dialogue?: HeroDialogueConfig;
 		rightPanel?: {
 			pill: string;
 			title: string;

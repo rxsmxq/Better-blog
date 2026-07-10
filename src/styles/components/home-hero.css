@@ -438,7 +438,7 @@ html:has(.home-hero) #top-row {
 .home-hero__name-letter,
 .home-hero__name-badge,
 .home-hero__avatar-group,
-.home-hero__speech-inner,
+.home-hero__dialogue-box,
 .home-hero__right-panel,
 .home-hero__focus-frame,
 .home-hero__viewfinder,
@@ -488,7 +488,7 @@ html:has(.home-hero) #top-row {
 	clip-path: circle(0% at 50% 50%);
 }
 
-.home-hero--motion-pending .home-hero__speech-inner {
+.home-hero--motion-pending .home-hero__dialogue-box {
 	opacity: 0;
 	transform: translateY(34px) scale(0.92);
 	filter: blur(10px);
@@ -517,78 +517,7 @@ html:has(.home-hero) #top-row {
 	transform: scale(1.1);
 }
 
-/* ---------- 对话框（放大·水平居中·放简介，左对齐，底部定位） ---------- */
-.home-hero__speech {
-	position: absolute;
-	left: 50%;
-	bottom: clamp(5rem, 10vh, 8rem);
-	transform: translateX(-50%);
-	z-index: 32;
-	width: min(48rem, 90%);
-	pointer-events: none;
-}
-
-.home-hero__speech-inner {
-	padding: clamp(1.2rem, 1.9vw, 1.7rem) clamp(1.4rem, 2.2vw, 1.9rem);
-	border: 2px solid #000000;
-	border-radius: 8px;
-	background:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)),
-		rgba(8, 10, 12, 0.44);
-	backdrop-filter: blur(18px) saturate(145%);
-	-webkit-backdrop-filter: blur(18px) saturate(145%);
-	box-shadow:
-		0 3px 0 rgba(0, 0, 0, 0.65),
-		0 22px 54px rgba(0, 0, 0, 0.32);
-	color: rgba(255, 255, 255, 0.86);
-	text-align: left;
-	transform-origin: 50% 100%;
-}
-
-.home-hero__speech-accent {
-	position: absolute;
-	right: clamp(-4rem, -4vw, -2.5rem);
-	bottom: clamp(-2.5rem, -2.8vh, -1.5rem);
-	z-index: 2;
-	width: clamp(6rem, 9vw, 8.5rem);
-	height: auto;
-	object-fit: contain;
-	pointer-events: none;
-	filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.34));
-}
-
-.home-hero__speech-text {
-	position: relative;
-	z-index: 1;
-	margin: 0;
-	text-shadow: none;
-	color: rgba(255, 255, 255, 0.9);
-	font-size: clamp(1.15rem, 1.6vw, 1.6rem);
-	font-weight: 950;
-	letter-spacing: 0.08em;
-	line-height: 1.35;
-	text-align: left;
-}
-
-.home-hero__speech-char {
-	display: inline;
-	opacity: 0;
-}
-
-[data-theme="light"] .home-hero__speech-inner {
-	border: none;
-	background:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.34)),
-		rgba(255, 255, 255, 0.24);
-	box-shadow:
-		0 3px 0 rgba(255, 255, 255, 0.85),
-		0 18px 42px rgba(0, 0, 0, 0.14);
-}
-
-[data-theme="light"] .home-hero__speech-text {
-	color: rgba(0, 0, 0, 0.72);
-	text-shadow: none;
-}
+/* 对话框样式已迁移至 home-hero-dialogue.css（galgame 暗黑对话框） */
 
 /* ---------- 右侧面板 ---------- */
 .home-hero__right-panel {
@@ -788,25 +717,10 @@ html:has(.home-hero) #top-row {
 		margin-bottom: 0.1rem;
 	}
 
-	/* 对话框：移动端缩小、居中 */
-	.home-hero__speech {
-		width: min(100%, 34rem);
-	}
-
-	.home-hero__speech-inner {
-		padding: clamp(0.9rem, 3vw, 1.1rem) clamp(1rem, 3.5vw, 1.2rem);
-	}
-
-	.home-hero__speech-text {
-		font-size: clamp(0.9rem, 3.6vw, 1.15rem);
-		text-align: center;
-	}
-
-	/* 移动端隐藏相机取景器元素与简介对话框 */
+	/* 移动端隐藏相机取景器元素（对话框移动端样式见 home-hero-dialogue.css） */
 	.home-hero__focus-frame,
 	.home-hero__viewfinder,
-	.home-hero__camera-params,
-	.home-hero__speech {
+	.home-hero__camera-params {
 		display: none;
 	}
 
