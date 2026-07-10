@@ -280,5 +280,9 @@ export const getEnabledFriends = (): FriendLink[] => {
 		return friends.sort(() => Math.random() - 0.5);
 	}
 
-	return friends.sort((a, b) => b.weight - a.weight);
+	// 权重降序；同权重时按配置倒序（后添加的友链靠前）
+	return friends
+		.map((friend, index) => ({ friend, index }))
+		.sort((a, b) => b.friend.weight - a.friend.weight || b.index - a.index)
+		.map(({ friend }) => friend);
 };

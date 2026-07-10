@@ -96,7 +96,7 @@ const description =
         )
       }
 
-      <div class="friends-grid">
+      <div class="friends-grid" data-friends-grid data-page-size="9">
         {
           items.map((item) => (
             <div class="friend-card" data-tags={item.tags?.join(",")} data-title={item.title}>
@@ -111,6 +111,17 @@ const description =
           ))
         }
       </div>
+
+      <!-- 分页控件（默认每页 9 个） -->
+      <nav class="friends-pagination" data-friends-pagination hidden aria-label="友链分页">
+        <button type="button" class="friends-page-btn" data-page-prev aria-label="上一页">
+          <Icon name="material-symbols:chevron-left-rounded" class="text-lg" />
+        </button>
+        <div class="friends-page-nums" data-page-nums></div>
+        <button type="button" class="friends-page-btn" data-page-next aria-label="下一页">
+          <Icon name="material-symbols:chevron-right-rounded" class="text-lg" />
+        </button>
+      </nav>
     </div>
   </div>
 
@@ -132,6 +143,18 @@ const description =
       if (window.__friendFilterReady) return;
       window.__friendFilterReady = true;
 
+      // 每个 card-base 独立维护当前标签与页码
+      var state = new WeakMap();
+
+      function getState(root) {
+        var s = state.get(root);
+        if (!s) {
+          s = { tag: "all", page: 1 };
+          state.set(root, s);
+        }
+        return s;
+      }
+
       function updateIndicator(container, button) {
         var indicator = container.querySelector(".friend-tab-indicator");
         if (!indicator || !button) return;
@@ -142,21 +165,86 @@ const description =
         indicator.style.opacity = "1";
       }
 
-      // 事件委托：点击 friend-tab-btn 时处理
+      // 核心：按标签筛选 + 分页，统一渲染
+      function render(root) {
+        var grid = root.querySelector("[data-friends-grid]");
+        if (!grid) return;
+        var s = getState(root);
+        var pageSize = parseInt(grid.dataset.pageSize, 10) || 9;
+
+        var cards = Array.prototype.slice.call(grid.querySelectorAll(".friend-card"));
+        // 命中当前标签的卡片
+        var matched = cards.filter(function(card) {
+          if (s.tag === "all") return true;
+          var tags = (card.dataset.tags || "").split(",");
+          return tags.indexOf(s.tag) !== -1;
+        });
+
+        var totalPages = Math.max(1, Math.ceil(matched.length / pageSize));
+        if (s.page > totalPages) s.page = totalPages;
+        if (s.page < 1) s.page = 1;
+
+        var start = (s.page - 1) * pageSize;
+        var end = start + pageSize;
+        var matchedSet = new Set(matched);
+
+        cards.forEach(function(card) {
+          var idx = matched.indexOf(card);
+          var visible = matchedSet.has(card) && idx >= start && idx < end;
+          if (visible) {
+            card.style.display = "block";
+            card.classList.add("animate-fade-in-up");
+          } else {
+            card.style.display = "none";
+            card.classList.remove("animate-fade-in-up");
+          }
+        });
+
+        renderPagination(root, s.page, totalPages);
+      }
+
+      function renderPagination(root, page, totalPages) {
+        var nav = root.querySelector("[data-friends-pagination]");
+        if (!nav) return;
+        if (totalPages <= 1) {
+          nav.hidden = true;
+          return;
+        }
+        nav.hidden = false;
+
+        var prev = nav.querySelector("[data-page-prev]");
+        var next = nav.querySelector("[data-page-next]");
+        if (prev) prev.disabled = page <= 1;
+        if (next) next.disabled = page >= totalPages;
+
+        var nums = nav.querySelector("[data-page-nums]");
+        if (!nums) return;
+        nums.innerHTML = "";
+        for (var i = 1; i <= totalPages; i++) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "friends-page-num" + (i === page ? " is-active" : "");
+          btn.dataset.pageGo = String(i);
+          btn.textContent = String(i);
+          nums.appendChild(btn);
+        }
+      }
+
+      // 事件委托：标签切换
       document.addEventListener("click", function(e) {
         var button = e.target.closest(".friend-tab-btn");
         if (!button) return;
         var container = button.closest("[data-friend-filter]");
         if (!container) return;
+        var root = container.closest(".card-base");
+        if (!root) return;
 
-        var selectedTag = button.dataset.tag;
-        var cardContainer = container.closest(".card-base");
-        if (!cardContainer) return;
+        var s = getState(root);
+        s.tag = button.dataset.tag;
+        s.page = 1; // 切换标签时重置到第一页
 
-        // 更新指示器
         updateIndicator(container, button);
 
-        // 更新按钮文字颜色
         var filters = container.querySelectorAll(".friend-tab-btn");
         filters.forEach(function(f) {
           if (f === button) {
@@ -168,32 +256,81 @@ const description =
           }
         });
 
-        // 过滤卡片
-        var cards = cardContainer.querySelectorAll(".friend-card");
-        cards.forEach(function(card) {
-          var tags = (card.dataset.tags || "").split(",");
-          if (selectedTag === "all" || (selectedTag && tags.includes(selectedTag))) {
-            card.style.display = "";
-            card.classList.add("animate-fade-in-up");
-          } else {
-            card.style.display = "none";
-            card.classList.remove("animate-fade-in-up");
-          }
-        });
+        render(root);
       });
 
-      // 初始化指示器位置
-      function initIndicator() {
-        var container = document.querySelector("[data-friend-filter]");
-        if (!container) return;
-        var allBtn = container.querySelector('[data-tag="all"]');
-        if (allBtn) {
-          updateIndicator(container, allBtn);
+      // 事件委托：分页按钮
+      document.addEventListener("click", function(e) {
+        var nav = e.target.closest("[data-friends-pagination]");
+        if (!nav) return;
+        var root = nav.closest(".card-base");
+        if (!root) return;
+        var s = getState(root);
+
+        var go = e.target.closest("[data-page-go]");
+        if (go) {
+          s.page = parseInt(go.dataset.pageGo, 10) || 1;
+        } else if (e.target.closest("[data-page-prev]")) {
+          s.page = Math.max(1, s.page - 1);
+        } else if (e.target.closest("[data-page-next]")) {
+          s.page = s.page + 1;
+        } else {
+          return;
         }
+
+        render(root);
+        // 滚动回卡片顶部
+        root.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      // 初始化：指示器 + 首屏分页
+      function init() {
+        document.querySelectorAll(".card-base").forEach(function(root) {
+          var container = root.querySelector("[data-friend-filter]");
+          if (container) {
+            var s = getState(root);
+            var activeBtn = container.querySelector('[data-tag="' + s.tag + '"]')
+              || container.querySelector('[data-tag="all"]');
+            if (activeBtn) updateIndicator(container, activeBtn);
+          }
+          if (root.querySelector("[data-friends-grid]")) {
+            render(root);
+          }
+        });
+        setupAvatarTimeouts();
       }
 
-      initIndicator();
-      document.addEventListener("astro:page-load", initIndicator);
+      // 头像加载超时：限时内没加载出来的，标记 is-error 显示手绘涂鸦头像
+      function setupAvatarTimeouts() {
+        var TIMEOUT = 5000;
+        var imgs = document.querySelectorAll(".friend-card-avatar__img");
+        imgs.forEach(function(img) {
+          if (img.dataset.avatarWatched) return;
+          img.dataset.avatarWatched = "1";
+          var wrap = img.parentElement;
+          if (!wrap) return;
+          // 已成功加载（含缓存命中）
+          if (img.complete && img.naturalWidth > 0) {
+            wrap.classList.remove("is-error");
+            wrap.classList.add("is-loaded");
+            return;
+          }
+          var timer = setTimeout(function() {
+            if (!wrap.classList.contains("is-loaded")) {
+              wrap.classList.add("is-error");
+            }
+          }, TIMEOUT);
+          img.addEventListener("load", function() {
+            clearTimeout(timer);
+          });
+          img.addEventListener("error", function() {
+            clearTimeout(timer);
+          });
+        });
+      }
+
+      init();
+      document.addEventListener("astro:page-load", init);
     })();
   </script>
 </MainGridLayout>

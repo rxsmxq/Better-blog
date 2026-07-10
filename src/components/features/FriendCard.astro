@@ -9,14 +9,17 @@ export interface Props {
 
 const { title, href, imgurl, desc, tags = [] } = Astro.props;
 
-// 类型标签颜色配置
-const typeColors: Record<string, { bg: string; text: string }> = {
-	Blog: { bg: "#3b82f6", text: "#ffffff" },
-	Docs: { bg: "#f59e0b", text: "#ffffff" },
+// 类型标签：标明是文档还是博客
+const tagLabels: Record<string, string> = {
+	Blog: "博客",
+	Docs: "文档",
 };
 
 const primaryTag = tags[0] || "Blog";
-const typeColor = typeColors[primaryTag] || typeColors.Blog;
+const tagLabel = tagLabels[primaryTag] || primaryTag;
+
+// 头像加载失败 / 骨架占位使用的首字
+const initial = title.trim().slice(0, 1);
 ---
 
 <a
@@ -25,56 +28,29 @@ const typeColor = typeColors[primaryTag] || typeColors.Blog;
   target="_blank"
   rel="noopener noreferrer"
   title={desc}
-  data-desc={desc}
 >
-  <!-- 左上角类型标签 -->
-  <span
-    class="friend-card-type-badge"
-    style={`background-color: ${typeColor.bg}; color: ${typeColor.text};`}
-  >
-    {primaryTag}
-  </span>
+  <!-- 顶部标签：标明是文档还是博客 -->
+  <span class="friend-card-tab">{tagLabel}</span>
 
-  <!-- 左侧：头像 -->
-  <div class="friend-card-left" data-title={title.slice(0, 4)}>
+  <!-- 第一层：头像（未加载/失败时显示手绘涂鸦头像，加载成功后淡入替换） -->
+  <div class="friend-card-avatar" data-initial={initial}>
+    <span class="friend-card-avatar__face" aria-hidden="true"></span>
     <img
       src={imgurl}
       alt={title}
-      class="friend-card-avatar"
+      class="friend-card-avatar__img"
       loading="lazy"
-      onerror="this.style.opacity='0';this.parentElement?.classList.add('avatar-error');"
+      onload="this.parentElement?.classList.remove('is-error');this.parentElement?.classList.add('is-loaded')"
+      onerror="this.parentElement?.classList.add('is-error')"
     />
   </div>
 
-  <!-- 右侧内容：标题 + 描述 -->
-  <div class="friend-card-right">
-    <div class="friend-card-header">
-      <h3 class="friend-card-title">{title}</h3>
-      <svg
-        class="friend-card-arrow"
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M7 17L17 7"></path>
-        <path d="M7 7h10v10"></path>
-      </svg>
-    </div>
-    <p class="friend-card-desc">{desc}</p>
-  </div>
+  <!-- 第二层：名字 -->
+  <h3 class="friend-card-name">{title}</h3>
 
-  <!-- 悬停时滑入的覆盖层 -->
-  <div class="friend-card-overlay">
-    <div class="friend-card-overlay-content">
-      <h3 class="friend-card-overlay-title">{title}</h3>
-      <p class="friend-card-overlay-desc">{desc}</p>
-    </div>
+  <!-- 第三层：介绍框（默认一行，悬停向下扩展显示更多，超出截断） -->
+  <div class="friend-card-intro">
+    <p class="friend-card-intro__text">{desc}</p>
   </div>
 </a>
 
