@@ -33,15 +33,14 @@ const initial = title.trim().slice(0, 1);
   <span class="friend-card-tab">{tagLabel}</span>
 
   <!-- 第一层：头像（未加载/失败时显示手绘涂鸦头像，加载成功后淡入替换） -->
+  <!-- 真实地址存于 data-src，由 friends.astro 的分页逻辑在卡片可见时注入 src，
+       避免 loading=lazy + display:none 在 Swup 导航后不触发加载的问题 -->
   <div class="friend-card-avatar" data-initial={initial}>
     <span class="friend-card-avatar__face" aria-hidden="true"></span>
     <img
-      src={imgurl}
       alt={title}
       class="friend-card-avatar__img"
-      loading="lazy"
-      onload="this.parentElement?.classList.remove('is-error');this.parentElement?.classList.add('is-loaded')"
-      onerror="this.parentElement?.classList.add('is-error')"
+      data-src={imgurl}
     />
   </div>
 

@@ -194,6 +194,7 @@ const description =
           if (visible) {
             card.style.display = "block";
             card.classList.add("animate-fade-in-up");
+            loadAvatar(card); // 卡片可见时才注入 src 开始加载头像
           } else {
             card.style.display = "none";
             card.classList.remove("animate-fade-in-up");
@@ -297,36 +298,44 @@ const description =
             render(root);
           }
         });
-        setupAvatarTimeouts();
       }
 
-      // 头像加载超时：限时内没加载出来的，标记 is-error 显示手绘涂鸦头像
-      function setupAvatarTimeouts() {
+      // 头像按需加载：卡片可见时才把 data-src 注入 src 触发请求。
+      // 彻底摆脱 loading=lazy + display:none 在 Swup 导航后不加载的问题。
+      // 加载成功淡入真实头像；失败或超时（5s）显示手绘涂鸦头像。
+      function loadAvatar(card) {
+        var img = card.querySelector(".friend-card-avatar__img");
+        if (!img || img.dataset.avatarLoaded) return;
+        img.dataset.avatarLoaded = "1";
+
+        var wrap = img.parentElement;
+        var src = img.dataset.src;
+        if (!wrap || !src) return;
+
         var TIMEOUT = 5000;
-        var imgs = document.querySelectorAll(".friend-card-avatar__img");
-        imgs.forEach(function(img) {
-          if (img.dataset.avatarWatched) return;
-          img.dataset.avatarWatched = "1";
-          var wrap = img.parentElement;
-          if (!wrap) return;
-          // 已成功加载（含缓存命中）
-          if (img.complete && img.naturalWidth > 0) {
-            wrap.classList.remove("is-error");
-            wrap.classList.add("is-loaded");
-            return;
+        var timer = setTimeout(function() {
+          if (!wrap.classList.contains("is-loaded")) {
+            wrap.classList.add("is-error");
           }
-          var timer = setTimeout(function() {
-            if (!wrap.classList.contains("is-loaded")) {
-              wrap.classList.add("is-error");
-            }
-          }, TIMEOUT);
-          img.addEventListener("load", function() {
-            clearTimeout(timer);
-          });
-          img.addEventListener("error", function() {
-            clearTimeout(timer);
-          });
+        }, TIMEOUT);
+
+        img.addEventListener("load", function() {
+          clearTimeout(timer);
+          wrap.classList.remove("is-error");
+          wrap.classList.add("is-loaded");
         });
+        img.addEventListener("error", function() {
+          clearTimeout(timer);
+          wrap.classList.add("is-error");
+        });
+
+        // 注入 src 开始加载；若命中缓存瞬时完成，load 事件可能不触发，手动兜底
+        img.src = src;
+        if (img.complete && img.naturalWidth > 0) {
+          clearTimeout(timer);
+          wrap.classList.remove("is-error");
+          wrap.classList.add("is-loaded");
+        }
       }
 
       init();
