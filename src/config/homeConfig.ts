@@ -40,6 +40,13 @@ export const homeConfig: HomeConfig = {
 			subtitle: "CREATIVE",
 			microText: "システム起動完了",
 		},
+		// 玻璃雨珠 + 撞击水花（仅桌面端生效，自动尊重 prefers-reduced-motion）
+		rain: {
+			enabled: true,
+			intensity: 0.6,
+			// 留空则随主题自动取色（暗色→白 / 浅色→深灰）；也可填 "#7fb0ff" 或 "127,176,255"
+			color: "#ffffff",
+		},
 	},
 
 	dataLayer: {

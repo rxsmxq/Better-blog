@@ -70,12 +70,19 @@ const nameLetters = Array.from(homeConfig.displayName || "");
 
 const mobileBackground =
 	homeConfig.hero.backgroundImageMobile || homeConfig.hero.backgroundImage;
+
+const rainConfig = {
+	enabled: homeConfig.hero.rain?.enabled ?? true,
+	intensity: homeConfig.hero.rain?.intensity ?? 0.6,
+	color: homeConfig.hero.rain?.color ?? "",
+};
 ---
 
 <section class="home-hero home-hero--motion-pending" id="home-hero"
 	data-avatar={avatarUrl}
 	data-avatar-off={avatarOffUrl}
 	data-work-hours={JSON.stringify(workHours)}
+	data-hero-rain={JSON.stringify(rainConfig)}
 >
 	<!-- 背景层：移动端 / 桌面端通过 <picture> 服务端切换 -->
 	<picture class="home-hero__video-picture">
@@ -196,6 +203,30 @@ const mobileBackground =
 	let vfxInstance: VFX | null = null;
 	let heroHatchEffect: HatchEffect | null = null;
 
+	// 玻璃雨珠 + 撞击水花
+	type RainDrop = { x: number; y: number; r: number; vy: number; len: number; alpha: number };
+	type SplashParticle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; r: number };
+	type HitEdge = { x1: number; x2: number; y: number };
+	let rainCanvas: HTMLCanvasElement | null = null;
+	let rainCtx: CanvasRenderingContext2D | null = null;
+	let rainRaf = 0;
+	let rainDrops: RainDrop[] = [];
+	let rainSplashes: SplashParticle[] = [];
+	let rainEdges: HitEdge[] = [];
+	let rainResizeHandler: (() => void) | null = null;
+	let rainEdgeTimer = 0;
+	let rainDpr = 1;
+	let rainIntensity = 0.6;
+	let rainColorRgb: string | null = null;
+
+	// 指针景深视差
+	let parallaxMoveHandler: ((e: PointerEvent) => void) | null = null;
+	let parallaxLeaveHandler: (() => void) | null = null;
+	let parallaxBgX: ((v: number) => void) | null = null;
+	let parallaxBgY: ((v: number) => void) | null = null;
+	let parallaxFrameX: ((v: number) => void) | null = null;
+	let parallaxFrameY: ((v: number) => void) | null = null;
+
 	function prefersReducedMotion() {
 		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	}
@@ -302,6 +333,303 @@ const mobileBackground =
 			vfxInstance.destroy();
 			vfxInstance = null;
 		}
+	}
+
+	// ============================================
+	// 玻璃雨珠 + 撞击水花（Canvas 2D）
+	// ============================================
+	// 解析配置色为 "r, g, b" 字符串；无法解析或留空时返回 null（走主题自动取色）
+	function parseRainColor(raw: string): string | null {
+		const value = raw.trim();
+		if (!value) return null;
+		// "r,g,b" / "r, g, b"
+		const parts = value.split(",").map((n) => Number.parseInt(n.trim(), 10));
+		if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n >= 0 && n <= 255)) {
+			return parts.join(", ");
+		}
+		// "#rgb" / "#rrggbb"
+		let hex = value.replace(/^#/, "");
+		if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+		if (hex.length === 6 && /^[0-9a-fA-F]{6}$/.test(hex)) {
+			const r = Number.parseInt(hex.slice(0, 2), 16);
+			const g = Number.parseInt(hex.slice(2, 4), 16);
+			const b = Number.parseInt(hex.slice(4, 6), 16);
+			return `${r}, ${g}, ${b}`;
+		}
+		return null;
+	}
+
+	function rainStroke() {
+		// 已配置固定颜色则优先使用
+		if (rainColorRgb) return rainColorRgb;
+		// 否则：暗色主题用白色雨珠，浅色主题用深灰，随主题实时取色
+		return document.documentElement.classList.contains("dark")
+			? "255, 255, 255"
+			: "70, 78, 90";
+	}
+
+	function collectRainEdges(hero: HTMLElement) {
+		const heroRect = hero.getBoundingClientRect();
+		const edges: HitEdge[] = [];
+		const selectors = [
+			".home-hero__viewfinder-corner",
+			".home-hero__avatar-wrapper",
+			".home-hero__speech-inner",
+			".home-hero__focus-frame",
+		];
+		for (const selector of selectors) {
+			hero.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+				const rect = el.getBoundingClientRect();
+				if (rect.width < 2 || rect.height < 2) return;
+				// 以元素顶边作为"撞击线"
+				edges.push({
+					x1: rect.left - heroRect.left,
+					x2: rect.right - heroRect.left,
+					y: rect.top - heroRect.top,
+				});
+			});
+		}
+		rainEdges = edges;
+	}
+
+	function spawnSplash(x: number, y: number) {
+		// 克制：全局水花粒子上限，避免同帧爆量
+		if (rainSplashes.length > 90) return;
+		const count = 6 + Math.floor(vfxRand() * 4);
+		for (let i = 0; i < count; i++) {
+			const angle = -Math.PI / 2 + (vfxRand() - 0.5) * 1.9;
+			const speed = 1.1 + vfxRand() * 2.2;
+			rainSplashes.push({
+				x,
+				y,
+				vx: Math.cos(angle) * speed,
+				vy: Math.sin(angle) * speed,
+				life: 0,
+				maxLife: 22 + Math.floor(vfxRand() * 16),
+				r: 0.8 + vfxRand() * 1.1,
+			});
+		}
+	}
+
+	// 轻量伪随机（避免依赖 Math.random 的语义，仅用于视觉抖动）
+	let vfxSeed = 20260710;
+	function vfxRand() {
+		vfxSeed = (vfxSeed * 1664525 + 1013904223) % 4294967296;
+		return vfxSeed / 4294967296;
+	}
+
+	function makeDrop(w: number, h: number, fromTop: boolean): RainDrop {
+		return {
+			x: vfxRand() * w,
+			y: fromTop ? -vfxRand() * h * 0.5 : vfxRand() * h,
+			r: 0.9 + vfxRand() * 1.4,
+			vy: 2.4 + vfxRand() * 3.2,
+			len: 9 + vfxRand() * 16,
+			alpha: 0.12 + vfxRand() * 0.2,
+		};
+	}
+
+	function initHeroRain() {
+		const hero = document.getElementById("home-hero");
+		if (!hero) return;
+		if (prefersReducedMotion() || isMobile()) return;
+
+		let cfg = { enabled: true, intensity: 0.6, color: "" };
+		try {
+			if (hero.dataset.heroRain) cfg = { ...cfg, ...JSON.parse(hero.dataset.heroRain) };
+		} catch {
+			// 配置损坏时使用默认值
+		}
+		if (!cfg.enabled) return;
+		rainIntensity = Math.max(0, Math.min(1, cfg.intensity));
+		rainColorRgb = parseRainColor(cfg.color || "");
+
+		destroyHeroRain();
+
+		const canvas = document.createElement("canvas");
+		canvas.className = "home-hero__rain-canvas";
+		canvas.setAttribute("aria-hidden", "true");
+		hero.appendChild(canvas);
+		const ctx = canvas.getContext("2d");
+		if (!ctx) {
+			canvas.remove();
+			return;
+		}
+		rainCanvas = canvas;
+		rainCtx = ctx;
+		rainDpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+		function resize() {
+			if (!rainCanvas || !rainCtx) return;
+			const rect = hero.getBoundingClientRect();
+			rainCanvas.width = Math.round(rect.width * rainDpr);
+			rainCanvas.height = Math.round(rect.height * rainDpr);
+			rainCtx.setTransform(rainDpr, 0, 0, rainDpr, 0, 0);
+			// 雨滴数量随强度与画面宽度缩放（克制上限 ~60）
+			const target = Math.round((20 + rainIntensity * 40) * Math.min(1, rect.width / 1280));
+			rainDrops = Array.from({ length: target }, () => makeDrop(rect.width, rect.height, false));
+			collectRainEdges(hero);
+		}
+		resize();
+		rainResizeHandler = resize;
+		window.addEventListener("resize", resize);
+		rainEdgeTimer = window.setInterval(() => collectRainEdges(hero), 500);
+
+		function frame() {
+			if (!rainCanvas || !rainCtx) return;
+			const w = rainCanvas.width / rainDpr;
+			const h = rainCanvas.height / rainDpr;
+			rainCtx.clearRect(0, 0, w, h);
+			const rgb = rainStroke();
+
+			// 雨珠 + 水痕拖尾
+			for (const d of rainDrops) {
+				const prevY = d.y;
+				d.y += d.vy;
+
+				// 撞击检测：穿过某条撞击线且落在其 x 区间内
+				let consumed = false;
+				for (const e of rainEdges) {
+					if (prevY < e.y && d.y >= e.y && d.x >= e.x1 && d.x <= e.x2) {
+						spawnSplash(d.x, e.y);
+						d.y = -vfxRand() * 40;
+						d.x = vfxRand() * w;
+						consumed = true;
+						break;
+					}
+				}
+				// 落到底部地面同样迸溅水花
+				if (!consumed && prevY < h && d.y >= h) {
+					spawnSplash(d.x, h - 1);
+					d.y = -vfxRand() * 40;
+					d.x = vfxRand() * w;
+				}
+
+				// 竖向水痕
+				rainCtx.strokeStyle = `rgba(${rgb}, ${d.alpha})`;
+				rainCtx.lineWidth = d.r;
+				rainCtx.beginPath();
+				rainCtx.moveTo(d.x, d.y - d.len);
+				rainCtx.lineTo(d.x, d.y);
+				rainCtx.stroke();
+				// 珠头高光
+				rainCtx.fillStyle = `rgba(${rgb}, ${Math.min(0.5, d.alpha + 0.18)})`;
+				rainCtx.beginPath();
+				rainCtx.arc(d.x, d.y, d.r * 0.9, 0, Math.PI * 2);
+				rainCtx.fill();
+			}
+
+			// 水花：扇形迸溅 + 重力回落 + 快速淡出
+			for (let i = rainSplashes.length - 1; i >= 0; i--) {
+				const p = rainSplashes[i];
+				p.life++;
+				p.vy += 0.16; // 重力
+				p.x += p.vx;
+				p.y += p.vy;
+				const t = 1 - p.life / p.maxLife;
+				if (t <= 0) {
+					rainSplashes.splice(i, 1);
+					continue;
+				}
+				rainCtx.fillStyle = `rgba(${rgb}, ${0.4 * t})`;
+				rainCtx.beginPath();
+				rainCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+				rainCtx.fill();
+			}
+
+			rainRaf = requestAnimationFrame(frame);
+		}
+		rainRaf = requestAnimationFrame(frame);
+	}
+
+	function destroyHeroRain() {
+		if (rainRaf) {
+			cancelAnimationFrame(rainRaf);
+			rainRaf = 0;
+		}
+		if (rainEdgeTimer) {
+			window.clearInterval(rainEdgeTimer);
+			rainEdgeTimer = 0;
+		}
+		if (rainResizeHandler) {
+			window.removeEventListener("resize", rainResizeHandler);
+			rainResizeHandler = null;
+		}
+		if (rainCanvas) {
+			rainCanvas.remove();
+			rainCanvas = null;
+		}
+		rainCtx = null;
+		rainDrops = [];
+		rainSplashes = [];
+		rainEdges = [];
+	}
+
+	// ============================================
+	// 指针景深视差（GSAP quickTo）
+	// ============================================
+	function initHeroParallax() {
+		const hero = document.getElementById("home-hero");
+		if (!hero) return;
+		if (prefersReducedMotion() || isMobile()) return;
+
+		destroyHeroParallax();
+
+		const bg = hero.querySelector<HTMLElement>(".home-hero__video");
+		const frame = hero.querySelector<HTMLElement>(".home-hero__viewfinder");
+		if (!bg && !frame) return;
+
+		// 背景放大以留出平移余量，避免露边
+		if (bg) gsap.set(bg, { scale: 1.06, transformOrigin: "center center" });
+
+		const q = { duration: 0.6, ease: "power3.out" };
+		if (bg) {
+			parallaxBgX = gsap.quickTo(bg, "x", q);
+			parallaxBgY = gsap.quickTo(bg, "y", q);
+		}
+		if (frame) {
+			parallaxFrameX = gsap.quickTo(frame, "x", q);
+			parallaxFrameY = gsap.quickTo(frame, "y", q);
+		}
+
+		const BG_AMP = 18; // 背景同向、幅度大
+		const FRAME_AMP = 10; // 前景框反向、幅度小
+
+		parallaxMoveHandler = (e: PointerEvent) => {
+			const rect = hero.getBoundingClientRect();
+			const nx = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 ~ 0.5
+			const ny = (e.clientY - rect.top) / rect.height - 0.5;
+			parallaxBgX?.(nx * BG_AMP);
+			parallaxBgY?.(ny * BG_AMP);
+			parallaxFrameX?.(-nx * FRAME_AMP);
+			parallaxFrameY?.(-ny * FRAME_AMP);
+		};
+		parallaxLeaveHandler = () => {
+			parallaxBgX?.(0);
+			parallaxBgY?.(0);
+			parallaxFrameX?.(0);
+			parallaxFrameY?.(0);
+		};
+		hero.addEventListener("pointermove", parallaxMoveHandler);
+		hero.addEventListener("pointerleave", parallaxLeaveHandler);
+	}
+
+	function destroyHeroParallax() {
+		const hero = document.getElementById("home-hero");
+		if (hero) {
+			if (parallaxMoveHandler) hero.removeEventListener("pointermove", parallaxMoveHandler);
+			if (parallaxLeaveHandler) hero.removeEventListener("pointerleave", parallaxLeaveHandler);
+			const bg = hero.querySelector<HTMLElement>(".home-hero__video");
+			const frame = hero.querySelector<HTMLElement>(".home-hero__viewfinder");
+			if (bg) gsap.set(bg, { clearProps: "transform" });
+			if (frame) gsap.set(frame, { clearProps: "transform" });
+		}
+		parallaxMoveHandler = null;
+		parallaxLeaveHandler = null;
+		parallaxBgX = null;
+		parallaxBgY = null;
+		parallaxFrameX = null;
+		parallaxFrameY = null;
 	}
 
 	// ============================================
@@ -647,6 +975,8 @@ const mobileBackground =
 		// 推迟 ScrollTrigger 初始化，避免阻塞 Hero 入场动画的首次渲染
 		requestAnimationFrame(() => {
 			initHomeScrollMotion();
+			initHeroRain();
+			initHeroParallax();
 		});
 	}
 
@@ -654,6 +984,8 @@ const mobileBackground =
 		killHomeMotion();
 		destroyWorkStatus();
 		destroyHeroHatch();
+		destroyHeroRain();
+		destroyHeroParallax();
 	}
 
 	async function scheduleHomeInit() {

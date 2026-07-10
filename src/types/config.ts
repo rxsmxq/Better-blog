@@ -294,6 +294,14 @@ export type HomeConfig = {
 			subtitle: string;
 			microText: string;
 		};
+		/** 玻璃雨珠 + 撞击水花动效（仅桌面端、尊重 reduced-motion） */
+		rain?: {
+			enabled?: boolean;
+			/** 雨量强度，0–1，默认 0.6（克制） */
+			intensity?: number;
+			/** 雨珠颜色（十六进制如 "#ffffff" 或 "r,g,b"）。留空则随主题自动取色（暗→白/亮→深灰） */
+			color?: string;
+		};
 	};
 	dataLayer: {
 		visitImage: string;

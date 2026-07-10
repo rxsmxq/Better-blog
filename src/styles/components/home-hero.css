@@ -5,7 +5,6 @@
 
 /* ---------- 全屏容器（突破 MainGridLayout 限制） ---------- */
 .home-hero {
-	--home-hero-nav-offset: 4.333rem;
 	--home-hero-content-shift: 2rem;
 	--home-hero-title-left: clamp(10rem, 17vw, 17rem);
 	--home-hero-profile-lift: clamp(2rem, 4vh, 3rem);
@@ -13,21 +12,28 @@
 	width: 100vw;
 	margin-left: calc(50% - 50vw);
 	margin-right: calc(50% - 50vw);
-	/* 使用动态视口高度，避免浏览器工具栏导致 100vh 留白 */
+	/* 全屏：navbar 已脱离文档流（见下方 html:has(.home-hero) #top-row），
+	   Hero 上方无占位，故 100dvh 即精确铺满视口，无需任何偏移补偿 */
 	min-height: 100vh;
 	min-height: 100dvh;
-	/* 由于向上偏移覆盖 navbar，额外补足该偏移量确保底部贴合视口 */
-	min-height: calc(100dvh + var(--home-hero-nav-offset));
 	overflow: hidden;
 	display: block;
 	color: #ffffff;
 	isolation: isolate;
-	/* 与 Navbar 重叠：抵消 sticky navbar 在普通文档流中占用的高度 */
-	margin-top: calc(-1 * var(--home-hero-nav-offset));
-	padding-top: 0;
 }
 
-/* 暗黑模式下背景图黑色遮罩 */
+/* 根治全屏：首页存在 Hero 时，将 sticky 顶栏改为 fixed 脱离文档流，
+   使其不再占据 Hero 上方的高度（顶栏本就是透明、pointer-events:none 的悬浮层，
+   设计意图即悬浮在 Hero 之上）。这样 Hero 顶边自然贴合视口顶部，彻底摆脱
+   对导航栏真实高度的依赖，不再需要 margin 负值 + 魔法数字补偿。 */
+html:has(.home-hero) #top-row {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+}
+
+/* 背景图黑色遮罩（默认常驻，亮/暗主题均生效） */
 .home-hero::after {
 	content: '';
 	position: absolute;
@@ -35,12 +41,8 @@
 	background: rgba(0, 0, 0, 0.45);
 	z-index: 1;
 	pointer-events: none;
-	opacity: 0;
-	transition: opacity 0.3s ease;
-}
-
-:root.dark .home-hero::after {
 	opacity: 1;
+	transition: opacity 0.3s ease;
 }
 
 /* ---------- 背景图片（picture 容器） ---------- */
@@ -61,6 +63,19 @@
 	height: 100%;
 	object-fit: cover;
 	z-index: 0;
+	/* 指针景深视差目标（transform 由脚本设置） */
+	will-change: transform;
+}
+
+/* ---------- 玻璃雨珠 + 撞击水花画布 ---------- */
+.home-hero__rain-canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	/* 位于内容之上，模拟最前方的镜头玻璃；不拦截交互 */
+	z-index: 20;
+	pointer-events: none;
 }
 
 /* ---------- 全屏内容容器 ---------- */
@@ -81,6 +96,8 @@
 	inset: 0;
 	z-index: 8;
 	pointer-events: none;
+	/* 指针景深视差目标（反向微移，transform 由脚本设置） */
+	will-change: transform;
 }
 
 .home-hero__viewfinder-corner {
@@ -687,9 +704,9 @@
 
 @media (max-width: 768px) {
 	.home-hero {
-		/* 补偿向上偏移的 navbar 高度，确保背景覆盖整个移动视口 */
+		/* 移动端顶栏本就 display:none（见 mobile-dock.css），Hero 上方无占位，
+		   直接使用 100svh 精确铺满小视口即可 */
 		min-height: 100svh;
-		min-height: calc(100svh + var(--home-hero-nav-offset));
 	}
 
 	.home-hero__canvas-container {
