@@ -44,10 +44,13 @@ for (const p of posts) {
 
 // 按年份统计每月文章总数
 const monthTotalsByYear = new Map<string, number>(); // key: "year-month"
+const totalPostsByYear = new Map<number, number>();
 for (const p of posts) {
 	const d = p.data.published;
-	const key = `${d.getFullYear()}-${d.getMonth()}`;
+	const year = d.getFullYear();
+	const key = `${year}-${d.getMonth()}`;
 	monthTotalsByYear.set(key, (monthTotalsByYear.get(key) || 0) + 1);
+	totalPostsByYear.set(year, (totalPostsByYear.get(year) || 0) + 1);
 }
 
 // 月份标签
@@ -65,8 +68,6 @@ const monthLabels = [
 	i18n(I18nKey.calendarNovember),
 	i18n(I18nKey.calendarDecember),
 ];
-
-const monthShort = monthLabels.map((l) => l.replace(/月$/, ""));
 
 // 周标签
 const weekLabels = ["W1", "W2", "W3", "W4"];
@@ -114,7 +115,7 @@ function buildGridForYear(year: number): MonthWeekCell[][] {
 // 序列化年份网格数据供客户端使用
 const yearGridsData: Record<
 	number,
-	{ grid: MonthWeekCell[][]; monthTotals: number[] }
+	{ grid: MonthWeekCell[][]; monthTotals: number[]; total: number }
 > = {};
 for (const year of years) {
 	const grid = buildGridForYear(year);
@@ -122,13 +123,17 @@ for (const year of years) {
 	for (let m = 0; m < 12; m++) {
 		monthTotals.push(monthTotalsByYear.get(`${year}-${m}`) || 0);
 	}
-	yearGridsData[year] = { grid, monthTotals };
+	yearGridsData[year] = {
+		grid,
+		monthTotals,
+		total: totalPostsByYear.get(year) || 0,
+	};
 }
 
 // 当前年份的网格（用于初始渲染）
 const initialYear = currentYear;
 const initialData = yearGridsData[initialYear] ||
-	yearGridsData[years[0]] || { grid: [], monthTotals: [] };
+	yearGridsData[years[0]] || { grid: [], monthTotals: [], total: 0 };
 ---
 
 <div class="post-heatmap" id="post-heatmap"
@@ -139,23 +144,10 @@ const initialData = yearGridsData[initialYear] ||
 	<div class="heatmap-section-title">
 		<span class="iconify" data-icon="mdi:file-document-outline" data-width="16"></span>
 		<span>{i18n(I18nKey.postHeatmap)}</span>
-		<span class="heatmap-year-nav" id="heatmap-year-nav">
-			<button class="heatmap-year-btn" id="heatmap-year-prev" aria-label="上一年">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-			</button>
-			<span class="heatmap-year-label" id="heatmap-year-label">{initialYear}</span>
-			<button class="heatmap-year-btn" id="heatmap-year-next" aria-label="下一年">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-			</button>
-		</span>
+		<span class="heatmap-stats" id="post-heatmap-stats" data-suffix={i18n(I18nKey.postsCount)}>{initialYear} | {initialData.total} {i18n(I18nKey.postsCount)}</span>
 	</div>
 
 	<div class="heatmap-body" id="post-heatmap-body">
-		<div class="post-heatmap-months">
-			{monthShort.map((label) => (
-				<span class="post-heatmap-month-label">{label}</span>
-			))}
-		</div>
 		<div class="post-heatmap-grid-wrap">
 			<div class="post-heatmap-weeks">
 				{weekLabels.map((label) => (
@@ -175,6 +167,15 @@ const initialData = yearGridsData[initialYear] ||
 					</div>
 				))}
 			</div>
+			<div class="post-heatmap-year-vert" id="heatmap-year-nav-vert">
+				<button class="heatmap-year-btn" id="heatmap-year-prev" aria-label="上一年">
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+				</button>
+				<span class="heatmap-year-label-vert" id="heatmap-year-label">{initialYear}</span>
+				<button class="heatmap-year-btn" id="heatmap-year-next" aria-label="下一年">
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -193,6 +194,12 @@ if (container) {
 	const prevBtn = document.getElementById("heatmap-year-prev");
 	const nextBtn = document.getElementById("heatmap-year-next");
 	const gridEl = document.getElementById("post-heatmap-grid");
+	const statsEl = document.getElementById("post-heatmap-stats");
+
+	// 初始按钮状态
+	const initIdx = currentYearIdx;
+	prevBtn?.classList.toggle("is-disabled", initIdx >= years.length - 1);
+	nextBtn?.classList.toggle("is-disabled", initIdx <= 0);
 
 	function renderYear(year: number) {
 		if (!gridEl || !yearLabel) return;
@@ -200,6 +207,11 @@ if (container) {
 		if (!data) return;
 
 		yearLabel.textContent = String(year);
+
+		if (statsEl) {
+			const suffix = statsEl.getAttribute("data-suffix") || "";
+			statsEl.textContent = `${year} | ${data.total} ${suffix}`;
+		}
 
 		// 更新按钮状态
 		const idx = years.indexOf(year);

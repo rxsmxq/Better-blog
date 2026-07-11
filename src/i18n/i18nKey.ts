@@ -327,6 +327,8 @@ enum I18nKey {
 	// 热力图
 	postHeatmap = "postHeatmap",
 	githubHeatmap = "githubHeatmap",
+	githubContributions = "githubContributions",
+	githubCommits = "githubCommits",
 
 	// 日历页面
 	calendar = "calendar",

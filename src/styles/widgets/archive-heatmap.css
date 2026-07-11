@@ -34,20 +34,32 @@
 	margin-bottom: 0.5rem;
 }
 
+/* 标题缩进以对齐网格内容区域（跳过左侧星期标签列） */
+.post-heatmap .heatmap-section-title {
+	padding-left: calc(2.5rem + var(--post-cell-gap));
+}
+
+.github-heatmap .heatmap-section-title {
+	padding-left: calc(var(--cell-size) + var(--cell-gap));
+}
+
 .heatmap-stats {
-	margin-left: auto;
 	font-size: 0.65rem;
 	font-weight: 400;
 	color: var(--content-meta);
 	opacity: 0.8;
+	margin-left: 0.35rem;
 }
 
-/* 年份切换导航 */
-.heatmap-year-nav {
-	margin-left: auto;
+/* 年份切换导航（垂直） */
+.post-heatmap-year-vert {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 2px;
+	justify-content: center;
+	gap: 4px;
+	flex-shrink: 0;
+	padding-left: 6px;
 }
 
 .heatmap-year-btn {
@@ -82,13 +94,15 @@
 	pointer-events: none;
 }
 
-.heatmap-year-label {
+.heatmap-year-label-vert {
 	font-size: 0.7rem;
 	font-weight: 600;
 	color: var(--deep-text);
-	min-width: 2.5rem;
-	text-align: center;
+	writing-mode: vertical-rl;
+	text-orientation: mixed;
+	letter-spacing: 2px;
 	font-variant-numeric: tabular-nums;
+	padding: 2px 0;
 }
 
 /* 错误提示 */
@@ -96,14 +110,6 @@
 	font-size: 0.75rem;
 	color: var(--content-meta);
 	padding: 0.5rem 0;
-}
-
-.heatmap-hint {
-	font-size: 0.65rem;
-	color: var(--content-meta);
-	text-align: center;
-	padding: 2px 0 6px;
-	opacity: 0.7;
 }
 
 /* ============= GitHub 热力图 ============= */
@@ -116,22 +122,6 @@
 
 .post-heatmap .heatmap-body {
 	margin-top: 0.25rem;
-}
-
-/* 文章热力图月份标签行 */
-.post-heatmap-months {
-	display: grid;
-	grid-template-columns: repeat(12, var(--post-cell-size));
-	gap: var(--post-cell-gap);
-	margin-bottom: 4px;
-	padding-left: calc(2.5rem + var(--post-cell-gap));
-}
-
-.post-heatmap-month-label {
-	font-size: 0.65rem;
-	color: var(--content-meta);
-	text-align: center;
-	white-space: nowrap;
 }
 
 /* 文章热力图网格包装 */
@@ -174,20 +164,6 @@
 
 .heatmap-body {
 	margin-top: 0.5rem;
-}
-
-.heatmap-months {
-	display: grid;
-	grid-template-columns: repeat(53, var(--cell-size));
-	gap: var(--cell-gap);
-	margin-bottom: 4px;
-	padding-left: calc(var(--cell-size) + var(--cell-gap));
-}
-
-.heatmap-month-label {
-	font-size: 0.65rem;
-	color: var(--content-meta);
-	white-space: nowrap;
 }
 
 .heatmap-grid-wrap {
@@ -315,5 +291,7 @@
 @media (max-width: 640px) {
 	.archive-heatmap { --cell-size: 11px; --cell-gap: 2px; --post-cell-size: 20px; --post-cell-gap: 2px; }
 	.post-heatmap-weeks { width: 2rem; }
-	.post-heatmap-months { padding-left: calc(2rem + var(--post-cell-gap)); }
+	.post-heatmap-year-vert { padding-left: 4px; gap: 2px; }
+	.heatmap-year-btn { width: 18px; height: 18px; }
+	.heatmap-year-label-vert { font-size: 0.6rem; }
 }

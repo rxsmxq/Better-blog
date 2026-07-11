@@ -133,56 +133,15 @@ const totalContributions = contributionData.reduce(
 );
 const activeDays = contributionData.filter((d) => d.count > 0).length;
 
-// 月份标签
-const monthLabels = [
-	i18n(I18nKey.calendarJanuary),
-	i18n(I18nKey.calendarFebruary),
-	i18n(I18nKey.calendarMarch),
-	i18n(I18nKey.calendarApril),
-	i18n(I18nKey.calendarMay),
-	i18n(I18nKey.calendarJune),
-	i18n(I18nKey.calendarJuly),
-	i18n(I18nKey.calendarAugust),
-	i18n(I18nKey.calendarSeptember),
-	i18n(I18nKey.calendarOctober),
-	i18n(I18nKey.calendarNovember),
-	i18n(I18nKey.calendarDecember),
-];
-
-// 月份简写（取前2-3字符）
-const monthShort = monthLabels.map((l) => l.replace(/月$/, ""));
-
-function getMonthBoundaries() {
-	const boundaries: { label: string; weekIndex: number }[] = [];
-	for (let m = 0; m < 12; m++) {
-		const firstDay = new Date(currentYear, m, 1);
-		if (firstDay > now) break;
-		const startDay = firstDay.getDay();
-		const startOffset = startDay === 0 ? -6 : 1 - startDay;
-		const weekStart = new Date(firstDay);
-		weekStart.setDate(firstDay.getDate() + startOffset);
-		const yearStart = new Date(currentYear, 0, 1);
-		const yearStartDay = yearStart.getDay();
-		const yearStartOffset = yearStartDay === 0 ? -6 : 1 - yearStartDay;
-		yearStart.setDate(yearStart.getDate() + yearStartOffset);
-		const diffMs = weekStart.getTime() - yearStart.getTime();
-		const weekIndex = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
-		boundaries.push({ label: monthShort[m], weekIndex });
-	}
-	return boundaries;
-}
-
-const monthBoundaries = getMonthBoundaries();
-
-// 星期标签
+// 星期标签（周一到周日）
 const dayLabels = [
-	"",
-	i18n(I18nKey.calendarMonday).replace(/曜?日$/, ""),
-	"",
-	i18n(I18nKey.calendarWednesday).replace(/曜?日$/, ""),
-	"",
-	i18n(I18nKey.calendarFriday).replace(/曜?日$/, ""),
-	"",
+	i18n(I18nKey.calendarMonday),
+	i18n(I18nKey.calendarTuesday),
+	i18n(I18nKey.calendarWednesday),
+	i18n(I18nKey.calendarThursday),
+	i18n(I18nKey.calendarFriday),
+	i18n(I18nKey.calendarSaturday),
+	i18n(I18nKey.calendarSunday),
 ];
 ---
 
@@ -191,7 +150,7 @@ const dayLabels = [
 		<span class="iconify" data-icon="mdi:github" data-width="16"></span>
 		<span>{i18n(I18nKey.githubHeatmap)}</span>
 		{!fetchError && contributionData.length > 0 && (
-			<span class="heatmap-stats">{activeDays}d · {totalContributions} contributions</span>
+			<span class="heatmap-stats">{currentYear} | {activeDays}d · {totalContributions} {i18n(I18nKey.githubContributions)}</span>
 		)}
 	</div>
 
@@ -205,14 +164,6 @@ const dayLabels = [
 
 	{!fetchError && contributionData.length > 0 && (
 		<div class="heatmap-body">
-			<div class="heatmap-months">
-				{monthBoundaries.map((mb, i) => (
-					<span
-						class="heatmap-month-label"
-						style={`grid-column: ${mb.weekIndex + 1} / span ${i < monthBoundaries.length - 1 ? monthBoundaries[i + 1].weekIndex - mb.weekIndex : 3}`}
-					>{mb.label}</span>
-				))}
-			</div>
 			<div class="heatmap-grid-wrap">
 				<div class="heatmap-days">
 					{dayLabels.map((label) => (
@@ -225,7 +176,7 @@ const dayLabels = [
 							{week.map((cell) => (
 								<div
 									class={`heatmap-cell github-cell level-${cell.level}`}
-									title={cell.visible ? `${cell.date} · ${cell.count} commits` : ""}
+									title={cell.visible ? `${cell.date} · ${cell.count} ${i18n(I18nKey.githubCommits)}` : ""}
 									style={cell.visible ? "" : "visibility:hidden"}
 								></div>
 							))}

@@ -7,6 +7,8 @@ export const ru: Translation = {
 	[Key.archive]: "Архив",
 	[Key.postHeatmap]: "Тепловая карта",
 	[Key.githubHeatmap]: "Вклад в GitHub",
+	[Key.githubContributions]: "вкладов",
+	[Key.githubCommits]: "коммитов",
 	[Key.search]: "Поиск",
 	[Key.searchNoResults]: "Результаты не найдены.",
 	[Key.searchTypeSomething]: "Введите ключевое слово для поиска...",

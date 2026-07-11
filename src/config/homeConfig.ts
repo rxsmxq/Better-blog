@@ -45,13 +45,13 @@ export const homeConfig: HomeConfig = {
 			autoDelay: 1600,
 			// 默认逐句播放的简介，末句后弹出话题菜单
 			intro: [
-				{ speaker: "host", text: "欸——客人了喵～随便坐，别客气。" },
+				{ speaker: "host", text: "欸——来客人了喵～随便坐，别客气。" },
 				{ speaker: "host", text: "我是喵墩，老爸在摸鱼，这儿归我管了喵～" },
 				{
 					speaker: "host",
-					text: "对了，得搬上简介了喵~喵找找：且视他人之疑目如盏盏鬼火，大胆地去走你的夜路。",
+					text: "对了喵，得搬上简介了~喵找找：且视他人之疑目如盏盏鬼火，大胆地去走你的夜路。",
 				},
-				{ speaker: "host", text: "想打听啥？戳戳下面的话题，喵跟你慢慢唠～" },
+				{ speaker: "host", text: "想打听啥喵？戳戳下面的话题，喵跟你慢慢唠～" },
 			],
 			// 话题菜单：点击进入逐句对话，末句后返回菜单
 			topics: [
@@ -70,7 +70,7 @@ export const homeConfig: HomeConfig = {
 						{ speaker: "visitor", text: "听起来很忙的样子。" },
 						{
 							speaker: "host",
-							text: "忙归忙，但好玩呀——折腾本身就是浪漫喵～如果你感兴趣也可以加QQ群哦，放心，傻爸爸不会咬人",
+							text: "忙归忙，但好玩呀——折腾本身就是浪漫喵～如果你感兴趣也可以加QQ群喵，放心，傻爸爸不咬人的",
 						},
 					],
 				},
@@ -80,7 +80,7 @@ export const homeConfig: HomeConfig = {
 						{ speaker: "visitor", text: "有什么好玩的功能吗？" },
 						{
 							speaker: "host",
-							text: "有个音乐3D可视化播放，关于界面弹跳球，整站基本是AI搓出来的，喵爪都没动几下。",
+							text: "有个音乐3D可视化播放，但博客重点不是文章吗喵~老爸整站基本是AI搓出来的，喵爪都没动几下。",
 						},
 						{
 							speaker: "host",

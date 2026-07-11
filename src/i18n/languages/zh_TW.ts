@@ -7,6 +7,8 @@ export const zh_TW: Translation = {
 	[Key.archive]: "歸檔",
 	[Key.postHeatmap]: "文章分布",
 	[Key.githubHeatmap]: "GitHub 貢獻",
+	[Key.githubContributions]: "次貢獻",
+	[Key.githubCommits]: "次提交",
 	[Key.search]: "搜尋",
 	[Key.searchNoResults]: "找不到相關結果。",
 	[Key.searchTypeSomething]: "請輸入搜尋關鍵字。",

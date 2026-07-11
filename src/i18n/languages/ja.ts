@@ -7,6 +7,8 @@ export const ja: Translation = {
 	[Key.archive]: "アーカイブ",
 	[Key.postHeatmap]: "記事分布",
 	[Key.githubHeatmap]: "GitHub コントリビューション",
+	[Key.githubContributions]: "コントリビューション",
+	[Key.githubCommits]: "コミット",
 	[Key.search]: "検索",
 	[Key.searchNoResults]: "結果が見つかりません。",
 	[Key.searchTypeSomething]: "検索キーワードを入力してください。",
