@@ -134,7 +134,7 @@
 		}
 
 		// 检查 Mermaid 是否可用
-		if (!window.mermaid || typeof window.mermaid.render !== "function") {
+		if (!window.mermaid || typeof window.mermaid.run !== "function") {
 			console.warn("Mermaid not available, skipping render");
 			return;
 		}
@@ -181,83 +181,55 @@
 				logLevel: "error",
 			});
 
-			// 批量渲染所有图表，添加重试机制
-			const renderPromises = Array.from(mermaidElements).map(
-				async (element, index) => {
-					let attempts = 0;
-					const maxAttempts = 3;
+			// 使用 mermaid.run() 直接在目标元素内部渲染，不再创建 body 级临时 div
+			const elementsToRender = [];
+			mermaidElements.forEach((element, index) => {
+				const code = element.getAttribute("data-mermaid-code");
+				if (!code) return;
 
-					while (attempts < maxAttempts) {
-						try {
-							const code = element.getAttribute("data-mermaid-code");
+				element.id = element.id || `mermaid-${Date.now()}-${index}`;
+				// 恢复纯文本图表定义供 run() 读取
+				element.textContent = code;
+				elementsToRender.push(element);
+			});
 
-							if (!code) {
-								break;
-							}
+			if (elementsToRender.length === 0) {
+				isRendering = false;
+				return;
+			}
 
-							// 显示加载状态
-							element.innerHTML =
-								'<div class="mermaid-loading">Rendering diagram...</div>';
+			await window.mermaid.run({
+				nodes: elementsToRender,
+				suppressErrors: true,
+			});
 
-							// 渲染图表
-							const { svg } = await window.mermaid.render(
-								`mermaid-${Date.now()}-${index}-${attempts}`,
-								code,
-							);
+			// 后处理 SVG：响应式尺寸与主题滤镜
+			elementsToRender.forEach((element, index) => {
+				const svgElement = element.querySelector("svg");
+				if (svgElement) {
+					svgElement.setAttribute("width", "100%");
+					svgElement.removeAttribute("height");
+					svgElement.style.maxWidth = "100%";
+					svgElement.style.height = "auto";
 
-							element.innerHTML = svg;
-
-							// 添加响应式支持
-							const svgElement = element.querySelector("svg");
-							if (svgElement) {
-								svgElement.setAttribute("width", "100%");
-								svgElement.removeAttribute("height");
-								svgElement.style.maxWidth = "100%";
-								svgElement.style.height = "auto";
-
-								// 强制应用样式
-								if (isDark) {
-									svgElement.style.filter = "brightness(0.9) contrast(1.1)";
-								} else {
-									svgElement.style.filter = "none";
-								}
-							}
-
-							// 渲染成功，跳出重试循环
-							break;
-						} catch (error) {
-							attempts++;
-							console.warn(
-								`Mermaid rendering attempt ${attempts} failed for element ${index}:`,
-								error,
-							);
-
-							if (attempts >= maxAttempts) {
-								console.error(
-									`Failed to render Mermaid diagram after ${maxAttempts} attempts:`,
-									error,
-								);
-								element.innerHTML = `
-									<div class="mermaid-error">
-										<p>Failed to render diagram after ${maxAttempts} attempts.</p>
-										<button onclick="location.reload()" style="margin-top: 8px; padding: 4px 8px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer;">
-											Retry Page
-										</button>
-									</div>
-								`;
-							} else {
-								// 等待一段时间后重试
-								await new Promise((resolve) =>
-									setTimeout(resolve, 500 * attempts),
-								);
-							}
-						}
+					if (isDark) {
+						svgElement.style.filter = "brightness(0.9) contrast(1.1)";
+					} else {
+						svgElement.style.filter = "none";
 					}
-				},
-			);
+				} else {
+					console.error(`Mermaid diagram ${index} failed to render`);
+					element.innerHTML = `
+					<div class="mermaid-error">
+						<p>Failed to render diagram.</p>
+						<button onclick="location.reload()" style="margin-top: 8px; padding: 4px 8px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer;">
+							Retry Page
+						</button>
+					</div>
+				`;
+				}
+			});
 
-			// 等待所有渲染完成
-			await Promise.all(renderPromises);
 			retryCount = 0; // 重置重试计数
 
 			// 渲染完成后初始化 pan-zoom
@@ -614,9 +586,19 @@
 	}
 
 	// 启动初始化
+	// 使用 requestIdleCallback 异步加载 Mermaid，避免阻塞首屏；
+	// 改用 mermaid.run() 后不会在 body 创建临时 div，无需等到 window.load。
+	function startInit() {
+		if (typeof requestIdleCallback === "function") {
+			requestIdleCallback(() => initialize(), { timeout: 3000 });
+		} else {
+			setTimeout(() => initialize(), 300);
+		}
+	}
+
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initialize);
+		document.addEventListener("DOMContentLoaded", startInit, { once: true });
 	} else {
-		initialize();
+		startInit();
 	}
 })();

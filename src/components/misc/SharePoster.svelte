@@ -183,7 +183,7 @@ async function generatePoster() {
 
 		// Footer (Author + QR)
 		// Footer top border + padding
-		currentY += 24 * scale;
+		currentY += 12 * scale;
 		const footerHeight = 64 * scale; // Avatar/QR height
 		currentY += footerHeight;
 		currentY += padding; // Bottom padding
@@ -323,7 +323,7 @@ async function generatePoster() {
 		// Draw Description
 		if (description) {
 			// Draw vertical line
-			ctx.fillStyle = "#e5e7eb";
+			ctx.fillStyle = "#000000";
 			const descLineH = descHeight; // Approximate
 			// Extend the line slightly above and below the text
 			drawRoundedRect(
@@ -351,14 +351,14 @@ async function generatePoster() {
 		}
 
 		// Draw Footer Divider
-		drawY += 24 * scale; // Spacing before line
+		drawY += 12 * scale; // Spacing before line
 		ctx.beginPath();
-		ctx.strokeStyle = "#f3f4f6";
+		ctx.strokeStyle = "#000000";
 		ctx.lineWidth = 1 * scale;
 		ctx.moveTo(padding, drawY);
 		ctx.lineTo(width - padding, drawY);
 		ctx.stroke();
-		drawY += 24 * scale; // Spacing after line
+		drawY += 24 * scale; // Spacing after line (room for QR label above code)
 
 		// Draw Footer Content
 		const footerY = drawY;
@@ -436,17 +436,16 @@ async function generatePoster() {
 			);
 		}
 
-		// Site Info (Left of QR)
-		const siteInfoX = qrX - 16 * scale;
-		ctx.textAlign = "right";
-
-		ctx.fillStyle = "#9ca3af";
+		// QR Label
+		ctx.textAlign = "center";
+		ctx.textBaseline = "top";
+		ctx.fillStyle = "#000000";
 		ctx.font = `${12 * scale}px 'Roboto', sans-serif`;
-		ctx.fillText(i18n(I18nKey.scanToRead), siteInfoX, textCenterY - 20 * scale);
-
-		ctx.fillStyle = "#1f2937";
-		ctx.font = `700 ${20 * scale}px 'Roboto', sans-serif`;
-		ctx.fillText(siteTitle, siteInfoX, textCenterY + 4 * scale);
+		ctx.fillText(
+			i18n(I18nKey.scanToRead),
+			qrX + qrSize / 2,
+			footerY - 14 * scale,
+		);
 
 		// Finalize
 		posterImage = canvas.toDataURL("image/png");
@@ -522,8 +521,8 @@ function portal(node: HTMLElement) {
       </div>
       
       <div class="p-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-3">
-        <button 
-          class="py-3 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        <button
+          class="py-3 rounded-xl font-medium border transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-white text-black border-black hover:bg-black hover:text-white hover:border-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-black"
           on:click={copyLink}
         >
           {#if copied}
@@ -534,9 +533,8 @@ function portal(node: HTMLElement) {
             <span>{i18n(I18nKey.copyLink)}</span>
           {/if}
         </button>
-        <button 
-          class="py-3 text-white dark:text-black rounded-xl font-medium active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-90"
-          style="background-color: {themeColor};"
+        <button
+          class="py-3 rounded-xl font-medium active:scale-[0.98] transition-all flex items-center justify-center gap-2 bg-black text-white dark:bg-white dark:text-black disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
           on:click={downloadPoster}
           disabled={!posterImage}
         >

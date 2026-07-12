@@ -29,6 +29,11 @@ const tags = await getTagList();
 		</button>
 	)}
 
+	<button class="dock-btn dock-btn-comment hide" id="dock-comment-btn" aria-label="Comments" type="button" data-tooltip="跳到评论">
+		<span class="dock-btn-icon"><Icon name="mingcute:comment-line" class="text-3xl" /></span>
+		<span class="dock-btn-label">评论</span>
+	</button>
+
 	<div class="dock-stack" id="dock-stack" data-expanded="false">
 		<div class="dock-buttons">
 			{announcementConfig.items.length > 0 && (
@@ -62,11 +67,6 @@ const tags = await getTagList();
 			<button class="dock-btn dock-btn-toc hide" id="dock-toc-btn" aria-label="Table of Contents" type="button" data-tooltip="目录">
 				<span class="dock-btn-icon"><Icon name="material-symbols:format-list-bulleted" class="text-3xl" /></span>
 				<span class="dock-btn-label">目录</span>
-			</button>
-
-			<button class="dock-btn dock-btn-comment hide" id="dock-comment-btn" aria-label="Comments" type="button" data-tooltip="跳到评论">
-				<span class="dock-btn-icon"><Icon name="mingcute:comment-line" class="text-3xl" /></span>
-				<span class="dock-btn-label">评论</span>
 			</button>
 
 			<button class="dock-btn dock-btn-home hide" id="dock-home-btn" aria-label={i18n(I18nKey.home)} type="button" data-tooltip={i18n(I18nKey.home)}>

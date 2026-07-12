@@ -21,31 +21,27 @@
    2. Swup Page Transition — Blur Fade
    -------------------------------------------------------------------------- */
 
-/* 离开动画：模糊 + 淡出 + 上移 */
+/* 离开动画：淡出 + 上移（移除 filter:blur 以避免整页高斯模糊运算导致掉帧） */
 @keyframes blur-fade-out {
     from {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
     to {
         opacity: 0;
         transform: translateY(-6px);
-        filter: blur(6px);
     }
 }
 
-/* 进入动画：从模糊 + 淡入 + 下移到清晰 */
+/* 进入动画：淡入 + 下移 */
 @keyframes blur-fade-in {
     from {
         opacity: 0;
         transform: translateY(6px);
-        filter: blur(6px);
     }
     to {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
 }
 

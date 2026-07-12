@@ -41,10 +41,22 @@ let containerRef = $state<HTMLElement | null>(null);
 let view = $state<ArticleListView>("list");
 let gridColumnCount = $state(3);
 let currentPage = $state(1);
-let loadedImages = $state<Record<string, boolean>>({});
 
 const showLoadingSkeleton =
 	coverImageConfig.randomCoverImage.showLoading ?? true;
+
+/** 图片加载完成：直接操作 DOM class，避免 $state 响应式更新引发整列表重绘 */
+function handleImageLoad(event: Event, postId: string) {
+	const img = event.currentTarget as HTMLImageElement;
+	img.classList.add("is-loaded");
+	img.parentElement?.classList.remove("skeleton-shimmer");
+	// 保留跨页面图片缓存（详情页 CoverImage 读取），用 queueMicrotask 避免阻塞 load 回调
+	queueMicrotask(() => {
+		try {
+			sessionStorage.setItem(`cover_img_${postId}`, img.currentSrc || img.src);
+		} catch {}
+	});
+}
 
 const categoryColorPalette = [
 	"#fbbf24",
@@ -202,12 +214,23 @@ onMount(() => {
 	syncViewFromStorage();
 	updateGridColumns();
 
-	window.addEventListener("resize", updateGridColumns);
+	// resize 使用 RAF 节流（ticking 模式），避免高频触发布局读取
+	let resizeTicking = false;
+	const onResize = () => {
+		if (resizeTicking) return;
+		resizeTicking = true;
+		requestAnimationFrame(() => {
+			updateGridColumns();
+			resizeTicking = false;
+		});
+	};
+
+	window.addEventListener("resize", onResize);
 	window.addEventListener("layoutChange", handleLayoutChange);
 	document.addEventListener("astro:page-load", updateGridColumns);
 
 	return () => {
-		window.removeEventListener("resize", updateGridColumns);
+		window.removeEventListener("resize", onResize);
 		window.removeEventListener("layoutChange", handleLayoutChange);
 		document.removeEventListener("astro:page-load", updateGridColumns);
 	};
@@ -232,7 +255,8 @@ $effect(() => {
 		bind:this={containerRef}
 		style={`--article-list-grid-columns: ${gridColumnCount};`}
 	>
-		<div class="article-list-view" hidden={view !== "grid"}>
+		{#if view === "grid"}
+		<div class="article-list-view">
 			<div
 				class="article-list-masonry"
 				style="--cols: {gridColumnCount};"
@@ -251,25 +275,18 @@ $effect(() => {
 							>
 								<!-- 上方图片区域 (2/3) -->
 								{#if post.imageUrl}
-									<div class="article-grid-card__image-wrapper" class:skeleton-shimmer={showLoadingSkeleton && !loadedImages[post.id]}>
-										<img
-											class="article-grid-card__image"
-											class:is-loaded={loadedImages[post.id]}
-											src={post.imageUrl}
-											alt={`文章配图：${post.title}`}
-											loading="lazy"
-											decoding="async"
-											data-api-index="0"
-											referrerpolicy={post.imageReferrerPolicy || undefined}
-											onload={(event) => {
-												loadedImages[post.id] = true;
-												try {
-													const img = event.currentTarget as HTMLImageElement;
-													sessionStorage.setItem(`cover_img_${post.id}`, img.currentSrc || img.src);
-												} catch {}
-											}}
-											onerror={(event) => handleDetailImageError(event, post.imageApiUrls)}
-										/>
+								<div class="article-grid-card__image-wrapper" class:skeleton-shimmer={showLoadingSkeleton}>
+									<img
+										class="article-grid-card__image"
+										src={post.imageUrl}
+										alt={`文章配图：${post.title}`}
+										loading="lazy"
+										decoding="async"
+										data-api-index="0"
+										referrerpolicy={post.imageReferrerPolicy || undefined}
+										onload={(event) => handleImageLoad(event, post.id)}
+										onerror={(event) => handleDetailImageError(event, post.imageApiUrls)}
+									/>
 										<div class="article-grid-card__gradient-overlay"></div>
 										{#if isPinned}
 											<span class="article-grid-card__pinned-badge article-grid-card__pinned-badge--corner">
@@ -327,8 +344,10 @@ $effect(() => {
 				{/each}
 			</div>
 		</div>
+		{/if}
 
-		<div class="article-list-view" hidden={view !== "list"}>
+		{#if view === "list"}
+		<div class="article-list-view">
 			<div class="article-list-vertical" aria-label="文章列表">
 				{#each paginatedPosts as post, index (post.id)}
 					{@const isPinned = post.pinned}
@@ -341,25 +360,17 @@ $effect(() => {
 						{#if post.imageUrl}
 							<div
 								class="article-list-row-card__bg-wrapper"
-								class:skeleton-shimmer={showLoadingSkeleton && !loadedImages[post.id]}
 							>
 								<img
 									class="article-list-row-card__bg-image"
-									class:is-loaded={loadedImages[post.id]}
 									src={post.imageUrl}
 									alt={`文章配图：${post.title}`}
 									loading="lazy"
 									decoding="async"
 									data-api-index="0"
 									referrerpolicy={post.imageReferrerPolicy || undefined}
-									onload={(event) => {
-										loadedImages[post.id] = true;
-												try {
-													const img = event.currentTarget as HTMLImageElement;
-													sessionStorage.setItem(`cover_img_${post.id}`, img.currentSrc || img.src);
-												} catch {}
-											}}
-											onerror={(event) => handleDetailImageError(event, post.imageApiUrls)}
+									onload={(event) => handleImageLoad(event, post.id)}
+									onerror={(event) => handleDetailImageError(event, post.imageApiUrls)}
 								/>
 								<div class="article-list-row-card__gradient-overlay"></div>
 							</div>
@@ -422,6 +433,7 @@ $effect(() => {
 				{/each}
 			</div>
 		</div>
+		{/if}
 	</div>
 
 	{#if totalPages > 1}

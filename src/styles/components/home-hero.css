@@ -274,7 +274,7 @@ html:has(.home-hero) #top-row {
 	border-radius: 50%;
 	overflow: hidden;
 	outline: 3px solid #D44E7D;
-	background: #ffffff;
+	background: transparent;
 	box-shadow: 0 10px 0 #D44E7D, 0 18px 38px rgba(0, 0, 0, 0.48);
 	flex-shrink: 0;
 }
@@ -682,6 +682,11 @@ html:has(.home-hero) #top-row {
 		min-height: 100svh;
 	}
 
+	/* 移动端移除 hero 背景遮罩，让背景图完整显示（亮/暗主题均生效） */
+	.home-hero::after {
+		background: transparent;
+	}
+
 	.home-hero__canvas-container {
 		grid-template-columns: 1fr;
 		width: 100%;
@@ -698,11 +703,11 @@ html:has(.home-hero) #top-row {
 		padding: 2rem;
 		align-items: center;
 		justify-content: center;
-		background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
+		background: transparent;
 	}
 
 	[data-theme="light"] .home-hero__left-panel {
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+		background: transparent;
 	}
 
 	.home-hero__profile {
@@ -714,7 +719,7 @@ html:has(.home-hero) #top-row {
 	}
 
 	.home-hero__identity-row {
-		--identity-avatar-size: clamp(6rem, 26vw, 7.5rem);
+		--identity-avatar-size: clamp(8rem, 36vw, 10rem);
 		flex-direction: column;
 		align-items: center;
 		gap: 1.25rem;
@@ -738,8 +743,12 @@ html:has(.home-hero) #top-row {
 	}
 
 	.home-hero__avatar-wrapper {
-		border-width: 3px;
 		outline-width: 3px;
+	}
+
+	.home-hero__avatar {
+		/* 若图片边缘自带白边，稍微放大让图片内容顶满圆形裁剪区 */
+		transform: scale(1.08);
 	}
 
 	.home-hero__status-badge {

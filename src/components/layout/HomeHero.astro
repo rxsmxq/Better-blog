@@ -479,17 +479,20 @@ const rainConfig = {
 	}
 
 	function setDialogueHidden(state: DialogueState, hidden: boolean) {
-		state.root.dataset.hidden = String(hidden);
-		// 名牌（B站徽章）作为收起后的唤出触发器
-		if (state.els.trigger) {
-			state.els.trigger.classList.toggle("home-hero__name-badge--dialogue-trigger", hidden);
-			state.els.trigger.setAttribute("aria-expanded", String(!hidden));
-		}
-		if (hidden && state.autoTimer !== null) {
-			window.clearTimeout(state.autoTimer);
-			state.autoTimer = null;
-		}
+	state.root.dataset.hidden = String(hidden);
+	// 名牌（B站徽章）作为收起后的唤出触发器
+	if (state.els.trigger) {
+		state.els.trigger.classList.toggle("home-hero__name-badge--dialogue-trigger", hidden);
+		state.els.trigger.setAttribute("aria-expanded", String(!hidden));
 	}
+	if (hidden && state.autoTimer !== null) {
+		window.clearTimeout(state.autoTimer);
+		state.autoTimer = null;
+	}
+	// 立即同步雨滴撞击边缘，避免隐藏/展开后仍在旧位置溅水
+	const hero = document.getElementById("home-hero");
+	if (hero) collectRainEdges(hero);
+}
 
 	function startDialogue(state: DialogueState) {
 		if (state.started) return;
@@ -674,27 +677,46 @@ const rainConfig = {
 			: "70, 78, 90";
 	}
 
-	function collectRainEdges(hero: HTMLElement) {
-		const heroRect = hero.getBoundingClientRect();
-		const edges: HitEdge[] = [];
-		const selectors = [
-			".home-hero__viewfinder-corner",
-			".home-hero__dialogue-box",
-		];
-		for (const selector of selectors) {
-			hero.querySelectorAll<HTMLElement>(selector).forEach((el) => {
-				const rect = el.getBoundingClientRect();
-				if (rect.width < 2 || rect.height < 2) return;
-				// 以元素顶边作为"撞击线"
-				edges.push({
-					x1: rect.left - heroRect.left,
-					x2: rect.right - heroRect.left,
-					y: rect.top - heroRect.top,
-				});
-			});
+	function isRainEdgeVisible(el: HTMLElement, hero: HTMLElement): boolean {
+	if (!document.contains(el)) return false;
+	let current: HTMLElement | null = el;
+	while (current && current !== hero) {
+		const style = window.getComputedStyle(current);
+		if (style.display === "none" || style.visibility === "hidden") {
+			return false;
 		}
-		rainEdges = edges;
+		current = current.parentElement;
 	}
+	// 对 galgame 对话框额外判断 data-hidden，确保 transition 期间也立即生效
+	const dialogueRoot = el.closest(".home-hero__dialogue");
+	if (dialogueRoot && dialogueRoot.getAttribute("data-hidden") === "true") {
+		return false;
+	}
+	return true;
+}
+
+function collectRainEdges(hero: HTMLElement) {
+	const heroRect = hero.getBoundingClientRect();
+	const edges: HitEdge[] = [];
+	const selectors = [
+		".home-hero__viewfinder-corner",
+		".home-hero__dialogue-box",
+	];
+	for (const selector of selectors) {
+		hero.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+			if (!isRainEdgeVisible(el, hero)) return;
+			const rect = el.getBoundingClientRect();
+			if (rect.width < 2 || rect.height < 2) return;
+			// 以元素顶边作为"撞击线"
+			edges.push({
+				x1: rect.left - heroRect.left,
+				x2: rect.right - heroRect.left,
+				y: rect.top - heroRect.top,
+			});
+		});
+	}
+	rainEdges = edges;
+}
 
 	function spawnSplash(x: number, y: number) {
 		// 克制：全局水花粒子上限，避免同帧爆量

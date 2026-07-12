@@ -30,18 +30,20 @@
 	);
 	background-position: 0 1.4rem;
 	border: 2px solid var(--fc-ink);
-	/* 手绘感不规则圆角（方形纸张） */
-	border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px;
+	/* 原型图同款手绘感不规则圆角 */
+	border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 	box-shadow: 4px 4px 0 var(--fc-ink);
 	transition:
+		transform 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275),
 		box-shadow 400ms ease,
-		border-radius 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		border-radius 400ms ease;
 }
 
 .friend-card-link:hover {
-	/* 手绘感圆角翻转：方形纸张 → 长条纸张 */
+	/* 原型图 hover 状态：圆角翻转 + 上移旋转 */
 	box-shadow: 6px 8px 0 var(--fc-ink);
-	border-radius: 14px 255px 14px 225px / 255px 14px 225px 14px;
+	border-radius: 15px 255px 15px 225px / 255px 15px 225px 15px;
+	transform: translateY(-0.8em) rotate(1deg);
 }
 
 .friend-card-link:focus-visible {

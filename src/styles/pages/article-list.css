@@ -67,10 +67,6 @@
 	width: 100%;
 }
 
-.article-list-view[hidden] {
-	display: none;
-}
-
 /* ==========================================================================
    单列列表卡片布局 (Background Fusion List Card)
    ========================================================================== */
@@ -91,9 +87,6 @@
 	border-radius: var(--radius-large);
 	background: var(--page-bg);
 	overflow: hidden;
-	content-visibility: auto;
-	contain-intrinsic-size: auto 9.5rem;
-	contain: layout paint style;
 }
 
 .article-list-row-card:hover,
@@ -122,6 +115,7 @@
 	height: 100%;
 	object-fit: cover;
 	opacity: 0;
+	transition: opacity 0.4s ease;
 }
 
 .article-list-row-card__bg-image.is-loaded {
@@ -306,9 +300,6 @@
 	text-decoration: none;
 	color: inherit;
 	cursor: pointer;
-	content-visibility: auto;
-	contain-intrinsic-size: auto 23rem;
-	contain: layout paint style;
 }
 
 .article-grid-card:hover {
@@ -332,6 +323,7 @@
 	height: 100%;
 	object-fit: cover;
 	opacity: 0;
+	transition: opacity 0.4s ease;
 }
 
 .article-grid-card__image.is-loaded {
@@ -476,11 +468,22 @@
 .skeleton-shimmer {
 	position: relative;
 	background: linear-gradient(
-		90deg,
-		var(--card-bg, #f3f4f6) 25%,
-		var(--line-divider, #e5e7eb) 37%,
-		var(--card-bg, #f3f4f6) 63%
+		135deg,
+		var(--card-bg, #f3f4f6),
+		color-mix(in srgb, var(--card-bg, #f3f4f6) 75%, var(--line-divider, #e5e7eb))
 	);
+	animation: skeleton-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes skeleton-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.skeleton-shimmer {
+		animation: none;
+	}
 }
 
 
