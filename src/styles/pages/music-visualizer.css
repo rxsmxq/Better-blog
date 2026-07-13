@@ -2357,6 +2357,7 @@ html:has(.music-visualizer-page) .footer {
 		position: relative;
 		grid-column: 2;
 		grid-row: 1;
+		z-index: 4;
 		justify-self: stretch;
 		align-self: center;
 		width: 100%;
