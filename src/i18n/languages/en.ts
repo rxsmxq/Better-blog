@@ -266,6 +266,7 @@ export const en: Translation = {
 	[Key.siteStatsRevealLine1]:
 		"{posts} posts · {categories} categories · {tags} tags",
 	[Key.siteStatsRevealLine2]: "{words} words total",
+	[Key.siteStatsSource]: "Source",
 	[Key.footerRunningDays]: "Running for {days} days",
 	[Key.footerLastUpdate]: "Last updated {days} days ago",
 	[Key.today]: "Today",

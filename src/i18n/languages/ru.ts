@@ -267,6 +267,7 @@ export const ru: Translation = {
 	[Key.siteStatsRevealLine1]:
 		"{posts} статей · {categories} категорий · {tags} тегов",
 	[Key.siteStatsRevealLine2]: "Всего {words} слов",
+	[Key.siteStatsSource]: "Источник",
 	[Key.footerRunningDays]: "Работает {days} дней",
 	[Key.footerLastUpdate]: "Последнее обновление {days} дней назад",
 	[Key.today]: "Сегодня",

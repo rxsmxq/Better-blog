@@ -258,6 +258,7 @@ export const zh_CN: Translation = {
 	[Key.siteStatsRevealLine1]:
 		"{posts} 篇文章 · {categories} 个分类 · {tags} 个标签",
 	[Key.siteStatsRevealLine2]: "累计 {words} 字",
+	[Key.siteStatsSource]: "来源",
 	[Key.footerRunningDays]: "已运行 {days} 天",
 	[Key.footerLastUpdate]: "最后更新于 {days} 天前",
 	[Key.today]: "今天",

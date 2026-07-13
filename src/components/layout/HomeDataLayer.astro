@@ -1,6 +1,8 @@
 ---
 import DataMetricCard from "@components/features/DataMetricCard.astro";
 import LogoLoop from "@components/features/LogoLoop.svelte";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
 import { homeConfig, siteConfig } from "@/config";
 import {
 	getCategoryList,
@@ -35,7 +37,7 @@ const articlePills: DataPill[] = [
 const visitPills: DataPill[] = [
 	{ label: "UV", value: "--", tone: "light" },
 	{ label: "PV", value: "--", tone: "dark" },
-	{ label: "SOURCE", value: "Umami", tone: "outline" },
+	{ label: i18n(I18nKey.siteStatsSource), value: "Umami", tone: "outline" },
 ];
 
 const socialItems = homeConfig.links.map((link) => ({
@@ -229,17 +231,32 @@ const statsShareId = umamiConfig?.shareId ?? "";
 			})
 			.then((r) => r.json())
 			.then((data) => {
-				const uv = formatCompactNumber(data.uv || data.visitors || 0);
-				const pv = formatCompactNumber(data.pv || data.pageviews || 0);
-				if (detail) detail.textContent = `访客 ${uv} / 浏览 ${pv}`;
+				const uvRaw = data.uv || data.visitors || 0;
+				const pvRaw = data.pv || data.pageviews || 0;
+				const uvCompact = formatCompactNumber(uvRaw);
+				const pvCompact = formatCompactNumber(pvRaw);
+				const uvFull = Number(uvRaw).toLocaleString();
+				const pvFull = Number(pvRaw).toLocaleString();
+				if (detail) detail.textContent = `访客 ${uvCompact} / 浏览 ${pvCompact}`;
 				valueNodes.forEach((node) => {
 					const key = node.dataset.statValue;
-					if (key === "UV") node.textContent = uv;
-					if (key === "PV") node.textContent = pv;
+					if (key !== "UV" && key !== "PV") return;
+					const compact = key === "UV" ? uvCompact : pvCompact;
+					const full = key === "UV" ? uvFull : pvFull;
+					node.dataset.compactValue = compact;
+					node.dataset.fullValue = full;
+					node.textContent = compact;
 				});
 			})
 			.catch(() => {
 				if (detail) detail.textContent = "访客 -- / 浏览 --";
+				valueNodes.forEach((node) => {
+					const key = node.dataset.statValue;
+					if (key !== "UV" && key !== "PV") return;
+					node.dataset.compactValue = "--";
+					node.dataset.fullValue = "--";
+					node.textContent = "--";
+				});
 			});
 	}
 
@@ -259,7 +276,23 @@ const statsShareId = umamiConfig?.shareId ?? "";
 			const pills = Array.from(card.querySelectorAll<HTMLElement>(".data-card__hover-pill"));
 			if (!hover || !orb || !header || !title || pills.length === 0) return;
 
-			const timeline = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+			const isVisits = card.dataset.statKind === "visits";
+			const visitValueNodes = isVisits
+				? Array.from(card.querySelectorAll<HTMLElement>("[data-stat-value]"))
+				: [];
+
+			const timeline = gsap.timeline({
+				paused: true,
+				defaults: { ease: "power3.out" },
+				onReverseComplete: () => {
+					if (isVisits) {
+						visitValueNodes.forEach((node) => {
+							const compact = node.dataset.compactValue;
+							if (compact) node.textContent = compact;
+						});
+					}
+				},
+			});
 			timeline
 				.set(hover, { autoAlpha: 1 })
 				.fromTo(orb, {
@@ -295,8 +328,18 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					ease: "back.out(1.7)",
 				}, 0.5);
 
-			const enter = () => timeline.play();
-			const leave = () => timeline.reverse();
+			const enter = () => {
+				timeline.play();
+				if (isVisits) {
+					visitValueNodes.forEach((node) => {
+						const full = node.dataset.fullValue;
+						if (full && full !== "--") node.textContent = full;
+					});
+				}
+			};
+			const leave = () => {
+				timeline.reverse();
+			};
 			card.addEventListener("pointerenter", enter);
 			card.addEventListener("pointerleave", leave);
 			cleanups.push(() => {

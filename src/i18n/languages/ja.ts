@@ -265,6 +265,7 @@ export const ja: Translation = {
 	[Key.siteStatsRevealLine1]:
 		"記事 {posts} · カテゴリー {categories} · タグ {tags}",
 	[Key.siteStatsRevealLine2]: "累計 {words} 文字",
+	[Key.siteStatsSource]: "ソース",
 	[Key.footerRunningDays]: "運用 {days} 日",
 	[Key.footerLastUpdate]: "最終更新は {days} 日前",
 	[Key.today]: "今日",

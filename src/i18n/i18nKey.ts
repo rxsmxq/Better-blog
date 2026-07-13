@@ -248,6 +248,7 @@ enum I18nKey {
 	siteStatsHoverHint = "siteStatsHoverHint",
 	siteStatsRevealLine1 = "siteStatsRevealLine1",
 	siteStatsRevealLine2 = "siteStatsRevealLine2",
+	siteStatsSource = "siteStatsSource",
 	footerRunningDays = "footerRunningDays",
 	footerLastUpdate = "footerLastUpdate",
 	today = "today",
