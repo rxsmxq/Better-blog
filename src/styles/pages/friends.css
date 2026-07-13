@@ -5,9 +5,10 @@
 .friends-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	/* 卡片悬停会向下扩展，顶部对齐避免整行被拉伸 */
+	/* 顶部对齐，纸张本体的悬停位移不改变网格轨道 */
 	align-items: start;
-	gap: 1rem 0.75rem;
+	/* 给上方纸张的阴影和下方卡片胶带留出独立呼吸空间 */
+	gap: 1.75rem 0.75rem;
 	padding-top: 1rem;
 	padding-bottom: 1rem;
 }

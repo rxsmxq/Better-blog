@@ -2,7 +2,7 @@
    友链卡片 — 来自 FriendCard.astro
    灰阶手绘风：顶部标签 + 三层结构（头像 / 名字 / 介绍）
    头像加载时灰阶骨架圆，成功后淡入替换
-   介绍框默认一行，悬停向下扩展显示更多，超出截断
+   介绍框固定显示一行，超出截断
    ============================================ */
 
 .friend-card-link {
@@ -38,7 +38,6 @@
 		box-shadow 400ms ease,
 		border-radius 400ms ease;
 }
-
 .friend-card-link:hover {
 	/* 原型图 hover 状态：圆角翻转 + 上移旋转 */
 	box-shadow: 6px 8px 0 var(--fc-ink);
@@ -182,7 +181,7 @@
 	white-space: nowrap;
 }
 
-/* --- 第三层：介绍框（默认一行，悬停向下扩展固定高度，所有卡片一致） --- */
+/* --- 第三层：介绍框（固定一行，避免简介内容改变网格高度） --- */
 .friend-card-intro {
 	width: 100%;
 	padding: 0.45rem 0.7rem;
@@ -192,17 +191,7 @@
 	/* 手绘偏移硬阴影，同参考稿徽章 */
 	box-shadow: 2px 2px 0 var(--fc-ink);
 	overflow: hidden;
-	/* 默认一行高度，固定值确保每张卡片扩展量一致 */
 	height: 2.2rem;
-	transition:
-		height 400ms cubic-bezier(0.4, 0, 0.2, 1),
-		box-shadow 300ms ease;
-}
-
-.friend-card-link:hover .friend-card-intro {
-	/* 悬停统一扩展为固定长条高度 */
-	height: 7.5rem;
-	box-shadow: 3px 3px 0 var(--fc-ink);
 }
 
 .friend-card-intro__text {
@@ -217,12 +206,6 @@
 	-webkit-line-clamp: 1;
 	line-clamp: 1;
 	overflow: hidden;
-}
-
-/* 悬停显示更多行，超出仍截断 */
-.friend-card-link:hover .friend-card-intro__text {
-	-webkit-line-clamp: 6;
-	line-clamp: 6;
 }
 
 @keyframes friendAvatarBlink {
