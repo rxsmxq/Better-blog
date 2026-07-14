@@ -54,7 +54,7 @@ const isExternalLink = (href: string) => !/^(mailto:|tel:)/i.test(href);
 			))}
 		</div>
 
-		{/* 第二层：RSS | 隐私政策 */}
+		{/* 第二层：RSS | 隐私政策 | 用户协议 */}
 		<div class="flex items-center justify-center gap-2 text-neutral-500 dark:text-neutral-400 text-sm">
 			<a
 				class="transition text-(--primary) font-bold hover:scale-105 inline-flex items-center gap-1"
@@ -72,6 +72,15 @@ const isExternalLink = (href: string) => !/^(mailto:|tel:)/i.test(href);
 			>
 				<Icon name="material-symbols:shield-outline" is:inline class="text-base" />
 				<span>隐私政策</span>
+			</button>
+			<span class="text-neutral-300 dark:text-neutral-600">|</span>
+			<button
+				class="transition text-(--primary) font-bold bg-transparent border-none cursor-pointer p-0 hover:scale-105 inline-flex items-center gap-1"
+				onclick="window.openUserAgreementModal && window.openUserAgreementModal()"
+				type="button"
+			>
+				<Icon name="material-symbols:description-outline" is:inline class="text-base" />
+				<span>用户协议</span>
 			</button>
 		</div>
 

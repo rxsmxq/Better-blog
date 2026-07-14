@@ -339,9 +339,10 @@ const tags = await getTagList();
 			const isHome = window.location.pathname === "/" || window.location.pathname === "";
 			document.getElementById("dock-home-btn")?.classList.toggle("hide", isHome);
 			const isPost = /\/posts?\//.test(window.location.pathname);
+			const isFriends = /^\/friends\/?$/.test(window.location.pathname);
 			document.getElementById("dock-toc-btn")?.classList.toggle("hide", !isPost);
 			const hasComment = !!document.getElementById("post-comments");
-			document.getElementById("dock-comment-btn")?.classList.toggle("hide", !isPost || !hasComment);
+			document.getElementById("dock-comment-btn")?.classList.toggle("hide", !(isPost || isFriends) || !hasComment);
 		}
 		updateScrollDependent();
 		updatePathDependent();

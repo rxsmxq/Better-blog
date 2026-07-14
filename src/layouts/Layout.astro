@@ -9,6 +9,7 @@ import FontManager from "@components/features/FontManager.astro";
 import MusicManager from "@components/features/MusicManager.astro";
 import PageLoader from "@components/features/PageLoader.astro";
 import PrivacyModal from "@components/features/PrivacyModal.astro";
+import UserAgreementModal from "@components/features/UserAgreementModal.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 import MobileDock from "@components/layout/MobileDock.astro";
 import AISearch from "@/components/controls/AISearch.svelte";
@@ -222,6 +223,7 @@ const siteLang = lang.replace("_", "-");
       ]}
     />
     <PrivacyModal />
+    <UserAgreementModal />
     <FancyboxManager />
   </body>
 </html>

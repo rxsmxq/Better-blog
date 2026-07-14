@@ -294,6 +294,7 @@ const showSpine = !!spineModelConfig?.enable;
 		function updatePathDependent() {
 			const isHome = window.location.pathname === "/" || window.location.pathname === "";
 			const isPost = /\/posts?\//.test(window.location.pathname);
+			const isFriends = /^\/friends\/?$/.test(window.location.pathname);
 			const hasComment = !!document.getElementById("post-comments");
 
 			// 首页按钮：首页时置灰
@@ -303,7 +304,7 @@ const showSpine = !!spineModelConfig?.enable;
 			document.getElementById("md-toc-btn")?.classList.toggle("hide", !isPost);
 
 			// 评论按钮：仅文章页且有评论
-			document.getElementById("md-comment-btn")?.classList.toggle("hide", !isPost || !hasComment);
+			document.getElementById("md-comment-btn")?.classList.toggle("hide", !(isPost || isFriends) || !hasComment);
 		}
 
 		updatePathDependent();

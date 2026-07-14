@@ -4,9 +4,11 @@ import { friendsPageConfig } from "@/config";
 
 interface Props {
 	applyLink?: string;
+	commentEnabled?: boolean;
 }
 
-const { applyLink = friendsPageConfig.applyLink } = Astro.props;
+const { applyLink = friendsPageConfig.applyLink, commentEnabled = false } =
+	Astro.props;
 const site = friendsPageConfig.siteInfo;
 const notes = friendsPageConfig.notes;
 ---
@@ -80,10 +82,8 @@ const notes = friendsPageConfig.notes;
             <div class="fr-step-num">2</div>
             <div class="fr-step-line"></div>
             <div class="fr-step-content">
-              <p class="fr-step-title">
-                发送申请邮件至：<code class="fr-code">{site?.email}</code>
-              </p>
-              <p class="fr-step-desc">将下方模板内容复制修改后发送</p>
+              <p class="fr-step-title">在下方评论区提交申请</p>
+              <p class="fr-step-desc">将下方模板内容复制修改后，前往本页评论区发送</p>
               <div class="fr-template">
                 <button
                   class="fr-copy-btn fr-template-copy"
@@ -141,10 +141,12 @@ const notes = friendsPageConfig.notes;
           自助申请友链（推荐）
         </a>
       )}
-      <button class="fr-btn fr-btn-secondary" data-close-modal>
-        <Icon name="material-symbols:mail-outline-rounded" class="text-base" />
-        手动申请友链
-      </button>
+      {commentEnabled && (
+        <button class="fr-btn fr-btn-secondary" data-scroll-to-friend-comments>
+          <Icon name="mingcute:comment-line" class="text-base" />
+          前往评论区
+        </button>
+      )}
     </div>
   </div>
 </dialog>
@@ -169,6 +171,14 @@ const notes = friendsPageConfig.notes;
       el.addEventListener('click', () => {
         modal.close();
         document.body.style.overflow = '';
+      });
+    });
+
+    modal.querySelectorAll('[data-scroll-to-friend-comments]').forEach(el => {
+      el.addEventListener('click', () => {
+        modal.close();
+        document.body.style.overflow = '';
+        document.getElementById('post-comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
 
