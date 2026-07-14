@@ -12,9 +12,7 @@ import PrivacyModal from "@components/features/PrivacyModal.astro";
 import UserAgreementModal from "@components/features/UserAgreementModal.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 import MobileDock from "@components/layout/MobileDock.astro";
-import AISearch from "@/components/controls/AISearch.svelte";
 import FloatingDock from "@/components/controls/FloatingDock.astro";
-import SearchModal from "@/components/controls/SearchModal.svelte";
 
 import { expressiveCodeConfig, homeConfig, siteConfig } from "@/config";
 import { PAGE_WIDTH } from "@/constants/constants";
@@ -211,17 +209,8 @@ const siteLang = lang.replace("_", "-");
     {/* 全局持久化组件 — Swup 容器外，所有页面共享（CLAUDE.md 4.2） */}
     <FloatingDock />
     <MobileDock />
-    <AISearch client:idle />
-    <SearchModal
-      client:idle
-      placeholders={[
-        "搜索文章、标签、分类...",
-        "输入关键词开始搜索",
-        "试试搜索「Astro」或「Svelte」",
-        "按 ESC 关闭搜索面板",
-        "Ctrl+K 快速切换AI搜索/普通搜索",
-      ]}
-    />
+    <div id="ai-search-root"></div>
+    <div id="search-modal-root"></div>
     <PrivacyModal />
     <UserAgreementModal />
     <FancyboxManager />
@@ -231,6 +220,94 @@ const siteLang = lang.replace("_", "-");
 <script>
   import { navigateToPage } from "@/utils/navigation-utils";
   window.navigateToPage = navigateToPage;
+</script>
+
+<script>
+  import {
+    requestSearchModalToggle,
+    SEARCH_MODAL_TOGGLE_EVENT,
+  } from "@/utils/search-modal-controller";
+
+  const SEARCH_PLACEHOLDERS = [
+    "搜索文章、标签、分类...",
+    "输入关键词开始搜索",
+    "试试搜索「Astro」或「Svelte」",
+    "按 ESC 关闭搜索面板",
+    "Ctrl+K 快速切换AI搜索/普通搜索",
+  ];
+
+  if (!window.__searchLoadersReady) {
+    window.__searchLoadersReady = true;
+    let aiMountPromise: Promise<void> | null = null;
+    let searchMountPromise: Promise<void> | null = null;
+    let pendingAiToggles = 0;
+
+    const mountAiSearch = () => {
+      if (window.__aiSearchMounted) return Promise.resolve();
+      if (!aiMountPromise) {
+        aiMountPromise = Promise.all([
+          import("svelte"),
+          import("@/components/controls/AISearch.svelte"),
+        ]).then(async ([{ mount, tick }, { default: AISearch }]) => {
+          const target = document.getElementById("ai-search-root");
+          if (!target) throw new Error("AI search root is missing");
+          mount(AISearch, { target });
+          await tick();
+          window.__aiSearchMounted = true;
+        }).catch((error) => {
+          aiMountPromise = null;
+          console.error("Failed to load AI search:", error);
+        });
+      }
+      return aiMountPromise;
+    };
+
+    const mountSearchModal = () => {
+      if (window.__searchModalMounted) return Promise.resolve();
+      if (!searchMountPromise) {
+        searchMountPromise = Promise.all([
+          import("svelte"),
+          import("@/components/controls/SearchModal.svelte"),
+        ]).then(async ([{ mount, tick }, { default: SearchModal }]) => {
+          const target = document.getElementById("search-modal-root");
+          if (!target) throw new Error("Search modal root is missing");
+          mount(SearchModal, { target, props: { placeholders: SEARCH_PLACEHOLDERS } });
+          await tick();
+          window.__searchModalMounted = true;
+        }).catch((error) => {
+          searchMountPromise = null;
+          console.error("Failed to load search modal:", error);
+        });
+      }
+      return searchMountPromise;
+    };
+
+    window.addEventListener("toggle-ai-search", (event) => {
+      if (window.__aiSearchMounted) return;
+      event.stopImmediatePropagation();
+      pendingAiToggles += 1;
+      if (pendingAiToggles > 1 || aiMountPromise) return;
+      void mountAiSearch().then(() => {
+        const shouldToggle = pendingAiToggles % 2 === 1;
+        pendingAiToggles = 0;
+        if (shouldToggle && window.__aiSearchMounted) {
+          window.dispatchEvent(new CustomEvent("toggle-ai-search"));
+        }
+      });
+    });
+
+    window.addEventListener(SEARCH_MODAL_TOGGLE_EVENT, () => {
+      void mountSearchModal();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (window.__searchModalMounted) return;
+      if ((event.ctrlKey || event.metaKey) && event.code === "KeyK") {
+        event.preventDefault();
+        requestSearchModalToggle();
+      }
+    });
+  }
 </script>
 
 <script>
@@ -316,7 +393,6 @@ const siteLang = lang.replace("_", "-");
 
     window.swup.hooks.on("content:replace", () => {
       scheduleContentOverflowEnhancements();
-      import("@/utils/icon-loader").then(({ initIconLoader }) => initIconLoader());
     });
 
     // 侧边栏组件在 Swup 容器之外，页面切换后需要手动更新显隐状态
@@ -405,10 +481,8 @@ const siteLang = lang.replace("_", "-");
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       scheduleContentOverflowEnhancements();
-      import("@/utils/icon-loader").then(({ initIconLoader }) => initIconLoader());
     });
   } else {
     scheduleContentOverflowEnhancements();
-    import("@/utils/icon-loader").then(({ initIconLoader }) => initIconLoader());
   }
 </script>

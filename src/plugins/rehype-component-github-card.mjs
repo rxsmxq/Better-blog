@@ -15,7 +15,7 @@ export function GithubCardComponent(properties, children) {
 			'Invalid directive. ("github" directive must be leaf type "::github{repo="owner/repo"}")',
 		]);
 
-	if (!properties.repo?.includes("/"))
+	if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(properties.repo || ""))
 		return h(
 			"div",
 			{ class: "hidden" },
@@ -23,7 +23,19 @@ export function GithubCardComponent(properties, children) {
 		);
 
 	const repo = properties.repo;
+	const [owner, repoName] = repo.split("/");
 	const cardUuid = `GC${Math.random().toString(36).slice(-6)}`; // Collisions are not important
+	const apiUrl = JSON.stringify(
+		`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}`,
+	);
+	const descriptionId = JSON.stringify(`${cardUuid}-description`);
+	const languageId = JSON.stringify(`${cardUuid}-language`);
+	const forksId = JSON.stringify(`${cardUuid}-forks`);
+	const starsId = JSON.stringify(`${cardUuid}-stars`);
+	const avatarId = JSON.stringify(`${cardUuid}-avatar`);
+	const licenseId = JSON.stringify(`${cardUuid}-license`);
+	const cardId = JSON.stringify(`${cardUuid}-card`);
+	const logLabel = JSON.stringify(`${repo} | ${cardUuid}`);
 
 	const nAvatar = h(`div#${cardUuid}-avatar`, { class: "gc-avatar" });
 	const nLanguage = h(
@@ -58,20 +70,23 @@ export function GithubCardComponent(properties, children) {
 		`script#${cardUuid}-script`,
 		{ type: "text/javascript", defer: true },
 		`
-      fetch('https://api.github.com/repos/${repo}', { referrerPolicy: "no-referrer" }).then(response => response.json()).then(data => {
-        document.getElementById('${cardUuid}-description').innerText = data.description?.replace(/:[a-zA-Z0-9_]+:/g, '') || "Description not set";
-        document.getElementById('${cardUuid}-language').innerText = data.language;
-        document.getElementById('${cardUuid}-forks').innerText = Intl.NumberFormat('en-us', { notation: "compact", maximumFractionDigits: 1 }).format(data.forks).replaceAll("\u202f", '');
-        document.getElementById('${cardUuid}-stars').innerText = Intl.NumberFormat('en-us', { notation: "compact", maximumFractionDigits: 1 }).format(data.stargazers_count).replaceAll("\u202f", '');
-        const avatarEl = document.getElementById('${cardUuid}-avatar');
+      fetch(${apiUrl}, { referrerPolicy: "no-referrer" }).then(response => {
+        if (!response.ok) throw new Error("GitHub API request failed");
+        return response.json();
+      }).then(data => {
+        document.getElementById(${descriptionId}).innerText = data.description?.replace(/:[a-zA-Z0-9_]+:/g, '') || "Description not set";
+        document.getElementById(${languageId}).innerText = data.language || "Unknown";
+        document.getElementById(${forksId}).innerText = Intl.NumberFormat('en-us', { notation: "compact", maximumFractionDigits: 1 }).format(data.forks || 0).replaceAll("\u202f", '');
+        document.getElementById(${starsId}).innerText = Intl.NumberFormat('en-us', { notation: "compact", maximumFractionDigits: 1 }).format(data.stargazers_count || 0).replaceAll("\u202f", '');
+        const avatarEl = document.getElementById(${avatarId});
         avatarEl.style.backgroundImage = 'url(' + data.owner.avatar_url + '&s=32' + ')';
         avatarEl.style.backgroundColor = 'transparent';
-        document.getElementById('${cardUuid}-license').innerText = data.license?.spdx_id || "no-license";
-        document.getElementById('${cardUuid}-card').classList.remove("fetch-waiting");
-      }).catch(err => {
-        const c = document.getElementById('${cardUuid}-card');
+        document.getElementById(${licenseId}).innerText = data.license?.spdx_id || "no-license";
+        document.getElementById(${cardId}).classList.remove("fetch-waiting");
+      }).catch(() => {
+        const c = document.getElementById(${cardId});
         c?.classList.add("fetch-error");
-        console.warn("[GITHUB-CARD] (Error) Loading card for ${repo} | ${cardUuid}.")
+        console.warn("[GITHUB-CARD] (Error) Loading card for", ${logLabel});
       })
     `,
 	);
@@ -82,6 +97,7 @@ export function GithubCardComponent(properties, children) {
 			class: "card-github fetch-waiting no-styling",
 			href: `https://github.com/${repo}`,
 			target: "_blank",
+			rel: "noopener noreferrer",
 			repo,
 		},
 		[

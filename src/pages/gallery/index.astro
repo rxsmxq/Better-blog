@@ -8,6 +8,7 @@ import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { getAlbumCover, scanAlbumPhotos } from "@/utils/gallery-utils";
+import "@/styles/pages/gallery.css";
 
 if (!siteConfig.pages.gallery) {
 	return Astro.redirect("/404/");

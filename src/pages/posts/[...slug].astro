@@ -11,6 +11,8 @@ import SharePoster from "@components/misc/SharePoster.svelte";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import "@/styles/components/article-catalog.css";
+import "@/styles/components/post-hero.css";
 import { getCatalogGroups, getSortedPosts } from "@utils/content-utils";
 import {
 	getCategoryUrl,
@@ -65,9 +67,12 @@ if (processedImage) {
 	);
 	if (isLocal) {
 		const basePath = getFileDirFromPath(entry.filePath || "");
-		const files = import.meta.glob<ImageMetadata>("../../**", {
-			import: "default",
-		});
+		const files = import.meta.glob<ImageMetadata>(
+			"../../**/*.{png,jpg,jpeg,webp,avif,gif}",
+			{
+				import: "default",
+			},
+		);
 		let normalizedPath = path
 			.normalize(path.join("../../", basePath, processedImage))
 			.replace(/\\/g, "/");
@@ -89,9 +94,12 @@ if (posterAvatarUrl) {
 		posterAvatarUrl.startsWith("data:")
 	);
 	if (isLocalAvatar) {
-		const files = import.meta.glob<ImageMetadata>("../../**", {
-			import: "default",
-		});
+		const files = import.meta.glob<ImageMetadata>(
+			"../../**/*.{png,jpg,jpeg,webp,avif,gif}",
+			{
+				import: "default",
+			},
+		);
 		const normalizedPath = path
 			.normalize(path.join("../../", posterAvatarUrl))
 			.replace(/\\/g, "/");
@@ -139,6 +147,7 @@ const jsonLd = {
 };
 
 const catalogGroups = await getCatalogGroups(entry.id);
+const serializedJsonLd = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 ---
 
 <MainGridLayout
@@ -159,7 +168,7 @@ const catalogGroups = await getCatalogGroups(entry.id);
     is:inline
     slot="head"
     type="application/ld+json"
-    set:html={JSON.stringify(jsonLd)}
+    set:html={serializedJsonLd}
   />
   <!-- Layer 1: Title + meta -->
   <div class="post-hero rounded-(--radius-large) mb-2 onload-animation">

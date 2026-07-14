@@ -5,6 +5,7 @@ import AboutCanvas from "@components/about/AboutCanvas.svelte";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import "@/styles/components/about-canvas.css";
 
 const aboutPost = await getEntry("spec", "about");
 if (!aboutPost) {

@@ -582,6 +582,10 @@
 	text-decoration: line-through;
 }
 
+.ai-msg__text--streaming {
+	white-space: pre-wrap;
+}
+
 /* --- 流式光标 --- */
 .ai-cursor {
 	display: inline-block;
@@ -748,6 +752,13 @@
 	padding: 0.75em 0.75em 0.85em;
 	width: 100%;
 	position: relative;
+}
+
+.ai-input-area__privacy {
+	margin: 0;
+	font-size: 0.7rem;
+	line-height: 1.45;
+	color: var(--content-meta);
 }
 
 :root.dark .ai-input-area__box {

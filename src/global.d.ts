@@ -27,6 +27,9 @@ declare global {
 		) => void;
 		floatingTOCListenersInitialized?: boolean;
 		__aiSearchOpen?: boolean;
+		__searchLoadersReady?: boolean;
+		__aiSearchMounted?: boolean;
+		__searchModalMounted?: boolean;
 		_showLive2DWidget?: () => void;
 		_closeLive2DWidget?: () => void;
 		// biome-ignore lint/suspicious/noExplicitAny: External library

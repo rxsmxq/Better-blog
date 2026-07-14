@@ -6,9 +6,10 @@
  * 用法：node scripts/build-vectorize-index.js [--force]
  *   --force  强制全量重建（忽略 manifest）
  *
- * 环境变量（在 .env 中配置）：
- *   必填：CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
- *   可选（第三方 embedding API）：AI_API_KEY
+ * 环境变量：
+ *   .env.cf（必填）：CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+ *   .env（可选）：AI_API_KEY, ALLOWED_ORIGINS
+ * 凭证放 .env.cf 避免 wrangler CLI 认证冲突，详见 .env.cf.example
  *
  * 非敏感配置统一从 src/config/aiSearchConfig.ts 读取
  */
@@ -38,8 +39,10 @@ try {
 }
 
 // ── 加载环境变量（敏感信息）─────────────────────────────
-function loadEnv() {
-	const envPath = path.resolve(process.cwd(), ".env");
+// .env.cf 存放 Cloudflare 凭证（CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID），
+// 仅本脚本读取；wrangler CLI 不加载该文件，避免 token 与 wrangler login/dev 认证冲突。
+// .env 存放其余变量（AI_API_KEY / ALLOWED_ORIGINS 等）。
+function loadEnvFile(envPath) {
 	if (!fs.existsSync(envPath)) return;
 	const content = fs.readFileSync(envPath, "utf-8");
 	for (const line of content.split("\n")) {
@@ -53,6 +56,11 @@ function loadEnv() {
 		if (commentIdx !== -1) val = val.slice(0, commentIdx).trim();
 		if (!process.env[key]) process.env[key] = val;
 	}
+}
+
+function loadEnv() {
+	loadEnvFile(path.resolve(process.cwd(), ".env.cf"));
+	loadEnvFile(path.resolve(process.cwd(), ".env"));
 }
 
 loadEnv();
@@ -88,7 +96,13 @@ function loadManifest() {
 }
 
 function saveManifest(manifest) {
-	fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+	const tempPath = `${MANIFEST_PATH}.${process.pid}.${Date.now()}.tmp`;
+	try {
+		fs.writeFileSync(tempPath, JSON.stringify(manifest, null, 2));
+		fs.renameSync(tempPath, MANIFEST_PATH);
+	} finally {
+		if (fs.existsSync(tempPath)) fs.rmSync(tempPath);
+	}
 }
 
 function contentHash(text) {
@@ -276,8 +290,8 @@ async function createIndex() {
 
 async function syncChunks(chunks) {
 	const total = chunks.length;
-	let uploaded = 0;
-	const buffer = [];
+	const successfulIds = new Set();
+	const failedIds = new Set();
 
 	for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
 		const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
@@ -287,36 +301,45 @@ async function syncChunks(chunks) {
 		try {
 			console.log(`📝 生成嵌入 [${embedStart}-${embedEnd}/${total}]...`);
 			const embeddings = await generateEmbeddings(batch.map((c) => c.text));
-
-			for (let k = 0; k < batch.length; k++) {
-				buffer.push({
-					id: batch[k].id,
-					values: embeddings[k],
-					metadata: batch[k].metadata,
-				});
+			if (!Array.isArray(embeddings) || embeddings.length !== batch.length) {
+				throw new Error(`嵌入数量不匹配：预期 ${batch.length}，实际 ${embeddings?.length ?? 0}`);
 			}
 
-			if (buffer.length >= BATCH_SIZE || i + EMBED_BATCH_SIZE >= chunks.length) {
-				for (let j = 0; j < buffer.length; j += BATCH_SIZE) {
-					const subBatch = buffer.slice(j, j + BATCH_SIZE);
-					const upStart = uploaded + 1;
-					const upEnd = uploaded + subBatch.length;
-					console.log(`📤 上传向量 [${upStart}-${upEnd}/${total}]...`);
+			const vectors = batch.map((chunk, index) => ({
+					id: chunk.id,
+					values: embeddings[index],
+					metadata: chunk.metadata,
+				}));
+
+			for (let j = 0; j < vectors.length; j += BATCH_SIZE) {
+				const subBatch = vectors.slice(j, j + BATCH_SIZE);
+				const upStart = successfulIds.size + 1;
+				const upEnd = successfulIds.size + subBatch.length;
+				console.log(`📤 上传向量 [${upStart}-${upEnd}/${total}]...`);
+				try {
 					await insertVectors(subBatch);
-					uploaded += subBatch.length;
-					console.log(`✅ 累计 ${uploaded}/${total}`);
+					for (const vector of subBatch) successfulIds.add(vector.id);
+					console.log(`✅ 累计 ${successfulIds.size}/${total}`);
+				} catch (error) {
+					for (const vector of subBatch) failedIds.add(vector.id);
+					console.error(`❌ 上传批次失败:`, error.message);
 				}
-				buffer.length = 0;
 			}
 
 			if (i + EMBED_BATCH_SIZE < chunks.length) {
-				await new Promise((r) => setTimeout(r, 500));
+				await new Promise((resolve) => setTimeout(resolve, 500));
 			}
-		} catch (err) {
-			console.error(`❌ 嵌入 [${embedStart}-${embedEnd}] 失败:`, err.message);
+		} catch (error) {
+			for (const chunk of batch) failedIds.add(chunk.id);
+			console.error(`❌ 嵌入 [${embedStart}-${embedEnd}] 失败:`, error.message);
 		}
 	}
-	return uploaded;
+
+	return {
+		uploaded: successfulIds.size,
+		successfulIds,
+		failedIds,
+	};
 }
 
 // ── 主流程 ────────────────────────────────────────────
@@ -334,14 +357,19 @@ async function main() {
 		await createIndex();
 
 		const allChunks = posts.flatMap((p) => buildChunksForPost(p));
-		const processed = await syncChunks(allChunks);
+		const result = await syncChunks(allChunks);
+		if (result.failedIds.size > 0 || result.uploaded !== allChunks.length) {
+			throw new Error(
+				`全量重建不完整：成功 ${result.uploaded}/${allChunks.length}，manifest 未更新`,
+			);
+		}
 
 		const newManifest = {};
 		for (const post of posts) {
 			newManifest[post.slug] = { hash: post.hash, chunkIds: buildChunksForPost(post).map((c) => c.id) };
 		}
 		saveManifest(newManifest);
-		console.log(`全量重建完成，共上传 ${processed} 个向量`);
+		console.log(`全量重建完成，共上传 ${result.uploaded} 个向量`);
 		return;
 	}
 
@@ -364,21 +392,31 @@ async function main() {
 		for (const slug of deleted) delete manifest[slug];
 	}
 
-	if (changed.length > 0) {
-		const ids = changed.flatMap((p) => manifest[p.slug].chunkIds || []);
-		await deleteVectorsByIds(ids);
-	}
-
 	const toProcess = [...added, ...changed];
 	if (toProcess.length > 0) {
 		const chunkMap = new Map(toProcess.map((p) => [p.slug, buildChunksForPost(p)]));
 		const newChunks = [...chunkMap.values()].flat();
-		const processed = await syncChunks(newChunks);
+		const result = await syncChunks(newChunks);
 
 		for (const post of toProcess) {
-			manifest[post.slug] = { hash: post.hash, chunkIds: chunkMap.get(post.slug).map((c) => c.id) };
+			const postChunks = chunkMap.get(post.slug);
+			const newChunkIds = postChunks.map((chunk) => chunk.id);
+			const complete = newChunkIds.every((id) => result.successfulIds.has(id));
+			if (!complete) {
+				console.error(`❌ ${post.slug} 同步不完整，保留旧 manifest 以便下次重试`);
+				continue;
+			}
+
+			const previousIds = manifest[post.slug]?.chunkIds || [];
+			const currentIds = new Set(newChunkIds);
+			const staleIds = previousIds.filter((id) => !currentIds.has(id));
+			if (staleIds.length > 0) await deleteVectorsByIds(staleIds);
+
+			manifest[post.slug] = { hash: post.hash, chunkIds: newChunkIds };
 		}
-		console.log(`增量更新完成，新增/更新 ${processed} 个向量`);
+		console.log(
+			`增量更新完成，成功 ${result.uploaded} 个，失败 ${result.failedIds.size} 个向量`,
+		);
 	}
 
 	saveManifest(manifest);

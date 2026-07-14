@@ -50,7 +50,7 @@ export async function GET(context: APIContext): Promise<Response> {
 			}),
 		});
 	}
-	return rss({
+	const response = await rss({
 		title: siteConfig.title,
 		description: siteConfig.subtitle || "No description",
 		site: context.site ?? "https://firefly.cuteleaf.cn",
@@ -59,5 +59,15 @@ export async function GET(context: APIContext): Promise<Response> {
 		<templateThemeUrl>https://github.com/CuteLeaf/Firefly</templateThemeUrl>
 		<lastBuildDate>${formatDateI18nWithTime(new Date())}</lastBuildDate>`,
 		items: feedItems,
+	});
+	const headers = new Headers(response.headers);
+	headers.set(
+		"Cache-Control",
+		"public, max-age=3600, stale-while-revalidate=86400",
+	);
+	return new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers,
 	});
 }

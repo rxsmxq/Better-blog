@@ -2,6 +2,7 @@
 import { onMount, tick } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import { aiSearchConfig } from "@/config";
+import "@/styles/components/ai-search.css";
 
 interface Message {
 	role: "user" | "assistant";
@@ -18,6 +19,8 @@ interface SessionMeta {
 
 const STORAGE_SESSIONS_KEY = "ai-chat:sessions";
 const STORAGE_SESSION_PREFIX = "ai-chat:session:";
+const STORAGE_VERSION = 1;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_SESSIONS = 20;
 
 const SUGGESTIONS = ["博客的技术栈是什么？", "介绍一下自己"];
@@ -34,6 +37,13 @@ let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 let sessionId = $state("");
 let sessionList = $state<SessionMeta[]>([]);
 let showSessionList = $state(false);
+let scrollFrame: number | null = null;
+
+interface StoredValue<T> {
+	version: number;
+	expiresAt: number;
+	data: T;
+}
 
 const TEXTAREA_MIN_HEIGHT = 128;
 const TEXTAREA_MAX_HEIGHT = 256;
@@ -67,7 +77,7 @@ function startResize(e: MouseEvent | TouchEvent) {
 }
 
 function generateSessionId(): string {
-	return `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+	return `sess_${crypto.randomUUID()}`;
 }
 
 function getSessionTitle(msgs: Message[]): string {
@@ -79,17 +89,50 @@ function getSessionTitle(msgs: Message[]): string {
 }
 
 function loadSessionListFromStorage(): SessionMeta[] {
-	try {
-		const raw = localStorage.getItem(STORAGE_SESSIONS_KEY);
-		return raw ? JSON.parse(raw) : [];
-	} catch {
-		return [];
-	}
+	const list = readStoredValue<SessionMeta[]>(STORAGE_SESSIONS_KEY);
+	return Array.isArray(list)
+		? list.filter(
+				(item) =>
+					item &&
+					typeof item.id === "string" &&
+					typeof item.title === "string" &&
+					typeof item.updatedAt === "number",
+			)
+		: [];
 }
 
 function saveSessionListToStorage(list: SessionMeta[]) {
+	writeStoredValue(STORAGE_SESSIONS_KEY, list);
+}
+
+function readStoredValue<T>(key: string): T | null {
 	try {
-		localStorage.setItem(STORAGE_SESSIONS_KEY, JSON.stringify(list));
+		const raw = localStorage.getItem(key);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as StoredValue<T>;
+		if (
+			parsed.version !== STORAGE_VERSION ||
+			typeof parsed.expiresAt !== "number" ||
+			parsed.expiresAt <= Date.now()
+		) {
+			localStorage.removeItem(key);
+			return null;
+		}
+		return parsed.data;
+	} catch {
+		localStorage.removeItem(key);
+		return null;
+	}
+}
+
+function writeStoredValue<T>(key: string, data: T): void {
+	try {
+		const value: StoredValue<T> = {
+			version: STORAGE_VERSION,
+			expiresAt: Date.now() + SESSION_TTL_MS,
+			data,
+		};
+		localStorage.setItem(key, JSON.stringify(value));
 	} catch {}
 }
 
@@ -97,10 +140,7 @@ function saveCurrentSession() {
 	if (!sessionId || messages.length === 0) return;
 	if (messages.some((m) => m.streaming)) return;
 	try {
-		localStorage.setItem(
-			STORAGE_SESSION_PREFIX + sessionId,
-			JSON.stringify(messages),
-		);
+		writeStoredValue(STORAGE_SESSION_PREFIX + sessionId, messages);
 		const existing = sessionList.find((s) => s.id === sessionId);
 		if (existing) {
 			existing.title = getSessionTitle(messages);
@@ -126,12 +166,15 @@ function saveCurrentSession() {
 }
 
 function loadSessionMessages(id: string): Message[] {
-	try {
-		const raw = localStorage.getItem(STORAGE_SESSION_PREFIX + id);
-		return raw ? JSON.parse(raw) : [];
-	} catch {
-		return [];
-	}
+	const stored = readStoredValue<Message[]>(STORAGE_SESSION_PREFIX + id);
+	return Array.isArray(stored)
+		? stored.filter(
+				(message) =>
+					message &&
+					(message.role === "user" || message.role === "assistant") &&
+					typeof message.content === "string",
+			)
+		: [];
 }
 
 function deleteSession(id: string) {
@@ -150,6 +193,25 @@ function deleteSession(id: string) {
 
 function startNewSession() {
 	saveCurrentSession();
+	sessionId = generateSessionId();
+	messages = [];
+	showSessionList = false;
+}
+
+function clearAllSessions() {
+	stop();
+	try {
+		for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+			const key = localStorage.key(index);
+			if (
+				key === STORAGE_SESSIONS_KEY ||
+				key?.startsWith(STORAGE_SESSION_PREFIX)
+			) {
+				localStorage.removeItem(key);
+			}
+		}
+	} catch {}
+	sessionList = [];
 	sessionId = generateSessionId();
 	messages = [];
 	showSessionList = false;
@@ -192,15 +254,15 @@ function close() {
 
 function scrollToBottom() {
 	tick().then(() => {
-		if (messagesEl) {
-			requestAnimationFrame(() => {
-				messagesEl.scrollTo({
-					top: messagesEl.scrollHeight,
-					left: 0,
-					behavior: "auto",
-				});
+		if (!messagesEl || scrollFrame !== null) return;
+		scrollFrame = requestAnimationFrame(() => {
+			scrollFrame = null;
+			messagesEl.scrollTo({
+				top: messagesEl.scrollHeight,
+				left: 0,
+				behavior: "auto",
 			});
-		}
+		});
 	});
 }
 
@@ -234,7 +296,7 @@ async function send(text?: string) {
 	const q = (text || inputVal).trim();
 	if (!q || isLoading) return;
 
-	const MAX_INPUT_LEN = 2000;
+	const MAX_INPUT_LEN = 1000;
 	if (q.length > MAX_INPUT_LEN) {
 		messages = [
 			...messages,
@@ -260,13 +322,35 @@ async function send(text?: string) {
 		{ role: "assistant", content: "", streaming: true, refs: [] },
 	];
 	scrollToBottom();
+	let pendingText = "";
+	let pendingRefs: Message["refs"] | null = null;
+	let flushTimer: ReturnType<typeof setTimeout> | null = null;
+	const flushStreamUpdate = () => {
+		if (flushTimer) {
+			clearTimeout(flushTimer);
+			flushTimer = null;
+		}
+		if (!pendingText && !pendingRefs) return;
+		if (pendingText) {
+			messages[aiIdx].content += pendingText;
+			pendingText = "";
+		}
+		if (pendingRefs) {
+			messages[aiIdx].refs = pendingRefs;
+			pendingRefs = null;
+		}
+		messages = [...messages];
+		scrollToBottom();
+	};
+	const scheduleStreamUpdate = () => {
+		if (!flushTimer) flushTimer = setTimeout(flushStreamUpdate, 80);
+	};
 
 	try {
 		const history = messages
-			.slice(0, -1)
+			.slice(0, -2)
 			.slice(-6)
 			.map((m) => ({ role: m.role, content: m.content }));
-
 		const res = await fetch("/api/ai-chat", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -301,32 +385,45 @@ async function send(text?: string) {
 				if (!line.startsWith("data: ")) continue;
 				const json = line.slice(6);
 				try {
-					const data = JSON.parse(json);
+					const data: unknown = JSON.parse(json);
+					if (!data || typeof data !== "object") continue;
+					const type = Reflect.get(data, "type");
 
-					if (data.type === "chunk") {
-						messages[aiIdx].content += data.text;
-						messages = [...messages];
-						scrollToBottom();
-					} else if (data.type === "refs") {
-						messages[aiIdx].refs = data.articles;
-						messages = [...messages];
-						scrollToBottom();
-					} else if (data.type === "error") {
-						messages[aiIdx].content += `\n\n> 错误：${data.error}`;
-						messages = [...messages];
-					} else if (data.type === "done") {
-						// 流结束
+					if (type === "chunk") {
+						const chunk = Reflect.get(data, "text");
+						if (typeof chunk === "string") {
+							pendingText += chunk;
+							scheduleStreamUpdate();
+						}
+					} else if (type === "refs") {
+						const refs = Reflect.get(data, "articles");
+						if (Array.isArray(refs)) {
+							pendingRefs = refs as Message["refs"];
+							scheduleStreamUpdate();
+						}
+					} else if (type === "error") {
+						const errorText = Reflect.get(data, "error");
+						pendingText += `\n\n> 错误：${typeof errorText === "string" ? errorText : "响应中断"}`;
+						flushStreamUpdate();
+					} else if (type === "done") {
+						flushStreamUpdate();
 					}
 				} catch {
 					// 忽略解析错误
 				}
 			}
 		}
+		flushStreamUpdate();
 	} catch (err: unknown) {
 		const e = err instanceof Error ? err : new Error(String(err));
 		if (e.name === "AbortError") {
+			flushStreamUpdate();
 			messages[aiIdx].content += "\n\n> *(已取消)*";
 		} else {
+			if (flushTimer) clearTimeout(flushTimer);
+			flushTimer = null;
+			pendingText = "";
+			pendingRefs = null;
 			console.error("AI chat error:", e);
 			if (/429|insufficient_quota|quota/i.test(e.message)) {
 				messages[aiIdx].content =
@@ -337,6 +434,7 @@ async function send(text?: string) {
 		}
 		messages = [...messages];
 	} finally {
+		flushStreamUpdate();
 		messages[aiIdx].streaming = false;
 		messages = [...messages];
 		isLoading = false;
@@ -382,6 +480,7 @@ onMount(() => {
 	return () => {
 		saveCurrentSession();
 		window.removeEventListener("toggle-ai-search", toggleHandler);
+		if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
 	};
 });
 </script>
@@ -410,6 +509,11 @@ onMount(() => {
 							title="历史会话"
 						>
 							<Icon icon="material-symbols:history" />
+						</button>
+					{/if}
+					{#if sessionList.length > 0 || messages.length > 0}
+						<button class="ai-icon-btn" onclick={clearAllSessions} title="清空全部会话">
+							<Icon icon="material-symbols:delete-sweep-outline" />
 						</button>
 					{/if}
 					<button class="ai-icon-btn" onclick={startNewSession} title="新建会话">
@@ -498,11 +602,11 @@ onMount(() => {
 										<path class="ai-loader__line" d="m16.2 7.8 2.9-2.9" />
 										<path class="ai-loader__line" d="M12 2v4" />
 									</svg>
+								{:else if msg.streaming}
+									<span class="ai-msg__text ai-msg__text--streaming">{msg.content}</span>
+									<span class="ai-cursor"></span>
 								{:else}
 									<span class="ai-msg__text">{@html renderSimpleMd(msg.content)}</span>
-									{#if msg.streaming}
-										<span class="ai-cursor"></span>
-									{/if}
 								{/if}
 								{#if msg.role === "assistant" && msg.refs && msg.refs.length > 0}
 									<div class="ai-refs">
@@ -586,6 +690,9 @@ onMount(() => {
 							</button>
 						{/if}
 					</div>
+					<p class="ai-input-area__privacy">
+						问题和最近 6 条对话会发送至 ModelScope 或 Cloudflare Workers AI；请勿提交密码、Token 或个人敏感信息。本机会话保存 7 天。
+					</p>
 				</div>
 			</div>
 		</div>

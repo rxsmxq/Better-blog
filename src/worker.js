@@ -1,5 +1,43 @@
-import { handleAIChat } from "./workers/ai-chat.js";
+import { handleAIChat } from "./workers/ai-chat.ts";
 import { handleGuestbook } from "./workers/guestbook.js";
+
+export { RateLimiter } from "./workers/rate-limiter.ts";
+
+const STATIC_SECURITY_HEADERS = {
+	"Content-Security-Policy-Report-Only": [
+		"default-src 'self'",
+		"base-uri 'self'",
+		"object-src 'none'",
+		"frame-ancestors 'self'",
+		"form-action 'self' https:",
+		"img-src 'self' data: blob: https:",
+		"font-src 'self' data: https:",
+		"style-src 'self' 'unsafe-inline' https:",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+		"connect-src 'self' https: wss:",
+		"media-src 'self' blob: https:",
+		"frame-src https:",
+		"worker-src 'self' blob:",
+	].join("; "),
+	"Permissions-Policy":
+		"camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
+	"Referrer-Policy": "strict-origin-when-cross-origin",
+	"Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+	"X-Content-Type-Options": "nosniff",
+	"X-Frame-Options": "SAMEORIGIN",
+};
+
+function withStaticSecurityHeaders(response) {
+	const headers = new Headers(response.headers);
+	for (const [name, value] of Object.entries(STATIC_SECURITY_HEADERS)) {
+		headers.set(name, value);
+	}
+	return new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers,
+	});
+}
 
 /** ASSETS 不可用时的兜底 HTML，避免纯文本 "Not Found" */
 function plainNotFound() {
@@ -37,7 +75,7 @@ function plainNotFound() {
 }
 
 export default {
-	async fetch(request, env) {
+	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
 
 		if (url.pathname.startsWith("/api/guestbook")) {
@@ -45,15 +83,15 @@ export default {
 		}
 
 		if (url.pathname === "/api/ai-chat") {
-			return handleAIChat(request, env);
+			return handleAIChat(request, env, ctx);
 		}
 
 		// 静态资源：html_handling / not_found_handling 由 ASSETS binding 处理
 		// not_found_handling = "404-page" 时未命中会返回 dist/404.html
 		if (env.ASSETS) {
-			return env.ASSETS.fetch(request);
+			return withStaticSecurityHeaders(await env.ASSETS.fetch(request));
 		}
 
-		return plainNotFound();
+		return withStaticSecurityHeaders(plainNotFound());
 	},
 };

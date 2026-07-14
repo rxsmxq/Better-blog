@@ -76,7 +76,7 @@ export default defineConfig({
 			cache: true,
 			preload: true,
 			accessibility: true,
-			updateHead: false,
+			updateHead: true,
 			updateBodyClass: false,
 			globalInstance: true,
 			resolveUrl: (url) => url,
@@ -266,6 +266,11 @@ export default defineConfig({
 				drop: ["console", "debugger"],
 			},
 			rollupOptions: {
+				// @astrojs/mdx@6.0.3 在 dist/satteri/ 中静态引用了 satteri 与
+				// @astrojs/markdown-satteri（均为其 devDependencies，未随包发布）。
+				// 仅在使用 Sätteri 处理器时才会动态加载，本项目使用默认 unified 处理器，
+				// 故将其标记为 external 以避免 Rollup 预解析失败。
+				external: ["satteri", "@astrojs/markdown-satteri"],
 				output: {
 					manualChunks(id) {
 						if (id.includes("node_modules")) {
@@ -298,7 +303,7 @@ export default defineConfig({
 				},
 			},
 			// CSS 优化
-			cssCodeSplit: false,
+			cssCodeSplit: true,
 			cssMinify: "esbuild",
 			assetsInlineLimit: 4096,
 		},

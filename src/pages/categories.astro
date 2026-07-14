@@ -4,6 +4,7 @@ import TagGraph from "@components/widget/TagGraph.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import PageTitle from "@/components/common/PageTitle.astro";
 import { getCategoryList, getTagGraphData } from "@/utils/content-utils";
+import "@/styles/pages/categories.css";
 
 const categories = await getCategoryList();
 const tagGraph = await getTagGraphData();
