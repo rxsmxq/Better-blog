@@ -16,6 +16,11 @@ PC端
 
 <img alt="博客预览" src="./docs/images/image.webp" />
 
+新能测试
+
+<img alt="博客预览移动端" src="./docs/images/image-2.webp" />
+
+
 
 ## 项目概述
 

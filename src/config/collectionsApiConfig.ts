@@ -76,6 +76,14 @@ export const collectionsApiConfig: CollectionsApiConfig = {
 					icon: favicon("patorjk.com"),
 					enabled: true,
 				},
+				{
+					name: "设备展示 | Fireship",
+					url: "https://fireship.dev/",
+					description:
+						"用于生成设备展示效果的在线工具，方便快速制作产品截图与演示。",
+					icon: favicon("fireship.dev"),
+					enabled: true,
+				},
 			],
 		},
 		{
