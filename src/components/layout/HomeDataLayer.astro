@@ -84,7 +84,7 @@ const statsShareId = umamiConfig?.shareId ?? "";
 							<span class="guide-rotator__meta">{post.data.category || "未分类"} / {formatDateI18n(post.data.published)}</span>
 							<div class="guide-rotator__title-row">
 								<a class="guide-rotator__article-link" href={getPostUrlBySlug(post.id)}><strong>{post.data.title}</strong></a>
-								<button class="guide-card__article-action" type="button" data-guide-next aria-label="切换下一篇置顶文章" title="切换置顶文章"><Icon name="material-symbols:swap-vert-rounded" is:inline /></button>
+								<button class="guide-card__article-action" type="button" data-guide-next aria-label="切换下一篇置顶文章" title="切换下一篇置顶文章"><Icon name="material-symbols:arrow-forward-rounded" is:inline /></button>
 							</div>
 							<span>{post.data.description || "打开这篇文章继续阅读。"}</span>
 						</article>
@@ -107,7 +107,7 @@ const statsShareId = umamiConfig?.shareId ?? "";
 							<span class="guide-rotator__meta">{post.data.category || "未分类"} / {formatDateI18n(post.data.published)}</span>
 							<div class="guide-rotator__title-row">
 								<a class="guide-rotator__article-link" href={getPostUrlBySlug(post.id)}><strong>{post.data.title}</strong></a>
-								<a class="guide-card__article-action" href={getPostUrlBySlug(post.id)} aria-label={`打开文章：${post.data.title}`} title="打开当前文章"><Icon name="material-symbols:arrow-outward-rounded" is:inline /></a>
+								<a class="guide-card__article-action" href={getPostUrlBySlug(post.id)} aria-label={`打开文章：${post.data.title}`} title="打开当前文章"><Icon name="material-symbols:arrow-forward-rounded" is:inline /></a>
 							</div>
 						</article>
 					)) : <p class="guide-card__detail">暂无文章内容</p>}
@@ -275,8 +275,6 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					y: entryY,
 					scale: 0.56,
 					rotation,
-					filter: "blur(10px)",
-					clipPath: "inset(12% round 0.4rem)",
 					pointerEvents: "none",
 					transformOrigin: "50% 50%",
 				});
@@ -313,20 +311,16 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					y: (index) => blocks[index]?.collapseY ?? 0,
 					scale: 0.82,
 					rotation: 0,
-					filter: "blur(3px)",
-					clipPath: "inset(5% round 0.3rem)",
-					duration: 0.86,
-					stagger: 0.075,
+					duration: 0.34,
+					stagger: 0.027,
 					ease: "expo.inOut",
 				}, 0.5)
 				.to(blocks.map(({ element }) => element), {
 					x: 0,
 					y: 0,
 					scale: 1,
-					filter: "blur(0px)",
-					clipPath: "inset(0% round 0rem)",
-					duration: 1.18,
-					stagger: 0.07,
+					duration: 0.8,
+					stagger: 0.05,
 					ease: "expo.out",
 				}, "+=0.18");
 		};

@@ -266,46 +266,42 @@
 }
 
 .guide-card__article-action {
-	display: inline-grid;
-	place-items: center;
-	width: 2.15rem;
-	height: 2.15rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	flex: 0 0 2.75rem;
+	width: 2.75rem;
+	height: 2.75rem;
 	margin: 0;
 	padding: 0;
-	border: 2px solid var(--guide-fg);
-	border-radius: 50%;
-	background: var(--guide-fg);
-	color: var(--guide-bg);
-	font-size: 1.1rem;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--guide-fg);
+	font-size: 1.45rem;
 	line-height: 1;
 	text-decoration: none;
 	opacity: 0;
-	transform: translateX(-0.45rem) scale(0.9);
+	transform: translateX(-0.25rem);
 	pointer-events: none;
 	cursor: pointer;
-	transition: opacity 180ms ease, transform 180ms ease, background-color 180ms ease, color 180ms ease;
+	transition: opacity 180ms ease, transform 180ms ease, color 180ms ease;
 }
 
-.guide-card--latest .guide-card__article-action {
-	margin-left: auto;
-	transform: translateX(0.45rem) scale(0.9);
-}
-
-.guide-card--article:hover .guide-rotator__title-row,
-.guide-card--article:focus-within .guide-rotator__title-row {
+.guide-rotator__title-row:hover,
+.guide-rotator__title-row:focus-within {
 	transform: translateY(-0.3rem);
 }
 
-.guide-card--article:hover .guide-card__article-action,
-.guide-card--article:focus-within .guide-card__article-action {
+.guide-rotator__title-row:hover .guide-card__article-action,
+.guide-rotator__title-row:focus-within .guide-card__article-action {
 	opacity: 1;
-	transform: translateX(0) scale(1);
+	transform: translateX(0);
 	pointer-events: auto;
 }
 
 .guide-card__article-action:hover {
-	background: var(--guide-bg);
-	color: var(--guide-fg);
+	color: color-mix(in srgb, var(--guide-fg) 58%, var(--guide-accent));
 }
 
 .guide-card--article .guide-rotator__slides {
@@ -381,18 +377,25 @@
 .guide-rotator__title-row {
 	display: flex;
 	align-items: center;
-	gap: 0.65rem;
+	gap: 0.15rem;
+	width: 100%;
 	transition: transform 200ms ease;
 }
 
 .guide-rotator__article-link {
+	flex: 0 1 auto;
+	max-width: calc(100% - 2.9rem);
 	min-width: 0;
+	overflow: hidden;
 	color: inherit;
 	text-decoration: none;
 }
 
 .guide-rotator__article-link strong {
 	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .guide-rotator__slide > span:last-child {
