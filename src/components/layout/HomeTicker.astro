@@ -2,53 +2,115 @@
 import { announcementConfig } from "@/config";
 
 const items = [...announcementConfig.items].sort((a, b) => b.sort - a.sort);
-
-// 构建单条展示文本：仅标签 + 内容
-const tickerTexts = items.map((item) => `[${item.tag}] ${item.content}`);
-
-// 多条时合并为一条长文本，用 × 分隔
-const tickerContent = tickerTexts.join(" × ");
 ---
 
 {
 	items.length > 0 && (
-		<section class="home-ticker" aria-label="公告跑马灯" id="home-ticker">
+		<home-ticker
+			class="home-ticker"
+			aria-label="公告跑马灯"
+			data-speed="100"
+			data-ready="false"
+		>
 			<div class="home-ticker__inner">
-				<div class="home-ticker__track" id="home-ticker-track">
-					{Array.from({ length: 8 }).map((_, i) => (
-						<>
-							<span class="home-ticker__text">{tickerContent}</span>
-							{i < 7 && (
-								<span class="home-ticker__sep" aria-hidden="true">
-									×
+				<div class="home-ticker__track">
+					<div class="home-ticker__group">
+						<div class="home-ticker__sequence" data-ticker-source>
+							{items.map((item) => (
+								<span class="home-ticker__item">
+									<span class="home-ticker__text">[{item.tag}] {item.content}</span>
+									<span class="home-ticker__sep" aria-hidden="true">×</span>
 								</span>
-							)}
-						</>
-					))}
+							))}
+						</div>
+					</div>
 				</div>
 			</div>
-		</section>
+		</home-ticker>
 	)
 }
 
 <script>
-	function initHomeTicker() {
-		const track = document.getElementById("home-ticker-track") as HTMLElement | null;
-		if (!track) return;
+	class HomeTicker extends HTMLElement {
+		private track: HTMLElement | null = null;
+		private inner: HTMLElement | null = null;
+		private sourceSequence: HTMLElement | null = null;
+		private resizeObserver: ResizeObserver | null = null;
+		private layoutFrame = 0;
 
-		// 固定滚动速率：100 像素/秒
-		const SPEED = 100;
+		connectedCallback() {
+			this.track = this.querySelector<HTMLElement>(".home-ticker__track");
+			this.inner = this.querySelector<HTMLElement>(".home-ticker__inner");
 
-		// 测量轨道总宽度，计算移动 50% 所需时间
-		const trackWidth = track.scrollWidth;
-		const distance = trackWidth / 2;
-		const duration = distance / SPEED;
+			if (!this.track || !this.inner) return;
 
-		// 设置动画时长，保证无论内容多长，肉眼速度恒定
-		track.style.animationDuration = `${Math.max(duration, 4)}s`;
+			if (!this.sourceSequence) {
+				const source = this.querySelector<HTMLElement>("[data-ticker-source]");
+				if (!source) return;
+				this.sourceSequence = source.cloneNode(true) as HTMLElement;
+				this.sourceSequence.removeAttribute("data-ticker-source");
+			}
+
+			this.resizeObserver?.disconnect();
+			this.resizeObserver = new ResizeObserver(() => this.scheduleLayout());
+			this.resizeObserver.observe(this.inner);
+			this.scheduleLayout();
+
+			document.fonts?.ready.then(() => {
+				if (this.isConnected) this.scheduleLayout();
+			});
+		}
+
+		disconnectedCallback() {
+			this.resizeObserver?.disconnect();
+			this.resizeObserver = null;
+			cancelAnimationFrame(this.layoutFrame);
+		}
+
+		private scheduleLayout() {
+			cancelAnimationFrame(this.layoutFrame);
+			this.layoutFrame = requestAnimationFrame(() => this.layout());
+		}
+
+		private layout() {
+			if (!this.track || !this.inner || !this.sourceSequence) return;
+
+			this.dataset.ready = "false";
+
+			const group = document.createElement("div");
+			group.className = "home-ticker__group";
+
+			const firstSequence = this.sourceSequence.cloneNode(true) as HTMLElement;
+			group.appendChild(firstSequence);
+			this.track.replaceChildren(group);
+
+			const sequenceWidth = firstSequence.getBoundingClientRect().width;
+			if (sequenceWidth <= 0) return;
+
+			const copiesPerGroup = Math.max(
+				1,
+				Math.ceil((this.inner.clientWidth + 1) / sequenceWidth),
+			);
+
+			for (let index = 1; index < copiesPerGroup; index += 1) {
+				const repeatedSequence = this.sourceSequence.cloneNode(true) as HTMLElement;
+				repeatedSequence.setAttribute("aria-hidden", "true");
+				group.appendChild(repeatedSequence);
+			}
+
+			const duplicateGroup = group.cloneNode(true) as HTMLElement;
+			duplicateGroup.setAttribute("aria-hidden", "true");
+			this.track.appendChild(duplicateGroup);
+
+			const distance = group.getBoundingClientRect().width;
+			const configuredSpeed = Number.parseFloat(this.dataset.speed ?? "");
+			const speed = configuredSpeed > 0 ? configuredSpeed : 100;
+			this.style.setProperty("--home-ticker-duration", `${distance / speed}s`);
+			this.dataset.ready = "true";
+		}
 	}
 
-	// 首次加载 + Swup 每次导航后
-	initHomeTicker();
-	document.addEventListener("astro:page-load", initHomeTicker);
+	if (!customElements.get("home-ticker")) {
+		customElements.define("home-ticker", HomeTicker);
+	}
 </script>
