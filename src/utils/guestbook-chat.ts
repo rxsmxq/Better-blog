@@ -2,9 +2,12 @@ import type { WalineComment, WalineRootComment } from "@waline/api";
 import type {
 	GuestbookChatMessage,
 	GuestbookEmojiPack,
+	GuestbookImageAttachment,
 } from "@/types/guestbook-chat";
 
 const REPLY_MARKER = /^<!--guestbook-reply:(\d+):([^>]*)-->\s*/u;
+const MARKDOWN_IMAGE = /!\[[^\]]*\]\([^\s)]+(?:\s+"[^"]*")?\)/gu;
+export const WALINE_INLINE_IMAGE_SIZE_LIMIT = 128_000;
 
 export function hasGuestbookReplyMarker(value: string): boolean {
 	return REPLY_MARKER.test(value);
@@ -22,6 +25,13 @@ function buildEmojiAssetURL(
 	if (/^https?:\/\//u.test(item)) return item;
 	const filename = item.endsWith(`.${type}`) ? item : `${item}.${type}`;
 	return new URL(filename, `${folder.replace(/\/+$/u, "")}/`).href;
+}
+
+function applyEmojiAssetPrefix(item: string, prefix: string): string {
+	if (/^https?:\/\//u.test(item) || !prefix || item.startsWith(prefix)) {
+		return item;
+	}
+	return `${prefix}${item}`;
 }
 
 async function loadGuestbookEmojiPack(
@@ -54,10 +64,18 @@ async function loadGuestbookEmojiPack(
 			typeof manifest.name === "string" && manifest.name
 				? manifest.name
 				: "Waline",
-		icon: buildEmojiAssetURL(folder, iconName, type),
+		icon: buildEmojiAssetURL(
+			folder,
+			applyEmojiAssetPrefix(iconName, prefix),
+			type,
+		),
 		items: items.map((item) => ({
 			key: `${prefix}${item}`,
-			url: buildEmojiAssetURL(folder, item, type),
+			url: buildEmojiAssetURL(
+				folder,
+				applyEmojiAssetPrefix(item, prefix),
+				type,
+			),
 		})),
 	};
 }
@@ -79,7 +97,22 @@ export async function uploadGuestbookImage(
 	file: File,
 	uploadURL: string,
 ): Promise<string> {
-	if (!uploadURL) throw new Error("图片上传服务未配置");
+	if (!uploadURL) {
+		if (file.size > WALINE_INLINE_IMAGE_SIZE_LIMIT) {
+			throw new Error("Waline 原生图片不能超过 128 KB");
+		}
+		return await new Promise<string>((resolve, reject) => {
+			const reader = new FileReader();
+			reader.addEventListener("load", () => {
+				if (typeof reader.result === "string") resolve(reader.result);
+				else reject(new Error("图片读取失败，请重新选择"));
+			});
+			reader.addEventListener("error", () =>
+				reject(new Error("图片读取失败，请重新选择")),
+			);
+			reader.readAsDataURL(file);
+		});
+	}
 	const formData = new FormData();
 	formData.append("file", file);
 
@@ -106,6 +139,26 @@ export async function uploadGuestbookImage(
 	}
 
 	return url;
+}
+
+export function appendGuestbookImage(
+	content: string,
+	attachment?: GuestbookImageAttachment | null,
+): string {
+	if (!attachment) return content;
+	const alt = attachment.name.replace(/[[\]]/gu, "").trim() || "图片";
+	const image = `![${alt}](${attachment.url})`;
+	return content ? `${content}\n\n${image}` : image;
+}
+
+export function hasGuestbookImage(content: string): boolean {
+	MARKDOWN_IMAGE.lastIndex = 0;
+	return MARKDOWN_IMAGE.test(content);
+}
+
+export function getGuestbookTextLength(content: string): number {
+	MARKDOWN_IMAGE.lastIndex = 0;
+	return Array.from(content.replace(MARKDOWN_IMAGE, "").trim()).length;
 }
 
 export function normalizeGuestbookTimestamp(value: number): number {
@@ -170,6 +223,7 @@ export function normalizeGuestbookComment(
 	return {
 		id: String(comment.objectId),
 		objectId: comment.objectId,
+		userId: comment.user_id,
 		nick: comment.nick || "匿名访客",
 		avatar: comment.avatar || "",
 		link: normalizeGuestbookLink(comment.link),
@@ -222,6 +276,15 @@ export function buildGuestbookMessageBody(
 	if (!target?.objectId) return content;
 	const marker = `<!--guestbook-reply:${target.objectId}:${encodeURIComponent(target.nick)}-->`;
 	return `${marker}\n@${target.nick} ${content}`;
+}
+
+export function buildGuestbookEditedMessageBody(
+	content: string,
+	message: GuestbookChatMessage,
+): string {
+	if (!message.replyToId) return content;
+	const marker = `<!--guestbook-reply:${message.replyToId}:${encodeURIComponent(message.replyToNick || "访客")}-->`;
+	return `${marker}\n${content}`;
 }
 
 export function getGuestbookErrorMessage(error: unknown): string {

@@ -23,9 +23,15 @@ export interface GuestbookEmojiPack {
 	items: GuestbookEmojiItem[];
 }
 
+export interface GuestbookImageAttachment {
+	name: string;
+	url: string;
+}
+
 export interface GuestbookChatMessage {
 	id: string;
 	objectId?: number;
+	userId?: number;
 	nick: string;
 	avatar: string;
 	link?: string;

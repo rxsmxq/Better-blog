@@ -2,15 +2,17 @@
 const skeletonRows = Array.from({ length: 6 });
 ---
 
-<section class="guestbook-chat guestbook-chat--fallback" aria-label="留言聊天室" aria-busy="true">
+<section class="guestbook-chat guestbook-chat--fallback" aria-label="留言板" aria-busy="true">
 	<header class="guestbook-chat__header">
 		<div class="guestbook-chat__channel">
-			<div class="guestbook-chat__channel-mark" aria-hidden="true">GB</div>
 			<div>
-				<h2>留言聊天室</h2>
-				<div class="guestbook-chat__status">
-					<span></span>
-					正在连接留言服务
+				<div class="guestbook-chat__title-row">
+					<h2>留言板</h2>
+					<span>· -- 条留言</span>
+					<div class="guestbook-chat__status">
+						<span></span>
+						正在连接留言服务
+					</div>
 				</div>
 			</div>
 		</div>
@@ -39,6 +41,7 @@ const skeletonRows = Array.from({ length: 6 });
 					<div><span></span></div>
 				</div>
 				<div class="guestbook-chat__fallback-editor">
+					<div class="guestbook-chat__fallback-resize-handle"></div>
 					<div class="guestbook-chat__fallback-textarea"></div>
 					<div class="guestbook-chat__fallback-toolbar">
 						<span class="guestbook-chat__fallback-tool"></span>

@@ -7,12 +7,14 @@ import type {
 	GuestbookChatMessage,
 	GuestbookEmojiItem,
 	GuestbookEmojiPack,
+	GuestbookImageAttachment,
 	GuestbookProfile,
 } from "@/types/guestbook-chat";
 import {
 	getGuestbookInitials,
 	loadGuestbookEmojiPacks,
 	uploadGuestbookImage,
+	WALINE_INLINE_IMAGE_SIZE_LIMIT,
 } from "@/utils/guestbook-chat";
 
 interface Props {
@@ -30,7 +32,7 @@ interface Props {
 	onReplyCancel: () => void;
 	onLogin: () => void;
 	onLogout: () => void;
-	onSend: () => void;
+	onSend: (attachment?: GuestbookImageAttachment) => Promise<boolean>;
 	onToolError: (message: string) => void;
 }
 
@@ -54,9 +56,20 @@ let {
 }: Props = $props();
 
 const MAX_DRAFT_LENGTH = 300;
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_REMOTE_IMAGE_SIZE = 5 * 1024 * 1024;
+const MIN_MESSAGE_PANE_HEIGHT = 128;
+const RESIZE_KEYBOARD_STEP = 16;
 const emojiSources = commentConfig.waline?.emoji ?? [];
 const imageUploadURL = commentConfig.waline?.imageUploadURL ?? "";
+const maxImageSize = imageUploadURL
+	? MAX_REMOTE_IMAGE_SIZE
+	: WALINE_INLINE_IMAGE_SIZE_LIMIT;
+const supportedImageTypes = new Set([
+	"image/png",
+	"image/jpeg",
+	"image/gif",
+	"image/webp",
+]);
 
 let textarea = $state<HTMLTextAreaElement | null>(null);
 let emojiTrigger = $state<HTMLButtonElement | null>(null);
@@ -66,9 +79,14 @@ let showEmojiPicker = $state(false);
 let isComposing = $state(false);
 let isLoadingEmojis = $state(false);
 let isUploadingImage = $state(false);
+let pendingImage = $state<GuestbookImageAttachment | null>(null);
 let emojiError = $state("");
 let emojiPacks = $state<GuestbookEmojiPack[]>([]);
 let activeEmojiPackIndex = $state(0);
+let manualTextareaHeight = $state<number | null>(null);
+let resizePointerId = $state<number | null>(null);
+let resizeStartY = 0;
+let resizeStartHeight = 0;
 
 const inputDisabled = $derived(
 	isOffline || (loginMode === "force" && !authUser),
@@ -82,8 +100,103 @@ function updateProfile(field: keyof GuestbookProfile, value: string) {
 
 function resizeTextarea() {
 	if (!textarea) return;
+	if (manualTextareaHeight !== null) return;
 	textarea.style.height = "auto";
 	textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
+}
+
+function getTextareaHeightBounds() {
+	if (!textarea) return null;
+	const styles = getComputedStyle(textarea);
+	const minHeight = Number.parseFloat(styles.minHeight);
+	const cssMaxHeight = Number.parseFloat(styles.maxHeight);
+	const conversation = textarea.closest<HTMLElement>(
+		".guestbook-chat__conversation",
+	);
+	const composer = textarea.closest<HTMLElement>(
+		".guestbook-chat__composer-area",
+	);
+	const currentHeight = textarea.getBoundingClientRect().height;
+	const fixedComposerHeight = composer
+		? composer.getBoundingClientRect().height - currentHeight
+		: 0;
+	const availableHeight = conversation
+		? conversation.getBoundingClientRect().height -
+			fixedComposerHeight -
+			MIN_MESSAGE_PANE_HEIGHT
+		: window.innerHeight * 0.45;
+	const configuredMax = Number.isFinite(cssMaxHeight)
+		? cssMaxHeight
+		: window.innerHeight * 0.45;
+	const minimum = Number.isFinite(minHeight) ? minHeight : 56;
+
+	return {
+		min: minimum,
+		max: Math.max(minimum, Math.min(configuredMax, availableHeight)),
+	};
+}
+
+function setTextareaHeight(height: number) {
+	if (!textarea) return;
+	const bounds = getTextareaHeightBounds();
+	if (!bounds) return;
+	const nextHeight = Math.round(
+		Math.min(bounds.max, Math.max(bounds.min, height)),
+	);
+	manualTextareaHeight = nextHeight;
+	textarea.style.height = `${nextHeight}px`;
+}
+
+function startTextareaResize(event: PointerEvent) {
+	if (!textarea || event.button !== 0) return;
+	event.preventDefault();
+	resizePointerId = event.pointerId;
+	resizeStartY = event.clientY;
+	resizeStartHeight = textarea.getBoundingClientRect().height;
+	(event.currentTarget as HTMLButtonElement).setPointerCapture(event.pointerId);
+}
+
+function moveTextareaResize(event: PointerEvent) {
+	if (resizePointerId !== event.pointerId) return;
+	setTextareaHeight(resizeStartHeight + resizeStartY - event.clientY);
+}
+
+function finishTextareaResize(event: PointerEvent) {
+	if (resizePointerId !== event.pointerId) return;
+	const handle = event.currentTarget as HTMLButtonElement;
+	if (handle.hasPointerCapture(event.pointerId)) {
+		handle.releasePointerCapture(event.pointerId);
+	}
+	resizePointerId = null;
+}
+
+function handleResizeKeydown(event: KeyboardEvent) {
+	if (
+		!textarea ||
+		!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)
+	) {
+		return;
+	}
+	event.preventDefault();
+	const bounds = getTextareaHeightBounds();
+	if (!bounds) return;
+	const currentHeight = textarea.getBoundingClientRect().height;
+	if (event.key === "Home") setTextareaHeight(bounds.min);
+	else if (event.key === "End") setTextareaHeight(bounds.max);
+	else {
+		setTextareaHeight(
+			currentHeight +
+				(event.key === "ArrowUp"
+					? RESIZE_KEYBOARD_STEP
+					: -RESIZE_KEYBOARD_STEP),
+		);
+	}
+}
+
+function handleWindowResize() {
+	if (manualTextareaHeight !== null) {
+		setTextareaHeight(manualTextareaHeight);
+	}
 }
 
 function handleInput(event: Event) {
@@ -102,7 +215,7 @@ function handleKeydown(event: KeyboardEvent) {
 		return;
 	}
 	event.preventDefault();
-	onSend();
+	void submitMessage();
 }
 
 function handleWindowKeydown(event: KeyboardEvent) {
@@ -175,17 +288,24 @@ function openImagePicker() {
 	imageInput?.click();
 }
 
+async function submitMessage() {
+	const accepted = await onSend(pendingImage ?? undefined);
+	if (accepted) pendingImage = null;
+}
+
 async function handleImageSelection(event: Event) {
 	const input = event.currentTarget as HTMLInputElement;
 	const file = input.files?.[0];
 	input.value = "";
 	if (!file) return;
-	if (!file.type.startsWith("image/")) {
-		onToolError("只能上传图片文件");
+	if (!supportedImageTypes.has(file.type)) {
+		onToolError("仅支持 PNG、JPEG、GIF 或 WebP 图片");
 		return;
 	}
-	if (file.size > MAX_IMAGE_SIZE) {
-		onToolError("图片不能超过 5 MB");
+	if (file.size > maxImageSize) {
+		onToolError(
+			imageUploadURL ? "图片不能超过 5 MB" : "Waline 原生图片不能超过 128 KB",
+		);
 		return;
 	}
 
@@ -193,11 +313,11 @@ async function handleImageSelection(event: Event) {
 	onToolError("");
 	try {
 		const url = await uploadGuestbookImage(file, imageUploadURL);
-		const alt = file.name
+		const name = file.name
 			.replace(/\.[^.]+$/u, "")
 			.replace(/[[\]]/gu, "")
 			.trim();
-		insertContent(`\n![${alt || "图片"}](${url})\n`);
+		pendingImage = { name: name || "图片", url };
 	} catch (error) {
 		onToolError(
 			error instanceof Error ? error.message : "图片上传失败，请稍后重试",
@@ -211,6 +331,7 @@ async function handleImageSelection(event: Event) {
 <svelte:window
 	onkeydown={handleWindowKeydown}
 	onpointerdown={handleWindowPointerdown}
+	onresize={handleWindowResize}
 />
 
 <footer class="guestbook-composer">
@@ -276,8 +397,21 @@ async function handleImageSelection(event: Event) {
 		</div>
 	{/if}
 
-	<div class="guestbook-composer__editor">
-
+	<div
+		class:is-resizing={resizePointerId !== null}
+		class="guestbook-composer__editor"
+	>
+		<button
+			class="guestbook-composer__resize-handle"
+			type="button"
+			onpointerdown={startTextareaResize}
+			onpointermove={moveTextareaResize}
+			onpointerup={finishTextareaResize}
+			onpointercancel={finishTextareaResize}
+			onkeydown={handleResizeKeydown}
+			aria-label="调整输入框高度"
+			title="向上拖动扩大输入框"
+		></button>
 		<textarea
 			bind:this={textarea}
 			value={draft}
@@ -293,6 +427,21 @@ async function handleImageSelection(event: Event) {
 			aria-label="聊天消息"
 			disabled={inputDisabled}
 		></textarea>
+
+		{#if pendingImage}
+			<div class="guestbook-composer__image-preview">
+				<img src={pendingImage.url} alt={pendingImage.name} />
+				<span>{pendingImage.name}</span>
+				<button
+					type="button"
+					onclick={() => (pendingImage = null)}
+					aria-label="移除待发送图片"
+					title="移除图片"
+				>
+					<X size={16} aria-hidden="true" />
+				</button>
+			</div>
+		{/if}
 
 		<div class="guestbook-composer__footer">
 			<div class="guestbook-composer__tools">
@@ -326,7 +475,7 @@ async function handleImageSelection(event: Event) {
 					bind:this={imageInput}
 					class="guestbook-composer__file-input"
 					type="file"
-					accept="image/*"
+					accept="image/png,image/jpeg,image/gif,image/webp"
 					onchange={handleImageSelection}
 					tabindex="-1"
 					aria-hidden="true"
@@ -360,7 +509,7 @@ async function handleImageSelection(event: Event) {
 				<button
 					class="guestbook-composer__send"
 					type="button"
-					onclick={onSend}
+					onclick={() => void submitMessage()}
 					disabled={inputDisabled || isSending || isUploadingImage}
 					aria-busy={isSending}
 				>

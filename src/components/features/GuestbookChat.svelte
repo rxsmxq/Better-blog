@@ -1,5 +1,11 @@
 <script lang="ts">
-import { addComment, getComment, login } from "@waline/api";
+import {
+	addComment,
+	deleteComment,
+	getComment,
+	login,
+	updateComment,
+} from "@waline/api";
 import {
 	AlertCircle,
 	Bell,
@@ -17,14 +23,19 @@ import type { GuestbookAnnouncementItem } from "@/config";
 import { commentConfig, guestbookConfig } from "@/config";
 import type {
 	GuestbookAuthUser,
+	GuestbookImageAttachment,
 	GuestbookChatMessage as GuestbookMessage,
 	GuestbookProfile,
 } from "@/types/guestbook-chat";
 import {
+	appendGuestbookImage,
+	buildGuestbookEditedMessageBody,
 	buildGuestbookMessageBody,
 	flattenGuestbookComments,
 	getGuestbookErrorMessage,
 	getGuestbookInitials,
+	getGuestbookTextLength,
+	hasGuestbookImage,
 	hasGuestbookReplyMarker,
 	isGuestbookAuthError,
 	mergeGuestbookMessages,
@@ -61,12 +72,20 @@ let loggingIn = $state(false);
 let isOffline = $state(false);
 let currentPage = $state(1);
 let totalPages = $state(0);
+let totalCount = $state(0);
 let newMessageCount = $state(0);
 let lastSyncedAt = $state<number | null>(null);
 let messageList = $state<HTMLDivElement | null>(null);
 let announcementDialog = $state<HTMLDialogElement | null>(null);
+let deleteDialog = $state<HTMLDialogElement | null>(null);
 let selectedAnnouncement = $state<GuestbookAnnouncementItem | null>(null);
 let sidebarOpen = $state(false);
+let showScrollToBottom = $state(false);
+let editingMessageId = $state<string | null>(null);
+let editDraft = $state("");
+let mutatingMessageId = $state<string | null>(null);
+let messageActionError = $state<{ id: string; message: string } | null>(null);
+let deleteTarget = $state<GuestbookMessage | null>(null);
 let pollTimer: number | undefined;
 let dataController: AbortController | null = null;
 let syncQueued = false;
@@ -97,6 +116,14 @@ const chatMembers = $derived.by(() => {
 	);
 });
 
+function canManageMessage(message: GuestbookMessage): boolean {
+	if (!authUser?.token || !message.objectId || message.localState) return false;
+	return (
+		authUser.type === "administrator" ||
+		(typeof message.userId === "number" && message.userId === authUser.objectId)
+	);
+}
+
 function handleChatKeydown(event: KeyboardEvent) {
 	if (event.key !== "Escape") return;
 	sidebarOpen = false;
@@ -113,6 +140,22 @@ async function openAnnouncement(announcement: GuestbookAnnouncementItem) {
 function closeAnnouncement() {
 	if (announcementDialog?.open) announcementDialog.close();
 	document.body.style.overflow = "";
+}
+
+function closeDeleteDialog() {
+	if (deleteTarget && mutatingMessageId === deleteTarget.id) return;
+	if (deleteDialog?.open) deleteDialog.close();
+	deleteTarget = null;
+	document.body.style.overflow = "";
+}
+
+async function requestDeleteMessage(message: GuestbookMessage) {
+	if (!canManageMessage(message)) return;
+	messageActionError = null;
+	deleteTarget = message;
+	await tick();
+	if (!deleteDialog?.open) deleteDialog?.showModal();
+	document.body.style.overflow = "hidden";
 }
 
 function readStoredValue<T>(storage: Storage, key: string): T | null {
@@ -189,21 +232,33 @@ function readAuthentication(): GuestbookAuthUser | null {
 		localStorage,
 		AUTH_STORAGE_KEY,
 	);
-	return isAuthUser(persistentUser) ? persistentUser : null;
+	if (!isAuthUser(persistentUser)) return null;
+	if (persistentUser.type === "administrator") {
+		removeStoredValue(localStorage, AUTH_STORAGE_KEY);
+		writeStoredValue(sessionStorage, AUTH_STORAGE_KEY, persistentUser);
+	}
+	return persistentUser;
 }
 
 function persistAuthentication(user: GuestbookAuthUser) {
 	removeStoredValue(localStorage, AUTH_STORAGE_KEY);
 	removeStoredValue(sessionStorage, AUTH_STORAGE_KEY);
-	writeStoredValue(
-		user.remember ? localStorage : sessionStorage,
-		AUTH_STORAGE_KEY,
-		user,
-	);
+	const storage =
+		user.type === "administrator"
+			? sessionStorage
+			: user.remember
+				? localStorage
+				: sessionStorage;
+	writeStoredValue(storage, AUTH_STORAGE_KEY, user);
 }
 
 function clearAuthentication() {
 	authUser = null;
+	editingMessageId = null;
+	editDraft = "";
+	deleteTarget = null;
+	messageActionError = null;
+	if (deleteDialog?.open) deleteDialog.close();
 	removeStoredValue(localStorage, AUTH_STORAGE_KEY);
 	removeStoredValue(sessionStorage, AUTH_STORAGE_KEY);
 }
@@ -269,6 +324,7 @@ async function loadInitial() {
 		);
 		currentPage = 1;
 		totalPages = response.totalPages;
+		totalCount = response.count;
 		lastSyncedAt = Date.now();
 		await tick();
 		scrollToBottom(false);
@@ -319,6 +375,7 @@ async function syncLatest() {
 		).length;
 		messages = mergeGuestbookMessages(messages, incoming);
 		totalPages = response.totalPages;
+		totalCount = response.count;
 		lastSyncedAt = Date.now();
 		await tick();
 
@@ -355,6 +412,7 @@ async function loadOlder() {
 		);
 		currentPage = nextPage;
 		totalPages = response.totalPages;
+		totalCount = response.count;
 		await tick();
 		messageList.scrollTop += messageList.scrollHeight - previousHeight;
 	} catch (error) {
@@ -426,12 +484,15 @@ function scrollToBottom(smooth = true) {
 		behavior: smooth && !reduceMotion ? "smooth" : "auto",
 	});
 	newMessageCount = 0;
+	showScrollToBottom = false;
 }
 
 function handleMessageScroll() {
 	if (!messageList) return;
 	if (messageList.scrollTop < 72 && hasMore) void loadOlder();
-	if (isNearBottom()) newMessageCount = 0;
+	const nearBottom = isNearBottom();
+	showScrollToBottom = !nearBottom;
+	if (nearBottom) newMessageCount = 0;
 }
 
 function formatMessageTime(value: number): string {
@@ -511,8 +572,21 @@ async function jumpToQuotedMessage(message: GuestbookMessage) {
 	window.setTimeout(() => element.classList.remove("is-highlighted"), 1600);
 }
 
-function validateComposer(): string {
-	const content = draft.trim();
+function validateMessageBody(content: string): string {
+	const textLength = getGuestbookTextLength(content);
+	if (textLength < MIN_MESSAGE_LENGTH && !hasGuestbookImage(content)) {
+		return `消息至少需要 ${MIN_MESSAGE_LENGTH} 个字符`;
+	}
+	if (textLength > MAX_MESSAGE_LENGTH) {
+		return `消息不能超过 ${MAX_MESSAGE_LENGTH} 个字符`;
+	}
+	if (hasGuestbookReplyMarker(content)) {
+		return "消息内容不能以系统引用标记开头";
+	}
+	return "";
+}
+
+function validateComposer(content: string): string {
 	if (loginMode === "force" && !authUser) return "请先登录后再发送消息";
 	if (!authUser && profile.nick.trim().length < 2) {
 		return "昵称至少需要 2 个字符";
@@ -530,24 +604,20 @@ function validateComposer(): string {
 			return "网站地址格式不正确";
 		}
 	}
-	if (content.length < MIN_MESSAGE_LENGTH) {
-		return `消息至少需要 ${MIN_MESSAGE_LENGTH} 个字符`;
-	}
-	if (content.length > MAX_MESSAGE_LENGTH) {
-		return `消息不能超过 ${MAX_MESSAGE_LENGTH} 个字符`;
-	}
-	if (hasGuestbookReplyMarker(content)) {
-		return "消息内容不能以系统引用标记开头";
-	}
-	return "";
+	return validateMessageBody(content);
 }
 
-async function sendMessage(replaceMessageId?: string) {
-	if (isSending || isOffline) return;
-	composerError = validateComposer();
-	if (composerError) return;
+async function sendMessage(
+	replaceMessageId?: string,
+	attachment?: GuestbookImageAttachment,
+	contentOverride?: string,
+): Promise<boolean> {
+	if (isSending || isOffline) return false;
+	const content =
+		contentOverride ?? appendGuestbookImage(draft.trim(), attachment);
+	composerError = validateComposer(content);
+	if (composerError) return false;
 
-	const content = draft.trim();
 	const selectedTarget = replyTarget;
 	const target = selectedTarget?.objectId ? selectedTarget : null;
 	const tempId = `local-${Date.now()}`;
@@ -597,6 +667,7 @@ async function sendMessage(replaceMessageId?: string) {
 		messages = mergeGuestbookMessages(messages, [
 			normalizeGuestbookComment(response.data),
 		]);
+		totalCount += 1;
 		initialError = "";
 		syncError = "";
 		lastSyncedAt = Date.now();
@@ -612,6 +683,7 @@ async function sendMessage(replaceMessageId?: string) {
 				: message,
 		);
 	}
+	return true;
 }
 
 async function retryMessage(message: GuestbookMessage) {
@@ -620,16 +692,125 @@ async function retryMessage(message: GuestbookMessage) {
 		: null;
 	replyTarget = target;
 	const prefix = target ? `@${target.nick} ` : "";
-	draft =
+	const content =
 		prefix && message.body.startsWith(prefix)
 			? message.body.slice(prefix.length)
 			: message.body;
-	await tick();
-	await sendMessage(message.id);
+	await sendMessage(message.id, undefined, content);
 }
 
 function discardMessage(message: GuestbookMessage) {
 	messages = messages.filter((candidate) => candidate.id !== message.id);
+}
+
+function startEditingMessage(message: GuestbookMessage) {
+	if (!canManageMessage(message) || mutatingMessageId) return;
+	messageActionError = null;
+	editingMessageId = message.id;
+	editDraft = message.body;
+}
+
+function cancelEditingMessage() {
+	if (mutatingMessageId === editingMessageId) return;
+	editingMessageId = null;
+	editDraft = "";
+	messageActionError = null;
+}
+
+async function saveEditedMessage(message: GuestbookMessage) {
+	if (
+		!authUser?.token ||
+		!message.objectId ||
+		!canManageMessage(message) ||
+		mutatingMessageId
+	) {
+		return;
+	}
+	const content = editDraft.trim();
+	const validationError = validateMessageBody(content);
+	if (validationError) {
+		messageActionError = { id: message.id, message: validationError };
+		return;
+	}
+	if (content === message.body) {
+		cancelEditingMessage();
+		return;
+	}
+
+	mutatingMessageId = message.id;
+	messageActionError = null;
+	try {
+		const response = await updateComment({
+			serverURL,
+			lang,
+			token: authUser.token,
+			objectId: message.objectId,
+			comment: {
+				comment: buildGuestbookEditedMessageBody(content, message),
+			},
+		});
+		const normalized = normalizeGuestbookComment(response.data);
+		messages = messages.map((candidate) =>
+			candidate.id === message.id
+				? { ...normalized, userId: normalized.userId ?? message.userId }
+				: candidate,
+		);
+		editingMessageId = null;
+		editDraft = "";
+		queueLatestSync();
+	} catch (error) {
+		handleAuthenticationError(error);
+		messageActionError = {
+			id: message.id,
+			message: getGuestbookErrorMessage(error) || "消息修改失败，请稍后重试",
+		};
+	} finally {
+		mutatingMessageId = null;
+	}
+}
+
+async function confirmDeleteMessage() {
+	const target = deleteTarget;
+	if (
+		!target ||
+		!authUser?.token ||
+		!target.objectId ||
+		!canManageMessage(target) ||
+		mutatingMessageId
+	) {
+		return;
+	}
+
+	mutatingMessageId = target.id;
+	messageActionError = null;
+	try {
+		await deleteComment({
+			serverURL,
+			lang,
+			token: authUser.token,
+			objectId: target.objectId,
+		});
+		messages = messages.filter((message) => message.id !== target.id);
+		totalCount = Math.max(0, totalCount - 1);
+		if (replyTarget?.id === target.id) replyTarget = null;
+		if (editingMessageId === target.id) {
+			editingMessageId = null;
+			editDraft = "";
+		}
+		mutatingMessageId = null;
+		deleteTarget = null;
+		if (deleteDialog?.open) deleteDialog.close();
+		document.body.style.overflow = "";
+		queueLatestSync();
+	} catch (error) {
+		handleAuthenticationError(error);
+		messageActionError = {
+			id: target.id,
+			message: getGuestbookErrorMessage(error) || "消息删除失败，请稍后重试",
+		};
+	} finally {
+		mutatingMessageId = null;
+	}
 }
 
 async function handleLogin() {
@@ -694,6 +875,7 @@ onMount(() => {
 		if (pollTimer) window.clearInterval(pollTimer);
 		dataController?.abort();
 		if (announcementDialog?.open) announcementDialog.close();
+		if (deleteDialog?.open) deleteDialog.close();
 		document.body.style.overflow = "";
 		document.removeEventListener("visibilitychange", handleVisibilityChange);
 		window.removeEventListener("online", handleOnline);
@@ -704,19 +886,33 @@ onMount(() => {
 
 <svelte:window onkeydown={handleChatKeydown} />
 
-<section class="guestbook-chat" aria-label="留言聊天室">
+<section class="guestbook-chat" aria-label="留言板">
 	<header class="guestbook-chat__header">
 		<div class="guestbook-chat__channel">
-			<div class="guestbook-chat__channel-mark" aria-hidden="true">GB</div>
 			<div>
-				<h2>留言聊天室</h2>
-				<div
-					class:is-failed={Boolean(syncError)}
-					class="guestbook-chat__status"
-					aria-live="polite"
-				>
-					<span class:is-offline={isOffline}></span>
-					{formatSyncStatus()} · 30 s
+				<div class="guestbook-chat__title-row">
+					<h2>留言板</h2>
+					<span>· {initialLoading ? "--" : totalCount} 条留言</span>
+					<div class="guestbook-chat__sync">
+						<div
+							class:is-failed={Boolean(syncError)}
+							class="guestbook-chat__status"
+							aria-live="polite"
+						>
+							<span class:is-offline={isOffline}></span>
+							{formatSyncStatus()} · 30 s
+						</div>
+						<button
+							class:is-syncing={syncing} class="guestbook-chat__refresh"
+							type="button"
+							onclick={() => void syncLatest()}
+							disabled={syncing || initialLoading || isOffline}
+							aria-label="立即刷新消息"
+							title="立即刷新"
+						>
+							<RefreshCw size={17} aria-hidden="true" />
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -732,20 +928,6 @@ onMount(() => {
 			>
 				<Users size={18} aria-hidden="true" />
 				<span>{chatMembers.length}</span>
-			</button>
-			<button
-				class="guestbook-chat__refresh"
-				type="button"
-				onclick={() => void syncLatest()}
-				disabled={syncing || initialLoading || isOffline}
-				aria-label="立即刷新消息"
-				title="立即刷新"
-			>
-				<RefreshCw
-					class={syncing ? "is-spinning" : undefined}
-					size={19}
-					aria-hidden="true"
-				/>
 			</button>
 		</div>
 	</header>
@@ -824,23 +1006,41 @@ onMount(() => {
 								? messages.find((candidate) => candidate.id === message.replyToId)
 								: undefined}
 							timeLabel={formatMessageTime(message.createdAt)}
+							canManage={canManageMessage(message)}
+							isEditing={editingMessageId === message.id}
+							isMutating={mutatingMessageId === message.id}
+							{editDraft}
+							actionError={messageActionError?.id === message.id
+								? messageActionError.message
+								: undefined}
 							onReply={selectReply}
+							onEdit={startEditingMessage}
+							onEditDraftChange={(value) => (editDraft = value)}
+							onEditCancel={cancelEditingMessage}
+							onEditSave={(target) => void saveEditedMessage(target)}
+							onDelete={(target) => void requestDeleteMessage(target)}
 							onJump={(target) => void jumpToQuotedMessage(target)}
 							onRetry={(target) => void retryMessage(target)}
 							onDiscard={discardMessage}
+							onCopyError={(errorText) => {
+								messageActionError = { id: message.id, message: errorText };
+							}}
 						/>
 					{/each}
 				</div>
 			{/if}
 
 			<div class="guestbook-chat__composer-area">
-				{#if !initialLoading && !initialError && newMessageCount > 0}
+				{#if !initialLoading && !initialError && (showScrollToBottom || newMessageCount > 0)}
 					<button
 						class="guestbook-chat__new-messages"
 						type="button"
 						onclick={() => scrollToBottom(true)}
+						aria-label={newMessageCount > 0
+							? `${newMessageCount} 条新消息，回到最新消息`
+							: "回到底部"}
 					>
-						<ChevronDown size={17} aria-hidden="true" />{newMessageCount} 条新消息
+						<ChevronDown size={20} aria-hidden="true" />
 					</button>
 				{/if}
 
@@ -869,7 +1069,7 @@ onMount(() => {
 					onReplyCancel={() => (replyTarget = null)}
 					onLogin={() => void handleLogin()}
 					onLogout={handleLogout}
-					onSend={() => void sendMessage()}
+					onSend={(attachment) => sendMessage(undefined, attachment)}
 					onToolError={(message) => (composerError = message)}
 				/>
 			</div>
@@ -994,6 +1194,65 @@ onMount(() => {
 				<div class="privacy-footer">
 					<button class="privacy-confirm-btn" type="button" onclick={closeAnnouncement}>
 						我知道了
+					</button>
+				</div>
+			</div>
+		{/if}
+	</dialog>
+
+	<dialog
+		bind:this={deleteDialog}
+		class="privacy-modal guestbook-delete-modal"
+		aria-labelledby="guestbook-delete-title"
+		onclose={() => {
+			document.body.style.overflow = "";
+			if (!mutatingMessageId) deleteTarget = null;
+		}}
+		oncancel={(event) => {
+			event.preventDefault();
+			closeDeleteDialog();
+		}}
+	>
+		<div class="privacy-overlay" onclick={closeDeleteDialog}></div>
+		{#if deleteTarget}
+			<div class="privacy-panel guestbook-delete-modal__panel">
+				<div class="privacy-header">
+					<h2 id="guestbook-delete-title" class="privacy-title">删除消息</h2>
+					<button
+						class="privacy-close"
+						type="button"
+						onclick={closeDeleteDialog}
+						disabled={mutatingMessageId === deleteTarget.id}
+						aria-label="关闭删除确认"
+					>
+						<X size={20} aria-hidden="true" />
+					</button>
+				</div>
+				<div class="privacy-body guestbook-delete-modal__body">
+					<p>删除后无法恢复，Waline 服务端也会同步删除这条消息。</p>
+					<blockquote>{deleteTarget.body.slice(0, 160)}</blockquote>
+					{#if messageActionError?.id === deleteTarget.id}
+						<p class="guestbook-delete-modal__error" role="alert">
+							{messageActionError.message}
+						</p>
+					{/if}
+				</div>
+				<div class="privacy-footer guestbook-delete-modal__actions">
+					<button
+						class="guestbook-delete-modal__cancel"
+						type="button"
+						onclick={closeDeleteDialog}
+						disabled={mutatingMessageId === deleteTarget.id}
+					>
+						取消
+					</button>
+					<button
+						class="guestbook-delete-modal__confirm"
+						type="button"
+						onclick={() => void confirmDeleteMessage()}
+						disabled={mutatingMessageId === deleteTarget.id}
+					>
+						{mutatingMessageId === deleteTarget.id ? "删除中" : "确认删除"}
 					</button>
 				</div>
 			</div>
