@@ -35,6 +35,7 @@
 @import './widgets/announcement.css';
 
 /* === 页面层 === */
+@import './pages/categories.css';
 
 
 @plugin '@tailwindcss/typography';

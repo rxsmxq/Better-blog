@@ -112,6 +112,14 @@ export type Category = {
 	url: string;
 };
 
+export type CategoryTag = Tag & {
+	url: string;
+};
+
+export type CategoryTagGroup = Category & {
+	tags: CategoryTag[];
+};
+
 export async function getCategoryList(): Promise<Category[]> {
 	const allBlogPosts = await getAllPosts();
 	const count: { [key: string]: number } = {};
@@ -145,6 +153,55 @@ export async function getCategoryList(): Promise<Category[]> {
 		});
 	}
 	return ret;
+}
+
+export async function getCategoryTagGroups(): Promise<CategoryTagGroup[]> {
+	const allBlogPosts = await getAllPosts();
+	const groupMap = new Map<
+		string,
+		{ count: number; tagCounts: Map<string, number> }
+	>();
+	const uncategorized = i18n(I18nKey.uncategorized);
+
+	for (const post of allBlogPosts) {
+		const categoryName = post.data.category?.trim() || uncategorized;
+		const group = groupMap.get(categoryName) ?? {
+			count: 0,
+			tagCounts: new Map<string, number>(),
+		};
+
+		group.count++;
+		const postTags = new Set(
+			post.data.tags.map((tag) => tag.trim()).filter(Boolean),
+		);
+		for (const tag of postTags) {
+			group.tagCounts.set(tag, (group.tagCounts.get(tag) ?? 0) + 1);
+		}
+		groupMap.set(categoryName, group);
+	}
+
+	return [...groupMap.entries()]
+		.map(([name, group]) => ({
+			name,
+			count: group.count,
+			url: getCategoryUrl(name),
+			tags: [...group.tagCounts.entries()]
+				.map(([tagName, count]) => ({
+					name: tagName,
+					count,
+					url: getTagUrl(tagName),
+				}))
+				.sort(
+					(a, b) =>
+						b.count - a.count ||
+						a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+				),
+		}))
+		.sort(
+			(a, b) =>
+				b.count - a.count ||
+				a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+		);
 }
 
 export type CatalogGroup = {
