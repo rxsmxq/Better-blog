@@ -79,78 +79,77 @@ const title = "分类标签";
       <TagGraph graph={tagGraph} />
     </section>
   </div>
+  <script is:inline>
+  (function () {
+    function resizeTaxonomyCharts() {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event("resize"));
+      });
+    }
+
+    function selectTaxonomyView(root, view) {
+      const buttons = root.querySelectorAll("[data-taxonomy-view]");
+      const panels = root.querySelectorAll("[data-taxonomy-panel]");
+
+      for (const button of buttons) {
+        const isActive = button.dataset.taxonomyView === view;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+        button.tabIndex = isActive ? 0 : -1;
+      }
+
+      for (const panel of panels) {
+        panel.hidden = panel.dataset.taxonomyPanel !== view;
+      }
+
+      if (view === "graph") resizeTaxonomyCharts();
+    }
+
+    function initTaxonomyView() {
+      const root = document.querySelector("[data-taxonomy-view-root]");
+      if (!root || root.dataset.taxonomyViewBound === "true") return;
+      root.dataset.taxonomyViewBound = "true";
+
+      root.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-taxonomy-view]");
+        if (!button || !root.contains(button)) return;
+        selectTaxonomyView(root, button.dataset.taxonomyView || "folders");
+      });
+
+      root.addEventListener("keydown", (event) => {
+        const button = event.target.closest("[data-taxonomy-view]");
+        if (!button || !root.contains(button)) return;
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+        const buttons = Array.from(root.querySelectorAll("[data-taxonomy-view]"));
+        const currentIndex = buttons.indexOf(button);
+        if (currentIndex < 0) return;
+
+        event.preventDefault();
+        let nextIndex = currentIndex;
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = buttons.length - 1;
+        if (event.key === "ArrowLeft") {
+          nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+        }
+        if (event.key === "ArrowRight") {
+          nextIndex = (currentIndex + 1) % buttons.length;
+        }
+
+        const nextButton = buttons[nextIndex];
+        if (nextButton) {
+          nextButton.focus();
+          selectTaxonomyView(root, nextButton.dataset.taxonomyView || "folders");
+        }
+      });
+    }
+
+    initTaxonomyView();
+
+    if (!window.__taxonomyViewPageLoadBound) {
+      window.__taxonomyViewPageLoadBound = true;
+      document.addEventListener("astro:page-load", initTaxonomyView);
+    }
+  })();
+  </script>
 </MainGridLayout>
-
-<script>
-  function resizeTaxonomyCharts() {
-    requestAnimationFrame(() => {
-      window.dispatchEvent(new Event("resize"));
-    });
-  }
-
-  function selectTaxonomyView(root: HTMLElement, view: string) {
-    const buttons = root.querySelectorAll<HTMLButtonElement>("[data-taxonomy-view]");
-    const panels = root.querySelectorAll<HTMLElement>("[data-taxonomy-panel]");
-
-    for (const button of buttons) {
-      const isActive = button.dataset.taxonomyView === view;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-selected", String(isActive));
-      button.tabIndex = isActive ? 0 : -1;
-    }
-
-    for (const panel of panels) {
-      panel.hidden = panel.dataset.taxonomyPanel !== view;
-    }
-
-    if (view === "graph") resizeTaxonomyCharts();
-  }
-
-  function initTaxonomyView() {
-    const root = document.querySelector<HTMLElement>("[data-taxonomy-view-root]");
-    if (!root || root.dataset.taxonomyViewBound === "true") return;
-    root.dataset.taxonomyViewBound = "true";
-
-    root.addEventListener("click", (event) => {
-      const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-        "[data-taxonomy-view]",
-      );
-      if (!button || !root.contains(button)) return;
-      selectTaxonomyView(root, button.dataset.taxonomyView ?? "folders");
-    });
-
-    root.addEventListener("keydown", (event) => {
-      const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-        "[data-taxonomy-view]",
-      );
-      if (!button || !root.contains(button)) return;
-      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-
-      const buttons = Array.from(
-        root.querySelectorAll<HTMLButtonElement>("[data-taxonomy-view]"),
-      );
-      const currentIndex = buttons.indexOf(button);
-      if (currentIndex < 0) return;
-
-      event.preventDefault();
-      let nextIndex = currentIndex;
-      if (event.key === "Home") nextIndex = 0;
-      if (event.key === "End") nextIndex = buttons.length - 1;
-      if (event.key === "ArrowLeft") {
-        nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-      }
-      if (event.key === "ArrowRight") {
-        nextIndex = (currentIndex + 1) % buttons.length;
-      }
-
-      const nextButton = buttons[nextIndex];
-      nextButton?.focus();
-      if (nextButton) {
-        selectTaxonomyView(root, nextButton.dataset.taxonomyView ?? "folders");
-      }
-    });
-  }
-
-  initTaxonomyView();
-  document.addEventListener("astro:page-load", initTaxonomyView);
-</script>
