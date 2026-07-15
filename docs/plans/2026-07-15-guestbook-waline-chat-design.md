@@ -1,14 +1,16 @@
 # 留言板 Waline QQ 群聊设计
 
-> 本方案将 `/guestbook/` 改为 Waline 驱动的单频道群聊界面。评审重点是平铺消息协议、30 s 同步边界、匿名与登录身份处理、失败状态，以及实现是否符合 `CLAUDE.md`。目标是删除原 KV 留言链路，只保留可独立收发和恢复的自定义聊天室。
+> 本方案将 `/guestbook/` 改为 Waline 驱动的单频道群聊界面。评审重点是平铺消息协议、30 s 同步边界、匿名与登录身份处理、失败状态，以及实现是否符合 `CLAUDE.md`。原 KV 留言链路已删除，当前留言板只通过 Waline 收发消息。
+
+**实施状态（2026-07-16）**：代码、Worker 路由、`VISITOR_KV` 绑定和 KV 部署说明均已清理。留言板不再依赖项目 Worker 或 Cloudflare KV。
 
 ## 问题陈述
 
-项目当前存在两套留言数据源：文章评论使用 Waline，留言板使用 Cloudflare Worker + KV。留言板还包含卡片堆叠、拖拽投票、列表弹窗、详情弹窗和自定义缓存。这些功能无法复用 Waline 的登录、审核和后台管理。
+改造前存在两套留言数据源：文章评论使用 Waline，留言板使用 Cloudflare Worker + KV。旧留言板还包含卡片堆叠、拖拽投票、列表弹窗、详情弹窗和自定义缓存。这些功能无法复用 Waline 的登录、审核和后台管理。
 
-新频道固定使用 `/guestbook/`。2026-07-15 直接请求 Waline 接口时，该频道返回 `count: 0`，无需处理 Waline 历史数据迁移（来源：`https://comment.mmzhiku.xyz/api/comment`，2026-07-15 采样）。原 KV 数据不自动迁移。
+新频道固定使用 `/guestbook/`。2026-07-15 直接请求 Waline 接口时，该频道返回 `count: 0`，因此实施时未迁移原 KV 数据（来源：`https://comment.mmzhiku.xyz/api/comment`，2026-07-15 采样）。
 
-当前聊天室代码草稿包含 1157 行 Svelte 与组件内 `<style>`。该结构违反 `CLAUDE.md` 的样式组织、BEM、主题变量和 `768px` 断点规范。本设计先确定模块边界，再按规范重构。
+设计阶段的聊天室草稿包含 1157 行 Svelte 与组件内 `<style>`。该结构违反 `CLAUDE.md` 的样式组织、BEM、主题变量和 `768px` 断点规范，因此实施时按下述模块边界完成重构。
 
 ## 目标与验收
 
@@ -158,9 +160,9 @@ flowchart TD
 - 动态同步与错误状态使用 `aria-live`；交互控件支持键盘焦点。
 - 骨架、高亮和旋转动画限制在 `opacity`、`transform` 和 `box-shadow`，并处理 `prefers-reduced-motion`。
 
-## 旧实现清理
+## 旧实现清理结果
 
-删除范围包括：
+已删除以下旧实现：
 
 - `GuestbookCardStack`、`GuestbookCompose*`、`GuestbookDetailModal`、`GuestbookListModal`、`GuestbookView*` 和 `GuestbookVirtualList`。
 - `guestbook-api.ts`、`guestbook-cache.ts`、`guestbook-card-stack.ts` 和旧 `GuestbookMessage` 类型。
@@ -168,7 +170,7 @@ flowchart TD
 - `wrangler.jsonc` 与 Worker Env 类型中的 `VISITOR_KV`。
 - 旧留言样式、样式入口和 README 的 KV 部署说明。
 
-Cloudflare 控制台中的 KV 命名空间不由代码删除。生产验证完成后，维护者手动删除命名空间。
+代码和部署配置不再引用留言板 KV。Cloudflare 控制台中如仍保留旧命名空间，该命名空间不会被当前版本访问，可由维护者手动删除。
 
 ## 风险
 
