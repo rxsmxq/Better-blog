@@ -4,7 +4,7 @@ import Icon from "@/components/common/Icon.svelte";
 import { aiSearchPublicConfig } from "@/config/aiSearchConfig";
 import "@/styles/components/ai-search.css";
 import { AiSearchClientError, streamAiSearch } from "./api-client";
-import { renderSimpleMarkdown } from "./markdown";
+import { isSafeUrl, renderSimpleMarkdown } from "./markdown";
 import {
 	type AiSearchMessage,
 	type AiSearchSessionMeta,

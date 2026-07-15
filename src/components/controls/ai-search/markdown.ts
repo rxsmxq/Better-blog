@@ -1,4 +1,4 @@
-function isSafeUrl(value: string): boolean {
+export function isSafeUrl(value: string): boolean {
 	return /^(https?:|mailto:|tel:|\/|#|\.\/|\.\.\/|\?)/i.test(value.trim());
 }
 
