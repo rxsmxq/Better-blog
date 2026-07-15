@@ -67,6 +67,12 @@
 	letter-spacing: 0;
 }
 
+.home-data-layer[data-guide-opening="playing"] .home-data-layer__title-matrix,
+.home-data-layer[data-guide-opening="playing"] .data-card,
+.home-data-layer[data-guide-opening="playing"] .guide-card {
+	will-change: transform, opacity, clip-path, filter;
+}
+
 .home-guide-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
