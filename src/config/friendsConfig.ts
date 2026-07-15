@@ -279,6 +279,15 @@ export const friendsConfig: FriendLink[] = [
 		weight: 5,
 		enabled: true,
 	},
+	{
+		title: "拾玖的博客",
+		imgurl: "https://shijiucode.cn/favicon.ico?favicon.0x3dzn~oxb6tn.ico",
+		desc: "拾玖的博客",
+		siteurl: "https://shijiucode.cn/",
+		tags: ["Blog"],
+		weight: 5,
+		enabled: true,
+	},
 ];
 
 // 获取启用的友链并进行排序
