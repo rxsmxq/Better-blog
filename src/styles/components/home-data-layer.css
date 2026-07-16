@@ -448,8 +448,7 @@
 	margin-top: 0.75rem;
 }
 
-.guide-link-list a,
-.guide-card__more {
+.guide-link-list a {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -468,11 +467,11 @@
 }
 
 .guide-card--categories .guide-link-list a {
+	padding-inline: 0.55rem;
 	transition: background-color 180ms ease, border-color 180ms ease, color 0ms, transform 180ms ease;
 }
 
-.guide-link-list a:hover,
-.guide-card__more:hover {
+.guide-link-list a:hover {
 	color: color-mix(in srgb, var(--guide-fg) 62%, var(--guide-accent));
 }
 
@@ -498,15 +497,6 @@
 .guide-card--categories:focus-within .guide-link-list a:hover {
 	color: var(--guide-accent);
 	transform: translateX(0.2rem);
-}
-
-.guide-card__more {
-	margin-top: auto;
-	padding-top: 0.55rem;
-}
-
-.guide-card__more svg {
-	font-size: 1rem;
 }
 
 .guide-tag-list {

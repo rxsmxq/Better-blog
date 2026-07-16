@@ -23,16 +23,11 @@
 	flex-shrink: 0;
 	border-radius: 9999px;
 	padding: 0.25rem 0.5rem;
-	background: color-mix(in oklch, var(--card-bg) 60%, transparent);
+	background: color-mix(in oklch, var(--float-panel-bg) 72%, transparent);
 	backdrop-filter: blur(12px) saturate(1.2);
 	-webkit-backdrop-filter: blur(12px) saturate(1.2);
 	border: none;
-	box-shadow: 0 2px 8px color-mix(in oklch, var(--deep-text) 4%, transparent);
-	will-change: max-width, padding, border-radius, left, transform;
-	transform: translateZ(0);
-	-webkit-transform: translateZ(0);
-	backface-visibility: hidden;
-	-webkit-backface-visibility: hidden;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 	transition:
 		max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
 		width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -46,12 +41,6 @@
 :root.dark .navbar-seg {
 	background: color-mix(in oklch, var(--float-panel-bg) 80%, transparent);
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-}
-
-/* 首页 Hero 区域：亮色主题下使用半透明白色磨砂玻璃，避免透明背景叠加深色 Hero 图 */
-html:has(.home-hero):not(.dark) .navbar-seg {
-	background: color-mix(in oklch, var(--float-panel-bg) 72%, transparent);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* 左段：默认贴最左 */
@@ -78,9 +67,10 @@ html:has(.home-hero):not(.dark) .navbar-seg {
 /* 右段：默认贴最右 */
 .navbar-seg--right {
 	position: absolute;
-	right: 0;
+	left: 100%;
+	right: auto;
 	top: 50%;
-	transform: translateY(-50%);
+	transform: translate(-100%, -50%);
 	justify-content: flex-end;
 	gap: 0.25rem;
 }
@@ -137,7 +127,6 @@ html:has(.home-hero):not(.dark) .navbar-seg {
 	white-space: nowrap;
 	opacity: 1;
 	transform: translateX(0);
-	will-change: opacity, transform, max-width;
 	transition:
 		opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
 		transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
@@ -243,6 +232,18 @@ html:has(.home-hero):not(.dark) .navbar-seg {
 	overflow: hidden;
 }
 
+@media (min-width: 1024px) {
+	#navbar.scrolled .navbar-seg--left {
+		left: var(--navbar-compact-left, 0px);
+		transform: translate(-100%, -50%);
+	}
+	#navbar.scrolled .navbar-seg--right {
+		left: var(--navbar-compact-right, 100%);
+		right: auto;
+		transform: translateY(-50%);
+	}
+}
+
 #navbar.scrolled .nav-search-btn__shortcut {
 	max-width: 0;
 	min-width: 0;
@@ -346,7 +347,6 @@ html:has(.home-hero):not(.dark) .navbar-seg {
  * navbar-wrapper：滚动后背景变透明
  * ============================================ */
 #navbar-wrapper {
-	will-change: background-color;
 	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
 }
 

@@ -1633,13 +1633,16 @@ html:has(.guestbook-page) #category-bar-wrapper {
 }
 
 @media (max-width: 768px) {
+	html:has(.guestbook-page) #main-grid-wrapper {
+		padding-bottom: 0;
+	}
+
 	.guestbook-page {
-		height: calc(100svh - var(--guestbook-viewport-offset));
+		height: 100vh;
+		height: 100dvh;
 	}
 
 	.guestbook-chat {
-		height: calc(100dvh - 7.625rem);
-		min-height: 35rem;
 		border-right: 0;
 		border-left: 0;
 		border-radius: 0;

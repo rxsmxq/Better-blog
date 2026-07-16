@@ -1,8 +1,10 @@
 <script lang="ts">
+import { onMount } from "svelte";
+
 /**
  * 骷髅开关组件 - 用于切换列表/网格布局
  * 基于 Uiverse.io by ashif_6672 的原型改造
- * 注意：Swup 兼容，通过 astro:page-load 事件重新初始化 checkbox 状态
+ * Swup 替换容器时组件会重新挂载，因此每次挂载只初始化一次。
  */
 interface Props {
 	activeTab: "list" | "grid";
@@ -22,28 +24,24 @@ function syncCheckbox() {
 function handleChange() {
 	const newLayout = checkboxRef?.checked ? "grid" : "list";
 	activeTab = newLayout;
-	localStorage.setItem("postListLayout", newLayout);
+	try {
+		localStorage.setItem("postListLayout", newLayout);
+	} catch {}
 	window.dispatchEvent(
 		new CustomEvent("layoutChange", { detail: { layout: newLayout } }),
 	);
 }
 
 function initFromStorage() {
-	const saved = localStorage.getItem("postListLayout");
-	if (saved === "list" || saved === "grid") {
-		activeTab = saved;
-	}
+	try {
+		const saved = localStorage.getItem("postListLayout");
+		if (saved === "list" || saved === "grid") activeTab = saved;
+	} catch {}
 	syncCheckbox();
 }
 
-// 初始化 + Swup 页面切换后重新初始化
-$effect(() => {
+onMount(() => {
 	initFromStorage();
-	if (typeof document === "undefined") return;
-	document.addEventListener("astro:page-load", initFromStorage);
-	return () => {
-		document.removeEventListener("astro:page-load", initFromStorage);
-	};
 });
 </script>
 

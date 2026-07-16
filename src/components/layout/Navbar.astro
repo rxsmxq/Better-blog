@@ -220,117 +220,104 @@ function initHoverSlider() {
 
 initHoverSlider();
 
-(function() {
-	const navbar = document.getElementById('navbar');
+type NavbarRuntimeWindow = Window & {
+	__navbarScrollLayoutCleanup?: () => void;
+};
+
+function initNavbarScrollLayout() {
+	const runtimeWindow = window as NavbarRuntimeWindow;
+	runtimeWindow.__navbarScrollLayoutCleanup?.();
+
+	const navbarNode = document.getElementById('navbar');
+	if (!navbarNode) return;
+	const navbar = navbarNode as HTMLElement;
+
 	const navbarWrapper = document.getElementById('navbar-wrapper');
-	if (!navbar) return;
+	const segmentsNode = navbar.querySelector<HTMLElement>('.navbar-segments');
+	const centerNode = navbar.querySelector<HTMLElement>('.navbar-seg--center');
+	if (!segmentsNode || !centerNode) return;
+	const segments = segmentsNode as HTMLElement;
+	const center = centerNode as HTMLElement;
 
-	const SCROLL_IN = 80;   // 超过此值收缩
-	const SCROLL_OUT = 40;  // 低于此值展开
-	const COMPACT_GAP = 8;  // 0.5rem，缩球与中段胶囊的间距
-
-	let ticking = false;
-	let resizeTicking = false;
+	const SCROLL_IN = 80;
+	const SCROLL_OUT = 40;
+	const COMPACT_GAP = 8;
+	const desktopMedia = window.matchMedia('(min-width: 1024px)');
+	const abortController = new AbortController();
+	const { signal } = abortController;
+	let isCompact = navbar.classList.contains('scrolled');
+	let scrollFrame: number | null = null;
+	let layoutFrame: number | null = null;
 
 	function updateCompactLayout() {
-		const segments = document.querySelector('.navbar-segments') as HTMLElement | null;
-		const center = document.querySelector('.navbar-seg--center') as HTMLElement | null;
-		const left = document.querySelector('.navbar-seg--left') as HTMLElement | null;
-		const right = document.querySelector('.navbar-seg--right') as HTMLElement | null;
-
-		if (!segments || !center || !left || !right) return;
-
-		const isScrolled = navbar?.classList.contains('scrolled');
-		const isMobile = window.matchMedia('(max-width: 1023px)').matches;
-
-		if (isMobile) {
-			// 移动端：清空 JS 定位，交给 CSS flex
-			left.style.left = '';
-			left.style.transform = '';
-			right.style.left = '';
-			right.style.right = '';
-			right.style.transform = '';
-			return;
-		}
+		if (!isCompact || !desktopMedia.matches) return;
 
 		const segmentsRect = segments.getBoundingClientRect();
 		const centerRect = center.getBoundingClientRect();
-		const leftRect = left.getBoundingClientRect();
-		const rightRect = right.getBoundingClientRect();
+		navbar.style.setProperty(
+			'--navbar-compact-left',
+			`${centerRect.left - segmentsRect.left - COMPACT_GAP}px`,
+		);
+		navbar.style.setProperty(
+			'--navbar-compact-right',
+			`${centerRect.right - segmentsRect.left + COMPACT_GAP}px`,
+		);
+	}
 
-		// 左右段始终用 left 属性定位，保证 transition 连续、避免 right→auto 闪现
-		if (isScrolled) {
-			// 左球右边缘紧贴中段左边缘
-			left.style.left = `${centerRect.left - segmentsRect.left - COMPACT_GAP - leftRect.width}px`;
-			left.style.transform = 'translateY(-50%)';
+	function scheduleCompactLayout() {
+		if (layoutFrame !== null) return;
+		layoutFrame = requestAnimationFrame(() => {
+			layoutFrame = null;
+			updateCompactLayout();
+		});
+	}
 
-			// 右球（搜索）左边缘紧贴中段右边缘，向中间缩放
-			right.style.left = `${centerRect.right - segmentsRect.left + COMPACT_GAP}px`;
-			right.style.right = 'auto';
-			right.style.transform = 'translateY(-50%)';
-		} else {
-			// 默认展开态：左贴边、右贴边
-			left.style.left = '0px';
-			left.style.transform = 'translateY(-50%)';
+	function syncCompactState() {
+		let nextCompact = isCompact;
+		if (window.scrollY > SCROLL_IN) nextCompact = true;
+		else if (window.scrollY < SCROLL_OUT) nextCompact = false;
+		if (nextCompact === isCompact) return;
 
-			// 首次从 CSS right:0 切换到 left 定位时，先禁用 transition 避免闪现
-			const isFirstRightPosition = right.style.left === '';
-			if (isFirstRightPosition) {
-				right.style.transition = 'none';
-			}
-			right.style.left = `${segmentsRect.width - rightRect.width}px`;
-			right.style.right = 'auto';
-			right.style.transform = 'translateY(-50%)';
-			if (isFirstRightPosition) {
-				// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-				right.offsetHeight; // 强制重排
-				right.style.transition = '';
-			}
-		}
+		isCompact = nextCompact;
+		navbar.classList.toggle('scrolled', isCompact);
+		navbarWrapper?.classList.toggle('navbar-scrolled', isCompact);
+		// 状态切换发生在滚动 rAF 内，立即测量可避免先渲染一帧错误锚点。
+		updateCompactLayout();
 	}
 
 	function handleScroll() {
-		const y = window.scrollY;
-		const wasScrolled = navbar?.classList.contains('scrolled');
-
-		if (y > SCROLL_IN) {
-			navbar?.classList.add('scrolled');
-			navbarWrapper?.classList.add('navbar-scrolled');
-		} else if (y < SCROLL_OUT) {
-			navbar?.classList.remove('scrolled');
-			navbarWrapper?.classList.remove('navbar-scrolled');
-		}
-
-		const isScrolled = navbar?.classList.contains('scrolled');
-		// 滚动状态变化或处于收缩态时，更新左右球位置
-		if (wasScrolled !== isScrolled || isScrolled) {
-			requestAnimationFrame(updateCompactLayout);
-		}
-
-		ticking = false;
+		if (scrollFrame !== null) return;
+		scrollFrame = requestAnimationFrame(() => {
+			scrollFrame = null;
+			syncCompactState();
+		});
 	}
 
-	window.addEventListener('scroll', () => {
-		if (!ticking) {
-			requestAnimationFrame(handleScroll);
-			ticking = true;
-		}
-	}, { passive: true });
+	window.addEventListener('scroll', handleScroll, { passive: true, signal });
+	window.addEventListener('resize', scheduleCompactLayout, { passive: true, signal });
+	document.addEventListener('astro:page-load', syncCompactState, { signal });
 
-	window.addEventListener('resize', () => {
-		if (!resizeTicking) {
-			requestAnimationFrame(() => {
-				updateCompactLayout();
-				resizeTicking = false;
-			});
-			resizeTicking = true;
-		}
-	}, { passive: true });
+	const resizeObserver = new ResizeObserver(scheduleCompactLayout);
+	resizeObserver.observe(segments);
+	resizeObserver.observe(center);
 
-	handleScroll();
-	// 初始化定位，确保右段默认位置用 left 表示，避免后续滚动切换 right→auto 闪现
-	requestAnimationFrame(updateCompactLayout);
-})();
+	const cleanup = () => {
+		abortController.abort();
+		resizeObserver.disconnect();
+		if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
+		if (layoutFrame !== null) cancelAnimationFrame(layoutFrame);
+		if (runtimeWindow.__navbarScrollLayoutCleanup === cleanup) {
+			delete runtimeWindow.__navbarScrollLayoutCleanup;
+		}
+	};
+	runtimeWindow.__navbarScrollLayoutCleanup = cleanup;
+
+	syncCompactState();
+	navbarWrapper?.classList.toggle('navbar-scrolled', isCompact);
+	updateCompactLayout();
+}
+
+initNavbarScrollLayout();
 
 function initSearchShortcut() {
 	const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);

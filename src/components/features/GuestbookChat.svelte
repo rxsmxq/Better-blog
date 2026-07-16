@@ -89,6 +89,7 @@ let deleteTarget = $state<GuestbookMessage | null>(null);
 let pollTimer: number | undefined;
 let dataController: AbortController | null = null;
 let syncQueued = false;
+let initialMediaCleanup: (() => void) | null = null;
 
 const hasMore = $derived(currentPage < totalPages);
 const isSending = $derived(
@@ -326,8 +327,10 @@ async function loadInitial() {
 		totalPages = response.totalPages;
 		totalCount = response.count;
 		lastSyncedAt = Date.now();
+		initialLoading = false;
 		await tick();
 		scrollToBottom(false);
+		preserveInitialBottomWhileMediaLoads();
 	} catch (error) {
 		if (controller.signal.aborted || dataController !== controller) return;
 		const authenticationExpired = handleAuthenticationError(error);
@@ -485,6 +488,57 @@ function scrollToBottom(smooth = true) {
 	});
 	newMessageCount = 0;
 	showScrollToBottom = false;
+}
+
+function preserveInitialBottomWhileMediaLoads() {
+	initialMediaCleanup?.();
+	const list = messageList;
+	if (!list) return;
+
+	const listRect = list.getBoundingClientRect();
+	const pendingImages = Array.from(
+		list.querySelectorAll<HTMLImageElement>(".guestbook-message__body img"),
+	).filter((image) => {
+		if (image.complete) return false;
+		const imageRect = image.getBoundingClientRect();
+		return (
+			imageRect.bottom >= listRect.top - list.clientHeight &&
+			imageRect.top <= listRect.bottom + list.clientHeight
+		);
+	});
+	if (pendingImages.length === 0) return;
+
+	const handlers = new Map<HTMLImageElement, () => void>();
+	const cancel = () => cleanup();
+	const cleanup = () => {
+		for (const [image, handler] of handlers) {
+			image.removeEventListener("load", handler);
+			image.removeEventListener("error", handler);
+		}
+		handlers.clear();
+		list.removeEventListener("wheel", cancel);
+		list.removeEventListener("touchstart", cancel);
+		list.removeEventListener("pointerdown", cancel);
+		if (initialMediaCleanup === cleanup) initialMediaCleanup = null;
+	};
+
+	for (const image of pendingImages) {
+		const handler = () => {
+			image.removeEventListener("load", handler);
+			image.removeEventListener("error", handler);
+			handlers.delete(image);
+			scrollToBottom(false);
+			if (handlers.size === 0) cleanup();
+		};
+		handlers.set(image, handler);
+		image.addEventListener("load", handler, { once: true });
+		image.addEventListener("error", handler, { once: true });
+	}
+
+	list.addEventListener("wheel", cancel, { passive: true });
+	list.addEventListener("touchstart", cancel, { passive: true });
+	list.addEventListener("pointerdown", cancel);
+	initialMediaCleanup = cleanup;
 }
 
 function handleMessageScroll() {
@@ -874,6 +928,7 @@ onMount(() => {
 	return () => {
 		if (pollTimer) window.clearInterval(pollTimer);
 		dataController?.abort();
+		initialMediaCleanup?.();
 		if (announcementDialog?.open) announcementDialog.close();
 		if (deleteDialog?.open) deleteDialog.close();
 		document.body.style.overflow = "";

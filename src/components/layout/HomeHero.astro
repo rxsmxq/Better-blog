@@ -1101,20 +1101,6 @@ function collectRainEdges(hero: HTMLElement) {
 					stagger: 0.1,
 					ease: "expo.out",
 				}, "-=0.74");
-
-				images.forEach((image, imageIndex) => {
-					gsap.to(image, {
-						yPercent: -5,
-						ease: "none",
-						scrollTrigger: {
-							id: `home-motion-image-${index}-${imageIndex}`,
-							trigger: image,
-							start: "top bottom",
-							end: "bottom top",
-							scrub: 0.9,
-						},
-					});
-				});
 			}
 		});
 

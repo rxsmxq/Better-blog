@@ -124,8 +124,8 @@ const statsShareId = umamiConfig?.shareId ?? "";
 				<h3 id="guide-categories-title">分类索引</h3>
 				<div class="guide-link-list">
 					{categories.slice(0, 3).map((category) => <a href={category.url}><span>{category.name}</span><strong>{category.count}</strong></a>)}
+					<a href={url("/categories/")}><span>查看全部</span><strong>{categories.length} 个分类</strong></a>
 				</div>
-				<a class="guide-card__more" href={url("/categories/")}>查看全部 <Icon name="material-symbols:arrow-forward-rounded" is:inline /></a>
 			</section>
 
 			<section class="guide-card guide-card--index guide-card--tags" aria-labelledby="guide-tags-title">

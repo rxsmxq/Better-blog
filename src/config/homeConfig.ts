@@ -228,9 +228,9 @@ export const homeConfig: HomeConfig = {
 			showName: false,
 		},
 		{
-			name: "Email",
-			icon: "fa7-solid:envelope",
-			url: "mailto:784774835@qq.com",
+			name: "站内留言",
+			icon: "material-symbols:chat-rounded",
+			url: "/guestbook/",
 			showName: false,
 		},
 		{
