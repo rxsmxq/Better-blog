@@ -2,7 +2,7 @@
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@/components/common/Icon.svelte";
-import { galleryConfig } from "@/config";
+import { galleryConfig } from "@/config/galleryConfig";
 
 const categories = [
 	{ value: "pc", label: "PC" },

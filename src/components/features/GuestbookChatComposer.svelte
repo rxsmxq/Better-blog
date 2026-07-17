@@ -1,7 +1,14 @@
 <script lang="ts">
-import { ImagePlus, LoaderCircle, Reply, Smile, X } from "lucide-svelte";
+import {
+	ImagePlus,
+	LoaderCircle,
+	Reply,
+	Smile,
+	TriangleAlert,
+	X,
+} from "lucide-svelte";
 import { tick } from "svelte";
-import { commentConfig } from "@/config";
+import { commentConfig } from "@/config/commentConfig";
 import type {
 	GuestbookAuthUser,
 	GuestbookChatMessage,
@@ -11,7 +18,6 @@ import type {
 	GuestbookProfile,
 } from "@/types/guestbook-chat";
 import {
-	getGuestbookInitials,
 	loadGuestbookEmojiPacks,
 	uploadGuestbookImage,
 	WALINE_INLINE_IMAGE_SIZE_LIMIT,
@@ -75,6 +81,8 @@ let textarea = $state<HTMLTextAreaElement | null>(null);
 let emojiTrigger = $state<HTMLButtonElement | null>(null);
 let emojiPanel = $state<HTMLDivElement | null>(null);
 let imageInput = $state<HTMLInputElement | null>(null);
+let profileDialog = $state<HTMLDialogElement | null>(null);
+let profileNickInput = $state<HTMLInputElement | null>(null);
 let showEmojiPicker = $state(false);
 let isComposing = $state(false);
 let isLoadingEmojis = $state(false);
@@ -85,6 +93,8 @@ let emojiPacks = $state<GuestbookEmojiPack[]>([]);
 let activeEmojiPackIndex = $state(0);
 let manualTextareaHeight = $state<number | null>(null);
 let resizePointerId = $state<number | null>(null);
+let profileDraft = $state<GuestbookProfile>({ nick: "", mail: "", link: "" });
+let profileDialogError = $state("");
 let resizeStartY = 0;
 let resizeStartHeight = 0;
 
@@ -93,9 +103,62 @@ const inputDisabled = $derived(
 );
 const authName = $derived(authUser?.display_name || "访客");
 const activeEmojiPack = $derived(emojiPacks[activeEmojiPackIndex] ?? null);
+const hasGuestProfile = $derived(profile.nick.trim().length >= 2);
 
-function updateProfile(field: keyof GuestbookProfile, value: string) {
-	onProfileChange({ ...profile, [field]: value });
+function formatMobileIdentityName(value: string): string {
+	const characters = Array.from(value.trim());
+	return characters.length > 4
+		? `${characters.slice(0, 4).join("")}...`
+		: characters.join("");
+}
+
+async function openGuestProfile() {
+	profileDraft = { ...profile };
+	profileDialogError = "";
+	if (!profileDialog?.open) profileDialog?.showModal();
+	document.body.style.overflow = "hidden";
+	await tick();
+	profileNickInput?.focus();
+}
+
+function closeGuestProfile() {
+	if (profileDialog?.open) profileDialog.close();
+	profileDialogError = "";
+	document.body.style.overflow = "";
+}
+
+function validateGuestProfile(nextProfile: GuestbookProfile): string {
+	if (nextProfile.nick.length < 2) return "游客昵称至少需要 2 个字符";
+	if (
+		nextProfile.mail &&
+		!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(nextProfile.mail)
+	) {
+		return "邮箱格式不正确";
+	}
+	if (nextProfile.link) {
+		try {
+			const website = new URL(nextProfile.link);
+			if (website.protocol !== "http:" && website.protocol !== "https:") {
+				return "网站地址仅支持 http 或 https";
+			}
+		} catch {
+			return "网站地址格式不正确";
+		}
+	}
+	return "";
+}
+
+function saveGuestProfile() {
+	const nextProfile = {
+		nick: profileDraft.nick.trim(),
+		mail: profileDraft.mail.trim(),
+		link: profileDraft.link.trim(),
+	};
+	profileDialogError = validateGuestProfile(nextProfile);
+	if (profileDialogError) return;
+	onProfileChange(nextProfile);
+	onToolError("");
+	closeGuestProfile();
 }
 
 function resizeTextarea() {
@@ -289,6 +352,14 @@ function openImagePicker() {
 }
 
 async function submitMessage() {
+	if (!authUser && loginMode !== "force" && !hasGuestProfile) {
+		onToolError(
+			loginMode === "disable"
+				? "请先通过游客访问填写资料后再发送"
+				: "请选择游客访问并填写资料，或登录后发送",
+		);
+		return;
+	}
 	const accepted = await onSend(pendingImage ?? undefined);
 	if (accepted) pendingImage = null;
 }
@@ -345,55 +416,6 @@ async function handleImageSelection(event: Event) {
 			<button type="button" onclick={onReplyCancel} aria-label="取消引用" title="取消引用">
 				<X size={18} aria-hidden="true" />
 			</button>
-		</div>
-	{/if}
-
-	{#if authUser}
-		<div class="guestbook-composer__signed-in">
-			<div class="guestbook-composer__signed-avatar" aria-hidden="true">
-				<span>{getGuestbookInitials(authName)}</span>
-				{#if authUser.avatar}
-					<img src={authUser.avatar} alt="" referrerpolicy="no-referrer" />
-				{/if}
-			</div>
-			<strong>{authName}</strong>
-			<span>{authUser.type === "administrator" ? "管理员" : "已登录"}</span>
-		</div>
-	{:else}
-		<div class="guestbook-composer__identity-fields">
-			<label>
-				<span>昵称</span>
-				<input
-					value={profile.nick}
-					oninput={(event) => updateProfile("nick", event.currentTarget.value)}
-					maxlength="30"
-					autocomplete="nickname"
-					placeholder="你的昵称"
-					aria-required="true"
-				/>
-			</label>
-			<label>
-				<span>邮箱</span>
-				<input
-					value={profile.mail}
-					oninput={(event) => updateProfile("mail", event.currentTarget.value)}
-					maxlength="100"
-					type="email"
-					autocomplete="email"
-					placeholder="用于头像，不公开"
-				/>
-			</label>
-			<label>
-				<span>网址</span>
-				<input
-					value={profile.link}
-					oninput={(event) => updateProfile("link", event.currentTarget.value)}
-					maxlength="200"
-					type="url"
-					autocomplete="url"
-					placeholder="可选"
-				/>
-			</label>
 		</div>
 	{/if}
 
@@ -484,6 +506,66 @@ async function handleImageSelection(event: Event) {
 
 			<div class="guestbook-composer__actions">
 				<span class="guestbook-composer__count">{draft.length}/300</span>
+				{#if authUser}
+					<span
+						class:is-admin={authUser.type === "administrator"}
+						class="guestbook-composer__identity-summary"
+						tabindex="0"
+						aria-label={`当前登录用户：${authName}`}
+					>
+						<span
+							class="guestbook-composer__identity-label guestbook-composer__identity-label--desktop"
+						>
+							{authUser.type === "administrator" ? "管理员" : "已登录"} · {authName}
+						</span>
+						<span
+							class="guestbook-composer__identity-label guestbook-composer__identity-label--mobile"
+						>
+							{authUser.type === "administrator"
+								? "管理员"
+								: formatMobileIdentityName(authName)}
+						</span>
+						<span class="guestbook-composer__identity-tooltip" role="tooltip">
+							<span>当前用户：{authName}</span>
+						</span>
+					</span>
+				{:else if loginMode !== "force"}
+					<span
+						class="guestbook-composer__identity-summary"
+						tabindex="0"
+						aria-label={hasGuestProfile
+							? `游客资料，昵称 ${profile.nick}，邮箱 ${profile.mail || "未填写"}，网址 ${profile.link || "未填写"}`
+							: "游客资料未填写"}
+					>
+						<span
+							class="guestbook-composer__identity-label guestbook-composer__identity-label--desktop"
+						>
+							{hasGuestProfile ? profile.nick : "无"}
+						</span>
+						<span
+							class="guestbook-composer__identity-label guestbook-composer__identity-label--mobile"
+						>
+							{hasGuestProfile ? formatMobileIdentityName(profile.nick) : "无"}
+						</span>
+						<span class="guestbook-composer__identity-tooltip" role="tooltip">
+							{#if hasGuestProfile}
+								<span>昵称：{profile.nick}</span>
+								<span>邮箱：{profile.mail || "未填写"}</span>
+								<span>网址：{profile.link || "未填写"}</span>
+							{:else}
+								<span>尚未填写游客资料</span>
+							{/if}
+						</span>
+					</span>
+					<button
+						class="guestbook-composer__guest-profile"
+						type="button"
+						onclick={() => void openGuestProfile()}
+						title={hasGuestProfile ? "修改游客资料" : "填写游客资料"}
+					>
+						游客访问
+					</button>
+				{/if}
 				{#if loginMode !== "disable"}
 					{#if authUser}
 						<button
@@ -568,6 +650,94 @@ async function handleImageSelection(event: Event) {
 	</div>
 
 	{#if composerError}
-		<div class="guestbook-composer__error" role="alert">{composerError}</div>
+		<div class="guestbook-composer__error" role="alert">
+			<TriangleAlert size={16} aria-hidden="true" />
+			<span>{composerError}</span>
+			<button
+				type="button"
+				onclick={() => onToolError("")}
+				aria-label="关闭提示"
+				title="关闭提示"
+			>
+				<X size={15} aria-hidden="true" />
+			</button>
+		</div>
 	{/if}
 </footer>
+
+<dialog
+	bind:this={profileDialog}
+	class="privacy-modal guestbook-profile-modal"
+	aria-labelledby="guestbook-profile-title"
+	onclose={() => {
+		profileDialogError = "";
+		document.body.style.overflow = "";
+	}}
+	oncancel={(event) => {
+		event.preventDefault();
+		closeGuestProfile();
+	}}
+>
+	<div class="privacy-overlay" onclick={closeGuestProfile}></div>
+	<form
+		class="privacy-panel guestbook-profile-modal__panel"
+		onsubmit={(event) => {
+			event.preventDefault();
+			saveGuestProfile();
+		}}
+	>
+		<div class="privacy-header">
+			<h2 id="guestbook-profile-title" class="privacy-title">游客资料</h2>
+			<button
+				class="privacy-close"
+				type="button"
+				onclick={closeGuestProfile}
+				aria-label="关闭游客资料"
+			>
+				<X size={20} aria-hidden="true" />
+			</button>
+		</div>
+		<div class="privacy-body guestbook-profile-modal__body">
+			<label>
+				<span>昵称</span>
+				<input
+					bind:this={profileNickInput}
+					bind:value={profileDraft.nick}
+					maxlength="30"
+					autocomplete="nickname"
+					placeholder="至少 2 个字符"
+					required
+				/>
+			</label>
+			<label>
+				<span>邮箱</span>
+				<input
+					bind:value={profileDraft.mail}
+					maxlength="100"
+					type="email"
+					autocomplete="email"
+					placeholder="用于头像，不公开"
+				/>
+			</label>
+			<label>
+				<span>网址</span>
+				<input
+					bind:value={profileDraft.link}
+					maxlength="200"
+					type="url"
+					autocomplete="url"
+					placeholder="可选"
+				/>
+			</label>
+			{#if profileDialogError}
+				<p class="guestbook-profile-modal__error" role="alert">
+					{profileDialogError}
+				</p>
+			{/if}
+		</div>
+		<div class="privacy-footer guestbook-profile-modal__actions">
+			<button type="button" onclick={closeGuestProfile}>取消</button>
+			<button class="privacy-confirm-btn" type="submit">保存资料</button>
+		</div>
+	</form>
+</dialog>

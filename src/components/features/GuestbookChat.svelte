@@ -3,7 +3,6 @@ import {
 	addComment,
 	deleteComment,
 	getComment,
-	login,
 	updateComment,
 } from "@waline/api";
 import {
@@ -19,8 +18,9 @@ import {
 	X,
 } from "lucide-svelte";
 import { onMount, tick } from "svelte";
-import type { GuestbookAnnouncementItem } from "@/config";
-import { commentConfig, guestbookConfig } from "@/config";
+import { commentConfig } from "@/config/commentConfig";
+import { guestbookConfig } from "@/config/guestbookConfig";
+import type { GuestbookAnnouncementItem } from "@/types/config";
 import type {
 	GuestbookAuthUser,
 	GuestbookImageAttachment,
@@ -262,6 +262,86 @@ function clearAuthentication() {
 	if (deleteDialog?.open) deleteDialog.close();
 	removeStoredValue(localStorage, AUTH_STORAGE_KEY);
 	removeStoredValue(sessionStorage, AUTH_STORAGE_KEY);
+}
+
+class GuestbookLoginWindowError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "GuestbookLoginWindowError";
+	}
+}
+
+function loginWithWalineWindow(): Promise<GuestbookAuthUser> {
+	if (!serverURL) {
+		return Promise.reject(
+			new GuestbookLoginWindowError("Waline 服务地址未配置，暂时无法登录"),
+		);
+	}
+
+	const availableWidth = window.screen.availWidth || window.innerWidth;
+	const availableHeight = window.screen.availHeight || window.innerHeight;
+	const width = Math.min(1024, Math.max(320, availableWidth));
+	const height = Math.min(720, Math.max(480, availableHeight));
+	const left = Math.max(0, Math.round((availableWidth - width) / 2));
+	const top = Math.max(0, Math.round((availableHeight - height) / 2));
+	const loginURL = `${serverURL.replace(/\/+$/u, "")}/ui/login?lng=${encodeURIComponent(lang)}`;
+	const authWindow = window.open(
+		loginURL,
+		"waline-login",
+		`popup=yes,width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`,
+	);
+
+	if (!authWindow) {
+		return Promise.reject(
+			new GuestbookLoginWindowError(
+				"登录窗口被浏览器拦截，请允许本站打开弹出窗口后重试",
+			),
+		);
+	}
+
+	authWindow.focus();
+	const expectedOrigin = new URL(serverURL).origin;
+
+	return new Promise((resolve, reject) => {
+		let settled = false;
+		let closeTimer: number | undefined;
+
+		const cleanup = () => {
+			window.removeEventListener("message", handleMessage);
+			if (closeTimer !== undefined) window.clearInterval(closeTimer);
+		};
+		const rejectLogin = (message: string) => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			reject(new GuestbookLoginWindowError(message));
+		};
+		const handleMessage = (event: MessageEvent) => {
+			if (event.origin !== expectedOrigin || event.source !== authWindow)
+				return;
+			if (
+				!event.data ||
+				typeof event.data !== "object" ||
+				event.data.type !== "userInfo"
+			) {
+				return;
+			}
+			if (!isAuthUser(event.data.data)) {
+				rejectLogin("登录返回信息无效，请重新登录");
+				return;
+			}
+
+			settled = true;
+			cleanup();
+			authWindow.close();
+			resolve(event.data.data);
+		};
+
+		window.addEventListener("message", handleMessage);
+		closeTimer = window.setInterval(() => {
+			if (authWindow.closed) rejectLogin("登录窗口已关闭，请重新登录");
+		}, 500);
+	});
 }
 
 function finishDataRequest(controller: AbortController) {
@@ -643,7 +723,11 @@ function validateMessageBody(content: string): string {
 function validateComposer(content: string): string {
 	if (loginMode === "force" && !authUser) return "请先登录后再发送消息";
 	if (!authUser && profile.nick.trim().length < 2) {
-		return "昵称至少需要 2 个字符";
+		return profile.nick.trim()
+			? "游客昵称至少需要 2 个字符"
+			: loginMode === "disable"
+				? "请先通过游客访问填写资料后再发送"
+				: "请选择游客访问并填写资料，或登录后发送";
 	}
 	if (profile.mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(profile.mail)) {
 		return "邮箱格式不正确";
@@ -873,12 +957,15 @@ async function handleLogin() {
 	composerError = "";
 
 	try {
-		const user = await login({ serverURL, lang });
+		const user = await loginWithWalineWindow();
 		authUser = user;
 		persistAuthentication(user);
 		await loadInitial();
 	} catch (error) {
-		composerError = getGuestbookErrorMessage(error) || "登录失败，请稍后重试";
+		composerError =
+			error instanceof GuestbookLoginWindowError
+				? error.message
+				: getGuestbookErrorMessage(error) || "登录失败，请稍后重试";
 	} finally {
 		loggingIn = false;
 	}
@@ -944,7 +1031,21 @@ onMount(() => {
 <section class="guestbook-chat" aria-label="留言板">
 	<header class="guestbook-chat__header">
 		<div class="guestbook-chat__channel">
-			<div>
+			<button
+				class:is-syncing={syncing}
+				class="guestbook-chat__mobile-channel-refresh"
+				type="button"
+				onclick={() => void syncLatest()}
+				disabled={syncing || initialLoading || isOffline}
+				aria-label={syncing ? "留言板正在刷新" : "刷新留言板"}
+				aria-busy={syncing}
+			>
+				<span>留言板</span>
+				<span class:is-visible={syncing} class="guestbook-chat__mobile-refresh-icon">
+					<RefreshCw size={15} aria-hidden="true" />
+				</span>
+			</button>
+			<div class="guestbook-chat__desktop-channel-details">
 				<div class="guestbook-chat__title-row">
 					<h2>留言板</h2>
 					<span>· {initialLoading ? "--" : totalCount} 条留言</span>

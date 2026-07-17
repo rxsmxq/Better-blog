@@ -297,8 +297,8 @@ export function getGuestbookErrorMessage(error: unknown): string {
 		if (/(401|403|unauthorized|forbidden|token|登录)/iu.test(message)) {
 			return "登录状态已失效，请重新登录";
 		}
-		if (/(429|too many|rate limit|频繁)/iu.test(message)) {
-			return "操作过于频繁，请稍后再试";
+		if (/(429|too many|too fast|rate limit|频繁|太快)/iu.test(message)) {
+			return "游客留言有频率限制，请稍后再试";
 		}
 		if (/(required|word|length|content|字数|内容)/iu.test(message)) {
 			return "消息内容不符合留言服务要求，请检查后重试";
