@@ -3,6 +3,7 @@ import {
 	addComment,
 	deleteComment,
 	getComment,
+	login as loginWithWaline,
 	updateComment,
 } from "@waline/api";
 import {
@@ -264,84 +265,43 @@ function clearAuthentication() {
 	removeStoredValue(sessionStorage, AUTH_STORAGE_KEY);
 }
 
-class GuestbookLoginWindowError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "GuestbookLoginWindowError";
-	}
+interface WalineTokenResponse {
+	errno: number;
+	errmsg?: string;
+	data?: unknown;
 }
 
-function loginWithWalineWindow(): Promise<GuestbookAuthUser> {
-	if (!serverURL) {
-		return Promise.reject(
-			new GuestbookLoginWindowError("Waline 服务地址未配置，暂时无法登录"),
-		);
-	}
-
-	const availableWidth = window.screen.availWidth || window.innerWidth;
-	const availableHeight = window.screen.availHeight || window.innerHeight;
-	const width = Math.min(1024, Math.max(320, availableWidth));
-	const height = Math.min(720, Math.max(480, availableHeight));
-	const left = Math.max(0, Math.round((availableWidth - width) / 2));
-	const top = Math.max(0, Math.round((availableHeight - height) / 2));
-	const loginURL = `${serverURL.replace(/\/+$/u, "")}/ui/login?lng=${encodeURIComponent(lang)}`;
-	const authWindow = window.open(
-		loginURL,
-		"waline-login",
-		`popup=yes,width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`,
+function removeLoginTokenFromURL() {
+	const url = new URL(window.location.href);
+	if (!url.searchParams.has("token")) return;
+	url.searchParams.delete("token");
+	window.history.replaceState(
+		window.history.state,
+		"",
+		`${url.pathname}${url.search}${url.hash}`,
 	);
+}
 
-	if (!authWindow) {
-		return Promise.reject(
-			new GuestbookLoginWindowError(
-				"登录窗口被浏览器拦截，请允许本站打开弹出窗口后重试",
-			),
-		);
+async function restoreWalineRedirectLogin(token: string) {
+	if (!serverURL) throw new Error("Waline 服务地址未配置，暂时无法登录");
+	const response = await fetch(
+		`${serverURL.replace(/\/+$/u, "")}/api/token?lang=${encodeURIComponent(lang)}`,
+		{ headers: { Authorization: `Bearer ${token}` } },
+	);
+	if (!response.ok) throw new Error("登录信息验证失败，请重新登录");
+
+	const result = (await response.json()) as WalineTokenResponse;
+	const user =
+		result.errno === 0 && result.data && typeof result.data === "object"
+			? { ...(result.data as Record<string, unknown>), token, remember: false }
+			: null;
+	if (!isAuthUser(user)) {
+		throw new Error(result.errmsg || "登录信息已失效，请重新登录");
 	}
 
-	authWindow.focus();
-	const expectedOrigin = new URL(serverURL).origin;
-
-	return new Promise((resolve, reject) => {
-		let settled = false;
-		let closeTimer: number | undefined;
-
-		const cleanup = () => {
-			window.removeEventListener("message", handleMessage);
-			if (closeTimer !== undefined) window.clearInterval(closeTimer);
-		};
-		const rejectLogin = (message: string) => {
-			if (settled) return;
-			settled = true;
-			cleanup();
-			reject(new GuestbookLoginWindowError(message));
-		};
-		const handleMessage = (event: MessageEvent) => {
-			if (event.origin !== expectedOrigin || event.source !== authWindow)
-				return;
-			if (
-				!event.data ||
-				typeof event.data !== "object" ||
-				event.data.type !== "userInfo"
-			) {
-				return;
-			}
-			if (!isAuthUser(event.data.data)) {
-				rejectLogin("登录返回信息无效，请重新登录");
-				return;
-			}
-
-			settled = true;
-			cleanup();
-			authWindow.close();
-			resolve(event.data.data);
-		};
-
-		window.addEventListener("message", handleMessage);
-		closeTimer = window.setInterval(() => {
-			if (authWindow.closed) rejectLogin("登录窗口已关闭，请重新登录");
-		}, 500);
-	});
+	authUser = user;
+	persistAuthentication(user);
+	composerError = "";
 }
 
 function finishDataRequest(controller: AbortController) {
@@ -953,21 +913,55 @@ async function confirmDeleteMessage() {
 
 async function handleLogin() {
 	if (loggingIn) return;
+	if (!serverURL) {
+		composerError = "Waline 服务地址未配置，暂时无法登录";
+		return;
+	}
 	loggingIn = true;
 	composerError = "";
 
 	try {
-		const user = await loginWithWalineWindow();
+		const user = await loginWithWaline({ serverURL, lang });
+		if (!isAuthUser(user)) throw new Error("登录返回信息无效，请重新登录");
 		authUser = user;
 		persistAuthentication(user);
 		await loadInitial();
 	} catch (error) {
 		composerError =
-			error instanceof GuestbookLoginWindowError
+			error instanceof Error && error.message
 				? error.message
-				: getGuestbookErrorMessage(error) || "登录失败，请稍后重试";
+				: "登录失败，请稍后重试";
 	} finally {
 		loggingIn = false;
+	}
+}
+
+async function initializeGuestbook(returnedToken: string | null) {
+	if (returnedToken && loginMode !== "disable") {
+		loggingIn = true;
+		try {
+			await restoreWalineRedirectLogin(returnedToken);
+		} catch (error) {
+			composerError =
+				error instanceof Error && error.message
+					? error.message
+					: "登录信息验证失败，请重新登录";
+		} finally {
+			removeLoginTokenFromURL();
+			loggingIn = false;
+		}
+	} else if (returnedToken) {
+		removeLoginTokenFromURL();
+	}
+
+	if (isOffline) {
+		initialLoading = false;
+		initialError = "当前处于离线状态，恢复网络后将自动加载";
+	} else if (document.visibilityState === "visible") {
+		await loadInitial();
+	} else {
+		initialLoading = false;
+		initialError = "页面恢复可见后将自动加载聊天室";
 	}
 }
 
@@ -998,15 +992,8 @@ onMount(() => {
 	else authUser = readAuthentication();
 	draft = readStoredString(localStorage, DRAFT_STORAGE_KEY);
 	isOffline = !navigator.onLine;
-	if (isOffline) {
-		initialLoading = false;
-		initialError = "当前处于离线状态，恢复网络后将自动加载";
-	} else if (document.visibilityState === "visible") {
-		void loadInitial();
-	} else {
-		initialLoading = false;
-		initialError = "页面恢复可见后将自动加载聊天室";
-	}
+	const returnedToken = new URL(window.location.href).searchParams.get("token");
+	void initializeGuestbook(returnedToken);
 	startPolling();
 	document.addEventListener("visibilitychange", handleVisibilityChange);
 	window.addEventListener("online", handleOnline);
