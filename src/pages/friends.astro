@@ -53,7 +53,7 @@ const description =
       <!-- 页面标题和描述 -->
       <div class="mb-4">
         <div class="flex items-start justify-between gap-4 mb-3">
-          <PageTitle title={title} eyebrow="Friends" variant="stacked" />
+          <PageTitle title={title} variant="stacked" />
           {
             friendsPageConfig.applyLink && (
               <button
@@ -66,13 +66,6 @@ const description =
             )
           }
         </div>
-        {
-          description && (
-            <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-              {description}
-            </p>
-          )
-        }
       </div>
 
       <!-- 标签筛选 -->

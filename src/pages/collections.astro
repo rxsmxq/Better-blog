@@ -44,12 +44,7 @@ const enabledApisCount = enabledGroups.reduce(
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题 -->
       <div class="mb-8">
-        <PageTitle title={title} eyebrow="Collections" variant="stacked" />
-        {description && (
-          <p class="text-base text-neutral-500 dark:text-neutral-400 leading-relaxed mt-3">
-            {description}
-          </p>
-        )}
+        <PageTitle title={title} variant="stacked" />
       </div>
 
       <!-- Tab 分类导航（椭圆胶囊 + 换行） -->

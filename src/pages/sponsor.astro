@@ -26,12 +26,7 @@ const showSponsorsList = sponsorConfig.showSponsorsList !== false;
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题和描述 -->
       <div class="mb-8">
-        <PageTitle title={title} eyebrow="Sponsor" variant="stacked" />
-        {description && (
-          <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4 mt-3">
-            {description}
-          </p>
-        )}
+        <PageTitle title={title} variant="stacked" />
         {sponsorConfig.usage && (
           <div class="mb-8 p-4 rounded-lg bg-(--primary)/8 dark:bg-(--btn-regular-bg) border border-(--primary)/30 dark:border-none backdrop-blur-xs shadow-xs usage-info-box">
             <div class="flex items-start gap-2">
