@@ -25,7 +25,12 @@ const title = "分类标签";
         variant="stacked"
       />
 
-      <div class="categories-page__view-switch" role="tablist" aria-label="分类标签视图">
+      <div
+        class="categories-page__view-switch"
+        role="tablist"
+        aria-label="分类标签视图"
+        data-taxonomy-view-switch
+      >
         <button
           class="categories-page__view-button is-active"
           type="button"
@@ -52,6 +57,7 @@ const title = "分类标签";
           <Icon name="material-symbols:bar-chart" aria-hidden="true" />
           <span>数据图</span>
         </button>
+        <span class="categories-page__view-indicator" aria-hidden="true"></span>
       </div>
     </div>
 
@@ -80,10 +86,28 @@ const title = "分类标签";
   </div>
   <script is:inline>
   (function () {
+    if (window.__taxonomyViewController) {
+      window.__taxonomyViewController.init();
+      return;
+    }
+
+    var indicatorFrame = 0;
+
     function resizeTaxonomyCharts() {
       requestAnimationFrame(() => {
         window.dispatchEvent(new Event("resize"));
       });
+    }
+
+    function updateTaxonomyIndicator(root) {
+      var switcher = root.querySelector("[data-taxonomy-view-switch]");
+      var activeButton = root.querySelector("[data-taxonomy-view].is-active");
+      var indicator = switcher && switcher.querySelector(".categories-page__view-indicator");
+      if (!switcher || !activeButton || !indicator) return;
+
+      indicator.style.left = activeButton.offsetLeft + "px";
+      indicator.style.width = activeButton.offsetWidth + "px";
+      switcher.classList.add("is-ready");
     }
 
     function selectTaxonomyView(root, view) {
@@ -101,54 +125,70 @@ const title = "分类标签";
         panel.hidden = panel.dataset.taxonomyPanel !== view;
       }
 
+      updateTaxonomyIndicator(root);
       if (view === "graph") resizeTaxonomyCharts();
     }
 
     function initTaxonomyView() {
-      const root = document.querySelector("[data-taxonomy-view-root]");
-      if (!root || root.dataset.taxonomyViewBound === "true") return;
-      root.dataset.taxonomyViewBound = "true";
-
-      root.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-taxonomy-view]");
-        if (!button || !root.contains(button)) return;
-        selectTaxonomyView(root, button.dataset.taxonomyView || "folders");
-      });
-
-      root.addEventListener("keydown", (event) => {
-        const button = event.target.closest("[data-taxonomy-view]");
-        if (!button || !root.contains(button)) return;
-        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-
-        const buttons = Array.from(root.querySelectorAll("[data-taxonomy-view]"));
-        const currentIndex = buttons.indexOf(button);
-        if (currentIndex < 0) return;
-
-        event.preventDefault();
-        let nextIndex = currentIndex;
-        if (event.key === "Home") nextIndex = 0;
-        if (event.key === "End") nextIndex = buttons.length - 1;
-        if (event.key === "ArrowLeft") {
-          nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-        }
-        if (event.key === "ArrowRight") {
-          nextIndex = (currentIndex + 1) % buttons.length;
-        }
-
-        const nextButton = buttons[nextIndex];
-        if (nextButton) {
-          nextButton.focus();
-          selectTaxonomyView(root, nextButton.dataset.taxonomyView || "folders");
-        }
+      document.querySelectorAll("[data-taxonomy-view-root]").forEach((root) => {
+        const activeButton = root.querySelector('[data-taxonomy-view][aria-selected="true"]')
+          || root.querySelector("[data-taxonomy-view]");
+        if (!activeButton) return;
+        selectTaxonomyView(root, activeButton.dataset.taxonomyView || "folders");
       });
     }
+
+    function handleTaxonomyClick(event) {
+      if (!(event.target instanceof Element)) return;
+      const button = event.target.closest("[data-taxonomy-view]");
+      const root = button && button.closest("[data-taxonomy-view-root]");
+      if (!button || !root) return;
+      selectTaxonomyView(root, button.dataset.taxonomyView || "folders");
+    }
+
+    function handleTaxonomyKeydown(event) {
+      if (!(event.target instanceof Element)) return;
+      const button = event.target.closest("[data-taxonomy-view]");
+      const root = button && button.closest("[data-taxonomy-view-root]");
+      if (!button || !root) return;
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+      const buttons = Array.from(root.querySelectorAll("[data-taxonomy-view]"));
+      const currentIndex = buttons.indexOf(button);
+      if (currentIndex < 0) return;
+
+      event.preventDefault();
+      let nextIndex = currentIndex;
+      if (event.key === "Home") nextIndex = 0;
+      if (event.key === "End") nextIndex = buttons.length - 1;
+      if (event.key === "ArrowLeft") {
+        nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+      }
+      if (event.key === "ArrowRight") {
+        nextIndex = (currentIndex + 1) % buttons.length;
+      }
+
+      const nextButton = buttons[nextIndex];
+      if (nextButton) {
+        nextButton.focus();
+        selectTaxonomyView(root, nextButton.dataset.taxonomyView || "folders");
+      }
+    }
+
+    function syncTaxonomyIndicators() {
+      cancelAnimationFrame(indicatorFrame);
+      indicatorFrame = requestAnimationFrame(() => {
+        document.querySelectorAll("[data-taxonomy-view-root]").forEach(updateTaxonomyIndicator);
+      });
+    }
+
+    window.__taxonomyViewController = { init: initTaxonomyView };
+    document.addEventListener("click", handleTaxonomyClick);
+    document.addEventListener("keydown", handleTaxonomyKeydown);
+    document.addEventListener("astro:page-load", initTaxonomyView);
+    window.addEventListener("resize", syncTaxonomyIndicators);
 
     initTaxonomyView();
-
-    if (!window.__taxonomyViewPageLoadBound) {
-      window.__taxonomyViewPageLoadBound = true;
-      document.addEventListener("astro:page-load", initTaxonomyView);
-    }
   })();
   </script>
 </MainGridLayout>

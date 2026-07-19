@@ -175,6 +175,7 @@ const transparentPixel =
 	const TRANSPARENT_PIXEL =
 		"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 	const IMAGE_DECODE_TIMEOUT = 8000;
+	const SCROLL_SCRUB_SMOOTHING = 0.45;
 
 	// ===== 展示层动画阶段常量 =====
 	const PHASE1_DURATION = 1.2; // 垂直线从底部往上延展
@@ -225,8 +226,8 @@ const transparentPixel =
 	const SHUTTER_START_OFFSET = DISPLAY_TOTAL + 0.3;
 
 	let activeCleanup: Cleanup | null = null;
-let mediaCleanup: Cleanup | null = null;
-let initToken = 0;
+	let mediaCleanup: Cleanup | null = null;
+	let initToken = 0;
 
 	function matchesDesktop() {
 		return window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
@@ -563,7 +564,7 @@ async function hydrateLazyImages(root: HTMLElement) {
 				end: getPinEnd,
 				pin: root,
 				pinSpacing: true,
-				scrub: true,
+				scrub: SCROLL_SCRUB_SMOOTHING,
 				invalidateOnRefresh: true,
 				anticipatePin: 1,
 			},
@@ -874,19 +875,19 @@ async function hydrateLazyImages(root: HTMLElement) {
 	}
 
 	function bootHomeDisplayLayer() {
-	const root = getRoot();
-	if (!root || root.dataset.displayBootstrapped === "true") return;
-	root.dataset.displayBootstrapped = "true";
-	setupMediaWatchers();
+		const root = getRoot();
+		if (!root || root.dataset.displayBootstrapped === "true") return;
+		root.dataset.displayBootstrapped = "true";
+		setupMediaWatchers();
 
-	// 首页关键资源：boot 时立即初始化，initHomeDisplayLayer 内部会尽早并行
-	// 加载所有图片/视频并等待 decode/canplaythrough，确保用户滚动到时资源已就绪。
-	if (matchesDesktop() && !prefersReducedMotion()) {
-		void initHomeDisplayLayer();
+		// 首页关键资源：boot 时立即初始化，initHomeDisplayLayer 内部会尽早并行
+		// 加载所有图片/视频并等待 decode/canplaythrough，确保用户滚动到时资源已就绪。
+		if (matchesDesktop() && !prefersReducedMotion()) {
+			void initHomeDisplayLayer();
+		}
 	}
-}
 
 	bootHomeDisplayLayer();
-	document.addEventListener("astro:page-load", bootHomeDisplayLayer);
-	document.addEventListener("swup:willReplaceContent", teardownDisplay);
+	document.addEventListener("astro:page-load", bootHomeDisplayLayer, { once: true });
+	document.addEventListener("astro:before-swap", teardownDisplay, { once: true });
 </script>

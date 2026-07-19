@@ -38,7 +38,10 @@ interface Props {
 	onReplyCancel: () => void;
 	onLogin: () => void;
 	onLogout: () => void;
-	onSend: (attachment?: GuestbookImageAttachment) => Promise<boolean>;
+	onSend: (
+		content: string,
+		attachment?: GuestbookImageAttachment,
+	) => Promise<boolean>;
 	onToolError: (message: string) => void;
 }
 
@@ -343,7 +346,19 @@ function toggleEmojiPicker() {
 }
 
 function insertEmoji(emoji: GuestbookEmojiItem) {
-	insertContent(`![${emoji.key}](${emoji.url} "emoji")`);
+	if (insertContent(`:${emoji.key}:`)) showEmojiPicker = false;
+}
+
+function serializeEmojiShortcodes(content: string): string {
+	const emojiByKey = new Map(
+		emojiPacks.flatMap((pack) =>
+			pack.items.map((emoji) => [emoji.key, emoji.url] as const),
+		),
+	);
+	return content.replace(/:([A-Za-z0-9_-]+):/gu, (shortcode, key: string) => {
+		const url = emojiByKey.get(key);
+		return url ? `![${key}](${url} "emoji")` : shortcode;
+	});
 }
 
 function openImagePicker() {
@@ -360,7 +375,10 @@ async function submitMessage() {
 		);
 		return;
 	}
-	const accepted = await onSend(pendingImage ?? undefined);
+	const accepted = await onSend(
+		serializeEmojiShortcodes(draft.trim()),
+		pendingImage ?? undefined,
+	);
 	if (accepted) pendingImage = null;
 }
 

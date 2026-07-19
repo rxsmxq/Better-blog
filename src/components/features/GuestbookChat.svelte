@@ -711,8 +711,10 @@ async function sendMessage(
 	contentOverride?: string,
 ): Promise<boolean> {
 	if (isSending || isOffline) return false;
-	const content =
-		contentOverride ?? appendGuestbookImage(draft.trim(), attachment);
+	const content = appendGuestbookImage(
+		contentOverride ?? draft.trim(),
+		attachment,
+	);
 	composerError = validateComposer(content);
 	if (composerError) return false;
 
@@ -1212,7 +1214,8 @@ onMount(() => {
 					onReplyCancel={() => (replyTarget = null)}
 					onLogin={() => void handleLogin()}
 					onLogout={handleLogout}
-					onSend={(attachment) => sendMessage(undefined, attachment)}
+				onSend={(content, attachment) =>
+					sendMessage(undefined, attachment, content)}
 					onToolError={(message) => (composerError = message)}
 				/>
 			</div>
