@@ -292,7 +292,8 @@ export const friendsConfig: FriendLink[] = [
 		title: "Meet Blog 博客星图",
 		imgurl: "https://meet-blog.buyixiao.xyz/favicon.svg",
 		desc: "Meet Blog 博客星图",
-		siteurl: "https://meet-blog.buyixiao.xyz/?ref=https%3A%2F%2Ftblog.mmzhiku.xyz/",
+		siteurl:
+			"https://meet-blog.buyixiao.xyz/?ref=https%3A%2F%2Ftblog.mmzhiku.xyz/",
 		tags: ["星图"],
 		weight: 5,
 		enabled: true,

@@ -12,6 +12,8 @@ export const ja: Translation = {
 	[Key.archiveStatsGithub]: "今年のGitHubコントリビューション",
 	[Key.archiveStatsTotalPosts]: "全記事",
 	[Key.archiveStatsYearPosts]: "今年の記事",
+	[Key.archiveStatsCategoryPosts]: "このカテゴリの記事",
+	[Key.archiveStatsTagPosts]: "このタグの記事",
 	[Key.archiveStatsProgress]: "年間進捗",
 	[Key.archiveStatsLoading]: "GitHubデータを取得中",
 	[Key.archiveStatsUnavailable]: "--",

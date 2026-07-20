@@ -12,6 +12,8 @@ export const ru: Translation = {
 	[Key.archiveStatsGithub]: "Вклад GitHub за год",
 	[Key.archiveStatsTotalPosts]: "Все публикации",
 	[Key.archiveStatsYearPosts]: "Публикации за год",
+	[Key.archiveStatsCategoryPosts]: "Публикации в категории",
+	[Key.archiveStatsTagPosts]: "Публикации с тегом",
 	[Key.archiveStatsProgress]: "Годовой прогресс",
 	[Key.archiveStatsLoading]: "Загрузка данных GitHub",
 	[Key.archiveStatsUnavailable]: "--",

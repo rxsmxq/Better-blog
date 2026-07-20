@@ -27,6 +27,10 @@ const currentYearPosts = sortedPostsList.filter(
 			}).format(post.data.published),
 		) === currentYear,
 ).length;
+const archivePostSummaries = sortedPostsList.map((post) => ({
+	category: post.data.category ?? null,
+	tags: post.data.tags,
+}));
 const githubConfig = archiveStatsConfig?.github;
 ---
 
@@ -42,13 +46,15 @@ const githubConfig = archiveStatsConfig?.github;
       <ArchiveStats
         totalPosts={sortedPostsList.length}
         currentYearPosts={currentYearPosts}
+        postSummaries={archivePostSummaries}
         annualPostGoal={archiveStatsConfig?.annualPostGoal ?? 0}
         githubEnabled={githubConfig?.enabled ?? false}
         githubUsername={githubConfig?.username ?? ""}
         timezone={timezone}
         totalPostsLabel={i18n(I18nKey.archiveStatsTotalPosts)}
         githubLabel={i18n(I18nKey.archiveStatsGithub)}
-        yearPostsLabel={i18n(I18nKey.archiveStatsYearPosts)}
+        categoryPostsLabel={i18n(I18nKey.archiveStatsCategoryPosts)}
+        tagPostsLabel={i18n(I18nKey.archiveStatsTagPosts)}
         progressLabel={i18n(I18nKey.archiveStatsProgress)}
         goalLabel={i18n(I18nKey.archiveStatsGoal)}
         loadingLabel={i18n(I18nKey.archiveStatsLoading)}

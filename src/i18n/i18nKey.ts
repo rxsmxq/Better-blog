@@ -333,6 +333,8 @@ enum I18nKey {
 	archiveStatsGithub = "archiveStatsGithub",
 	archiveStatsTotalPosts = "archiveStatsTotalPosts",
 	archiveStatsYearPosts = "archiveStatsYearPosts",
+	archiveStatsCategoryPosts = "archiveStatsCategoryPosts",
+	archiveStatsTagPosts = "archiveStatsTagPosts",
 	archiveStatsProgress = "archiveStatsProgress",
 	archiveStatsLoading = "archiveStatsLoading",
 	archiveStatsUnavailable = "archiveStatsUnavailable",

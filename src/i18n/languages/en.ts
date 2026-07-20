@@ -12,6 +12,8 @@ export const en: Translation = {
 	[Key.archiveStatsGithub]: "GitHub contributions this year",
 	[Key.archiveStatsTotalPosts]: "All posts",
 	[Key.archiveStatsYearPosts]: "Posts this year",
+	[Key.archiveStatsCategoryPosts]: "Posts in category",
+	[Key.archiveStatsTagPosts]: "Posts with tag",
 	[Key.archiveStatsProgress]: "Annual progress",
 	[Key.archiveStatsLoading]: "Loading GitHub data",
 	[Key.archiveStatsUnavailable]: "--",

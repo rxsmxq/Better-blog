@@ -3,23 +3,29 @@ import { onMount } from "svelte";
 import { fetchGithubContributionSummary } from "@/api/github-contributions";
 
 type GithubStatus = "idle" | "loading" | "ready" | "error" | "disabled";
+type PostSummary = {
+	category?: string | null;
+	tags: string[];
+};
 
 export let totalPosts = 0;
 export let currentYearPosts = 0;
+export let postSummaries: PostSummary[] = [];
 export let annualPostGoal = 0;
 export let githubEnabled = false;
 export let githubUsername = "";
 export let timezone = "UTC";
 export let totalPostsLabel = "";
 export let githubLabel = "";
-export let yearPostsLabel = "";
+export let categoryPostsLabel = "";
+export let tagPostsLabel = "";
 export let progressLabel = "";
 export let goalLabel = "";
 export let loadingLabel = "";
 export let unavailableLabel = "--";
 
-let displayedTotal = totalPosts;
-let displayedYearPosts = currentYearPosts;
+let displayedScopePosts = totalPosts;
+let scopePostsLabel = totalPostsLabel;
 let displayedProgress: number | null = null;
 let displayedGithub: number | null = null;
 let githubStatus: GithubStatus = "idle";
@@ -33,6 +39,49 @@ $: progressTarget =
 
 function formatNumber(value: number): string {
 	return String(Math.max(0, Math.round(value)));
+}
+
+function normalizeFilterValue(value: string | null | undefined): string {
+	return (value ?? "").trim();
+}
+
+function getScopeSummary(): { label: string; count: number } {
+	if (postSummaries.length === 0) {
+		return { label: totalPostsLabel, count: totalPosts };
+	}
+
+	const params = new URLSearchParams(window.location.search);
+	const tags = params.getAll("tag").map(normalizeFilterValue).filter(Boolean);
+	const categories = params
+		.getAll("category")
+		.map(normalizeFilterValue)
+		.filter(Boolean);
+	const hasUncategorized = params.has("uncategorized");
+
+	let filtered = postSummaries;
+	if (tags.length > 0) {
+		filtered = filtered.filter((post) =>
+			post.tags.some((tag) => tags.includes(normalizeFilterValue(tag))),
+		);
+	}
+	if (categories.length > 0) {
+		filtered = filtered.filter((post) =>
+			categories.includes(normalizeFilterValue(post.category)),
+		);
+	}
+	if (hasUncategorized) {
+		filtered = filtered.filter(
+			(post) => normalizeFilterValue(post.category).length === 0,
+		);
+	}
+
+	const label =
+		tags.length > 0
+			? tagPostsLabel
+			: categories.length > 0 || hasUncategorized
+				? categoryPostsLabel
+				: totalPostsLabel;
+	return { label, count: filtered.length };
 }
 
 function getRuntimeYear(): number {
@@ -81,17 +130,17 @@ onMount(() => {
 	const reducedMotion = window.matchMedia(
 		"(prefers-reduced-motion: reduce)",
 	).matches;
+	const scopeSummary = getScopeSummary();
+	scopePostsLabel = scopeSummary.label;
 
 	if (!reducedMotion) {
-		displayedTotal = 0;
-		displayedYearPosts = 0;
+		displayedScopePosts = 0;
 		displayedProgress = progressTarget === null ? null : 0;
 	}
 
-	animateNumber(totalPosts, (value) => (displayedTotal = value), reducedMotion);
 	animateNumber(
-		currentYearPosts,
-		(value) => (displayedYearPosts = value),
+		scopeSummary.count,
+		(value) => (displayedScopePosts = value),
 		reducedMotion,
 	);
 	if (progressTarget !== null) {
@@ -156,18 +205,10 @@ $: githubStatusText =
 		<div
 			class="archive-stats__metric"
 			role="group"
-			aria-label={`${totalPostsLabel}: ${formatNumber(displayedTotal)}`}
+			aria-label={`${scopePostsLabel}: ${formatNumber(displayedScopePosts)}`}
 		>
-			<span class="archive-stats__value" aria-hidden="true">{formatNumber(displayedTotal)}</span>
-			<span class="archive-stats__label">{totalPostsLabel}</span>
-		</div>
-		<div
-			class="archive-stats__metric"
-			role="group"
-			aria-label={`${yearPostsLabel}: ${formatNumber(displayedYearPosts)}`}
-		>
-			<span class="archive-stats__value" aria-hidden="true">{formatNumber(displayedYearPosts)}</span>
-			<span class="archive-stats__label">{yearPostsLabel}</span>
+			<span class="archive-stats__value" aria-hidden="true">{formatNumber(displayedScopePosts)}</span>
+			<span class="archive-stats__label">{scopePostsLabel}</span>
 		</div>
 		<div
 			class="archive-stats__metric"

@@ -12,6 +12,8 @@ export const zh_CN: Translation = {
 	[Key.archiveStatsGithub]: "本年 GitHub 贡献",
 	[Key.archiveStatsTotalPosts]: "全部文章",
 	[Key.archiveStatsYearPosts]: "今年文章",
+	[Key.archiveStatsCategoryPosts]: "本分类文章",
+	[Key.archiveStatsTagPosts]: "本标签文章",
 	[Key.archiveStatsProgress]: "年进度",
 	[Key.archiveStatsLoading]: "正在获取 GitHub 数据",
 	[Key.archiveStatsUnavailable]: "--",

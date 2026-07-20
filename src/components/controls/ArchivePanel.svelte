@@ -50,6 +50,7 @@ let highlightedMonth: string | null = null;
 // ===== 高亮 SVG path 状态 =====
 // 用一条 SVG path 绘制从年节点 → 月节点 → 文章节点的整条高亮线
 let highlightPathD = "";
+let highlightRequestId = 0;
 
 // DOM 引用
 let panelEl: HTMLElement;
@@ -182,14 +183,12 @@ function formatFilterSummary(filters: ActiveFilter[]): string {
 /**
  * 计算从年节点中心到悬停文章节点中心的 SVG path。
  * 路径：年节点中心 → 向下到月节点 Y → 向右到月节点 X → 向下到文章节点 Y → 向右到文章节点 X
- * 拐角处用圆弧 (arc) 连接，保证视觉连续。
+ * 每个转角使用二次曲线，避免鼠标移动时出现突兀的直角。
  */
-async function computeHighlight(postId: string) {
+async function computeHighlight(postId: string, requestId: number) {
 	await tick();
-	if (!panelEl) {
-		highlightPathD = "";
+	if (!panelEl || requestId !== highlightRequestId || hoveredPostId !== postId)
 		return;
-	}
 
 	// 找到悬停文章所在的年/月
 	let targetYear: number | null = null;
@@ -211,64 +210,75 @@ async function computeHighlight(postId: string) {
 		return;
 	}
 
-	highlightedYear = targetYear;
-	highlightedMonth = `${targetYear}-${targetMonth}`;
-
 	const panelRect = panelEl.getBoundingClientRect();
-	const tw =
-		Number.parseFloat(getComputedStyle(panelEl).getPropertyValue("--tw")) * 16; // rem→px
-	const r = 4; // 拐角圆弧半径
-
 	const yearBlock = yearBlockRefs.get(targetYear);
 	const monthBlock = monthBlockRefs.get(`${targetYear}-${targetMonth}`);
 	const postRow = postRowRefs.get(postId);
 
-	if (!yearBlock || !monthBlock || !postRow) {
-		highlightPathD = "";
-		return;
-	}
+	if (!yearBlock || !monthBlock || !postRow) return;
 
-	const yr = yearBlock.getBoundingClientRect();
-	const mr = monthBlock.getBoundingClientRect();
-	const pr = postRow.getBoundingClientRect();
+	const yearNode = yearBlock.querySelector<HTMLElement>(".ap-year-node");
+	const monthNode = monthBlock.querySelector<HTMLElement>(".ap-month-node");
+	const postNode = postRow.querySelector<HTMLElement>(".ap-post-node");
+	if (!yearNode || !monthNode || !postNode) return;
 
-	// 各节点中心坐标（相对于 panel）
-	const x0 = yr.left - panelRect.left + tw / 2; // 年竖线 X
-	const y0 = yr.top - panelRect.top + tw / 2; // 年节点中心 Y
-	const x1 = mr.left - panelRect.left + tw / 2; // 月竖线 X
-	const y1 = mr.top - panelRect.top + tw / 2; // 月节点中心 Y
-	const x2 = pr.left - panelRect.left + tw / 2; // 文章竖线 X
-	const y2 = pr.top - panelRect.top + pr.height / 2; // 文章节点中心 Y
+	highlightedYear = targetYear;
+	highlightedMonth = `${targetYear}-${targetMonth}`;
+	const getCenter = (node: HTMLElement) => {
+		const rect = node.getBoundingClientRect();
+		return {
+			x: rect.left - panelRect.left + rect.width / 2,
+			y: rect.top - panelRect.top + rect.height / 2,
+		};
+	};
 
-	// 路径（所有拐角均为外拐角，圆弧向外凸出）：
-	// M x0 y0
-	// L x0 (y1 - r)               // 年竖线向下，预留拐角
-	// A r r 0 0 0 (x0 + r) y1     // 第一个圆弧：外拐角（逆时针）
-	// L (x1 - r) y1               // 月横线
-	// A r r 0 0 0 x1 (y1 + r)     // 第二个拐角：外拐角（逆时针）
-	// L x1 (y2 - r)               // 月竖线向下，预留拐角
-	// A r r 0 0 0 (x1 + r) y2     // 第三个圆弧：外拐角（逆时针）
-	// L x2 y2                     // 文章横线
+	const yearCenter = getCenter(yearNode);
+	const monthCenter = getCenter(monthNode);
+	const postCenter = getCenter(postNode);
+
+	// 计算三个圆角转折点的方向和半径。
+	const firstHorizontal = Math.abs(monthCenter.x - yearCenter.x);
+	const firstVertical = Math.abs(monthCenter.y - yearCenter.y);
+	const secondHorizontal = Math.abs(postCenter.x - monthCenter.x);
+	const secondVertical = Math.abs(postCenter.y - monthCenter.y);
+	const radius = Math.min(
+		6,
+		firstHorizontal / 2,
+		firstVertical / 2,
+		secondHorizontal / 2,
+		secondVertical / 2,
+	);
+	const firstYDirection = Math.sign(monthCenter.y - yearCenter.y) || 1;
+	const firstXDirection = Math.sign(monthCenter.x - yearCenter.x) || 1;
+	const secondYDirection = Math.sign(postCenter.y - monthCenter.y) || 1;
+	const secondXDirection = Math.sign(postCenter.x - monthCenter.x) || 1;
+
+	// 以二次曲线替代三个直角，保留节点之间清晰的层级关系。
 	const d = [
-		`M ${x0} ${y0}`,
-		`L ${x0} ${y1 - r}`,
-		`A ${r} ${r} 0 0 0 ${x0 + r} ${y1}`,
-		`L ${x1 - r} ${y1}`,
-		`A ${r} ${r} 0 0 0 ${x1} ${y1 + r}`,
-		`L ${x1} ${y2 - r}`,
-		`A ${r} ${r} 0 0 0 ${x1 + r} ${y2}`,
-		`L ${x2} ${y2}`,
+		`M ${yearCenter.x} ${yearCenter.y}`,
+		`L ${yearCenter.x} ${monthCenter.y - firstYDirection * radius}`,
+		`Q ${yearCenter.x} ${monthCenter.y} ${yearCenter.x + firstXDirection * radius} ${monthCenter.y}`,
+		`L ${monthCenter.x - firstXDirection * radius} ${monthCenter.y}`,
+		`Q ${monthCenter.x} ${monthCenter.y} ${monthCenter.x} ${monthCenter.y + secondYDirection * radius}`,
+		`L ${monthCenter.x} ${postCenter.y - secondYDirection * radius}`,
+		`Q ${monthCenter.x} ${postCenter.y} ${monthCenter.x + secondXDirection * radius} ${postCenter.y}`,
+		`L ${postCenter.x} ${postCenter.y}`,
 	].join(" ");
 
 	highlightPathD = d;
 }
 
-async function onPostEnter(postId: string) {
+function onPostEnter(postId: string) {
 	hoveredPostId = postId;
-	await computeHighlight(postId);
+	const requestId = ++highlightRequestId;
+	void computeHighlight(postId, requestId);
 }
 
-function onPostLeave() {
+function onPostLeave(event: MouseEvent | FocusEvent) {
+	const relatedTarget = event.relatedTarget;
+	if (relatedTarget instanceof Node && panelEl?.contains(relatedTarget)) return;
+
+	highlightRequestId += 1;
 	hoveredPostId = null;
 	highlightedYear = null;
 	highlightedMonth = null;
@@ -404,7 +414,6 @@ onMount(() => {
 						<!-- 月份标题行 -->
 						<div class="ap-month-header">
 							<div class="ap-col">
-								<div class="ap-hline ap-month-hline"></div>
 								<div
 									class="ap-node ap-month-node"
 									class:highlighted={highlightedMonth === `${yearGroup.year}-${monthGroup.month}`}
@@ -431,7 +440,6 @@ onMount(() => {
 										use:registerPostRow={post.id}
 									>
 										<div class="ap-col">
-											<div class="ap-hline ap-post-hline"></div>
 											<div
 												class="ap-node ap-post-node"
 												class:hovered={hoveredPostId === post.id}
@@ -443,6 +451,8 @@ onMount(() => {
 											class="ap-post-link group btn-plain"
 											on:mouseenter={() => onPostEnter(post.id)}
 											on:mouseleave={onPostLeave}
+											on:focus={() => onPostEnter(post.id)}
+											on:blur={onPostLeave}
 										>
 											<span class="ap-date">{formatDate(post.data.published)}</span>
 											<span class="ap-post-content">
@@ -482,42 +492,26 @@ onMount(() => {
 		</div>
 	{/each}
 
-	<!-- 高亮 SVG 线：一条连续 path 覆盖虚线，拐角带圆弧 -->
-	{#if highlightPathD}
-		<svg class="ap-highlight-svg" aria-hidden="true">
-			<path d={highlightPathD} fill="none" stroke="var(--lh)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-		</svg>
-	{/if}
+	<!-- 常驻单条路径，切换文章时只更新 d，避免 SVG 卸载/重建造成闪烁 -->
+	<svg class="ap-highlight-svg" aria-hidden="true">
+		<path d={highlightPathD} fill="none" stroke="var(--lh)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+	</svg>
 
 </div>
 
 <style>
 .archive-panel {
-	--tw: 2rem;
-	--lc: var(--line-color, oklch(0.82 0 0));
+	--tw: 1.25rem;
 	--lh: oklch(0.15 0 0);
 	--nc: var(--line-color, oklch(0.82 0 0));
 	--nh: oklch(0.15 0 0);
-	--lw: 2.5px;
-	position: relative; /* 高亮覆盖层的定位基准 */
+	position: relative;
 }
 
 /* ── 年份块 ── */
 .ap-year-block {
 	position: relative;
-	margin-bottom: 2.5rem;
-}
-
-/* 年竖线：贯穿整个年块 */
-.ap-year-block::before {
-	content: "";
-	position: absolute;
-	left: calc(var(--tw) / 2);
-	top: calc(var(--tw) / 2);
-	bottom: 1rem;
-	width: 0;
-	border-left: var(--lw) dashed var(--lc);
-	z-index: 0;
+	margin-bottom: 1.5rem;
 }
 
 .ap-months-area { padding-left: var(--tw); }
@@ -525,19 +519,7 @@ onMount(() => {
 /* ── 月份块 ── */
 .ap-month-block {
 	position: relative;
-	margin-bottom: 0.5rem;
-}
-
-/* 月竖线：贯穿整个月块 */
-.ap-month-block::before {
-	content: "";
-	position: absolute;
-	left: calc(var(--tw) / 2);
-	top: calc(var(--tw) / 2);
-	bottom: 1rem;
-	width: 0;
-	border-left: var(--lw) dashed var(--lc);
-	z-index: 0;
+	margin-bottom: 0.25rem;
 }
 
 .ap-posts-area { padding-left: var(--tw); }
@@ -548,16 +530,7 @@ onMount(() => {
 	position: relative;
 	display: flex;
 	align-items: center;
-	min-height: 2.25rem;
-	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.ap-post-row:hover {
-	transform: translateX(0.375rem);
-}
-
-/* 文章间竖线（已移除，避免与横线重叠形成虚线） */
-.ap-post-row::before {
-	content: none;
+	min-height: 2rem;
 }
 
 /* ── 节点列 ── */
@@ -613,28 +586,7 @@ onMount(() => {
 	transform: translateX(-50%) scale(1.6);
 }
 
-/* ── 横线（静态虚线） ── */
-.ap-hline {
-	position: absolute;
-	height: 0;
-	border-top: var(--lw) dashed var(--lc);
-	z-index: 1;
-}
-.ap-month-hline {
-	top: 50%;
-	left: calc(-1 * var(--tw) / 2);
-	width: var(--tw);
-}
-.ap-post-hline {
-	top: 50%;
-	left: calc(-1 * var(--tw) / 2);
-	width: var(--tw);
-}
-
-/* ══════════════════════════════════════════════════
-   高亮 SVG 线
-   一条连续 path 覆盖虚线，拐角带圆弧
-══════════════════════════════════════════════════ */
+/* ── 悬停高亮路径 ── */
 .ap-highlight-svg {
 	position: absolute;
 	inset: 0;
@@ -645,27 +597,30 @@ onMount(() => {
 	overflow: visible;
 }
 .ap-highlight-svg path {
-	filter: drop-shadow(0 0 2px var(--page-bg, white)) drop-shadow(0 0 2px var(--page-bg, white));
-}
-:global(.dark) .ap-highlight-svg path {
-	filter: drop-shadow(0 0 2px var(--page-bg, #0d0d0d)) drop-shadow(0 0 2px var(--page-bg, #0d0d0d));
+	filter: none;
 }
 
 /* ── 标题行 ── */
 .ap-year-header, .ap-month-header {
 	display: flex; align-items: center; min-height: var(--tw);
 }
-.ap-year-label, .ap-month-label {
-	display: flex; align-items: baseline; gap: 0.6rem; padding-left: 0.5rem; flex: 1;
+.ap-year-header {
+	margin-bottom: 0.45rem;
 }
-.ap-h1 { font-size: 1.375rem; font-weight: 700; color: var(--deep-text); margin: 0; }
-.ap-h2 { font-size: 1.05rem;  font-weight: 600; color: var(--deep-text); margin: 0; }
+.ap-month-header {
+	margin-bottom: 0.3rem;
+}
+.ap-year-label, .ap-month-label {
+	display: flex; align-items: baseline; gap: 0.6rem; padding-left: 0.25rem; flex: 1;
+}
+.ap-h1 { font-size: 1.65rem; font-weight: 700; color: var(--deep-text); margin: 0; }
+.ap-h2 { font-size: 1.25rem;  font-weight: 600; color: var(--deep-text); margin: 0; }
 .ap-count { font-size: 0.75rem; color: var(--content-meta); }
 
 /* ── 文章链接 ── */
 .ap-post-link {
-	display: flex; align-items: center; gap: 0.85rem;
-	flex: 1; min-height: 2.5rem; padding: 0.25rem 0.5rem;
+	display: flex; align-items: center; gap: 0.65rem;
+	flex: 1; min-height: 2.15rem; padding: 0.2rem 0.4rem;
 	margin-left: 0;
 	border-radius: 0.5rem; text-decoration: none; overflow: hidden;
 }
@@ -731,7 +686,14 @@ onMount(() => {
 }
 
 @media (max-width: 768px) {
-	.archive-panel { --tw: 1.5rem; }
+	.archive-panel { --tw: 1rem; }
+	.ap-node,
+	.ap-highlight-svg {
+		display: none;
+	}
+	.ap-col {
+		display: none;
+	}
 	.ap-post-link {
 		align-items: flex-start;
 		gap: 0.5rem;
@@ -776,20 +738,9 @@ onMount(() => {
 	.ap-tag-more,
 	.ap-meta-divider { font-size: 0.72rem; }
 
-	/* 移动端隐藏时间线虚线、节点与高亮层，保留标题与文章列表 */
-	.ap-year-block::before,
-	.ap-month-block::before {
-		content: none;
-	}
-	.ap-hline,
-	.ap-node,
-	.ap-col,
-	.ap-highlight-layer {
-		display: none;
-	}
 	.ap-months-area,
 	.ap-posts-area {
-		padding-left: 0.5rem;
+		padding-left: 0.75rem;
 	}
 }
 </style>
