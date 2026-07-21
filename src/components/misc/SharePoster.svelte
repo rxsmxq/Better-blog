@@ -46,24 +46,33 @@ onDestroy(() => {
 	document.removeEventListener("astro:page-load", handlePageTransition);
 });
 
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+function isRemoteImage(src: string): boolean {
+	try {
+		const url = new URL(src);
+		return url.protocol === "http:" || url.protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+
+function getPosterImageProxyUrl(src: string): string {
+	return `/api/poster-image?url=${encodeURIComponent(src)}`;
+}
+
+function loadImage(
+	src: string,
+	usePosterImageProxy = false,
+): Promise<HTMLImageElement | null> {
 	return new Promise((resolve) => {
 		const img = new Image();
 		img.crossOrigin = "anonymous";
 		img.onload = () => resolve(img);
 		img.onerror = () => {
-			if (!src.includes("images.weserv.nl")) {
-				const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}&output=png`;
-				const proxyImg = new Image();
-				proxyImg.crossOrigin = "anonymous";
-				proxyImg.onload = () => resolve(proxyImg);
-				proxyImg.onerror = () => {
-					resolve(null);
-				};
-				proxyImg.src = proxyUrl;
-			} else {
-				resolve(null);
+			if (usePosterImageProxy && isRemoteImage(src)) {
+				loadImage(getPosterImageProxyUrl(src)).then(resolve);
+				return;
 			}
+			resolve(null);
 		};
 		img.src = src;
 	});
@@ -133,7 +142,7 @@ async function generatePoster() {
 		});
 		const [qrImg, coverImg, avatarImg] = await Promise.all([
 			loadImage(qrCodeUrl),
-			coverImage ? loadImage(coverImage) : Promise.resolve(null),
+			coverImage ? loadImage(coverImage, true) : Promise.resolve(null),
 			avatar ? loadImage(avatar) : Promise.resolve(null),
 		]);
 
