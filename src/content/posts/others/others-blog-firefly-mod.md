@@ -389,6 +389,18 @@ fetchGithubContributionSummary(
 
 > 不要将 `.env`、`.env.cf`、真实 Token 或 Cloudflare API Token 提交到仓库。
 
+# 用到的AI模型
+
+- MIMO V2.5/PRO（送的百亿补贴）
+- claude opus 4.6\4.7\4.8\fable 5
+- GPT 5.5/5.6
+- antigravity的gemini 3.1/3.5
+- TRAE上的 GLM/豆包/KIMI/QWEN/DeepSeek（都是拿来测试性能好在工作上确定是否实用）
+- codeBuddy
+
+共耗费30块左右，主打一个薅羊毛，新手一定不要在TRAE、codeBuddy这些平台上写代码。也不是不好吧，是能跑出来，但是我拆分了很久的任务跑了都有问题，这30块消耗都是拿顶模去修复trae给我留的屎。
+
+我不确定是模型问题还是平台，用来写的代码BUG是真的多。
 
 # 优点与UI复制
 
