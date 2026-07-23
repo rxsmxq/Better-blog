@@ -10,7 +10,15 @@ draft: false
 
 这是一个二开项目，基于 Firefly 主题进行修改。
 
-项目地址：[https://github.com/MmzMing/my-blog](https://github.com/MmzMing/my-blog)
+Q1: 为什么不直接用[fuwari](https://github.com/saicaca/fuwari)啊，为啥要用[Astro](https://astro.build/)啊
+
+你敢信我一开始就奔着不是博客，而是个人主页去做的😢，看到一个直接零成本部署博客的（后面才知道只要是个静态博客就能做到零成本了），稀里糊涂的入坑Firefly了，不是说Firefly不好，只是二开再二开。
+
+尽管astro这个架构有些不适合我（重构太费时费力气了），以目前来看灯塔测试全绿，构建平均时间40s内，没看出啥毛病（如果大家有建议可以来评论区说说，我最喜欢别人锐评）
+
+**项目地址**
+
+[https://github.com/MmzMing/my-blog](https://github.com/MmzMing/my-blog)
 
 项目属于二开，感兴趣可以点个star
 
