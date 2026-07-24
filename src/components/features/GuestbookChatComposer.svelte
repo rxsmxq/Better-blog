@@ -462,9 +462,9 @@ async function handleImageSelection(event: Event) {
 			rows="3"
 			maxlength="300"
 			placeholder={loginMode === "force" && !authUser
-				? "登录后参与聊天"
+				? "登录后参与留言"
 				: "说点什么..."}
-			aria-label="聊天消息"
+			aria-label="留言内容"
 			disabled={inputDisabled}
 		></textarea>
 
