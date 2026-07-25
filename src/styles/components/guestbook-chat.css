@@ -698,9 +698,9 @@ html:has(.guestbook-page) #category-bar-wrapper {
 }
 
 .guestbook-message__badge--waiting {
-	border-color: var(--guestbook-muted);
-	background: var(--guestbook-bubble);
-	color: var(--deep-text);
+	border-color: var(--guestbook-waiting);
+	background: transparent;
+	color: var(--guestbook-waiting);
 }
 
 .guestbook-message__bubble-row {
