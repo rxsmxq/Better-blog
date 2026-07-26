@@ -208,6 +208,10 @@ export const siteConfig: SiteConfig = {
 			websiteId: "5907656e-d254-4c9e-ad73-5ce40bf184bb",
 			shareId: "uAfsjwbIKgVPjxtc",
 			scriptUrl: "https://stats.mmzhiku.xyz/script.js",
+			// 使用 Umami 的 PV 展示文章详情、列表与网格浏览量；启用时优先于评论系统统计
+			pageviews: {
+				enabled: true,
+			},
 			// 是否追踪出站链接
 			trackOutboundLinks: true,
 			// 是否收集浏览器性能指标

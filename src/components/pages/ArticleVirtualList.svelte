@@ -4,6 +4,10 @@ import { i18n } from "@i18n/translation";
 import { onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import { coverImageConfig } from "@/config/coverImageConfig";
+import {
+	getUmamiPageviewLookup,
+	normalizeUmamiPageviewPath,
+} from "@/utils/umami-pageviews";
 
 type ArticleListView = "list" | "grid";
 
@@ -35,17 +39,30 @@ export type ArticleListPost = {
 	password: boolean;
 };
 
+type UmamiPageviewConfig = {
+	apiBase: string;
+	enabled: boolean;
+	shareId: string;
+};
+
 interface Props {
 	posts: ArticleListPost[];
 	defaultView?: ArticleListView;
 	postsPerPage?: number;
+	umamiPageviews?: UmamiPageviewConfig;
 }
 
-let { posts, defaultView = "list", postsPerPage = 15 }: Props = $props();
+let {
+	posts,
+	defaultView = "list",
+	postsPerPage = 15,
+	umamiPageviews,
+}: Props = $props();
 
 let containerRef = $state<HTMLElement | null>(null);
 let view = $state<ArticleListView>(defaultView);
 let currentPage = $state(1);
+let pageviewLookup = $state<Map<string, number> | null>(null);
 
 const showLoadingSkeleton =
 	coverImageConfig.randomCoverImage.showLoading ?? true;
@@ -173,6 +190,15 @@ onMount(() => {
 	} catch {}
 
 	window.addEventListener("layoutChange", handleLayoutChange);
+	if (umamiPageviews?.enabled && umamiPageviews.apiBase && umamiPageviews.shareId) {
+		void getUmamiPageviewLookup(umamiPageviews)
+			.then((lookup) => {
+				pageviewLookup = lookup;
+			})
+			.catch(() => {
+				pageviewLookup = new Map();
+			});
+	}
 	const completedImageFrame = requestAnimationFrame(() => {
 		for (const image of containerRef?.querySelectorAll<HTMLImageElement>(
 			".article-list-card__image",
@@ -284,6 +310,17 @@ onMount(() => {
 									<Icon icon="material-symbols:calendar-month-rounded" size="sm" />
 									<time datetime={post.publishedIso}>{post.publishedText}</time>
 								</span>
+								{#if umamiPageviews?.enabled}
+									<span class="article-list-card__meta-item" title="浏览量">
+										<Icon icon="material-symbols:visibility-outline-rounded" size="sm" />
+										<span>
+											{pageviewLookup === null
+												? "—"
+												: (pageviewLookup.get(normalizeUmamiPageviewPath(post.url)) || 0).toLocaleString()}
+										</span>
+										<span class="sr-only">浏览量</span>
+									</span>
+								{/if}
 								<span class="article-list-card__category">#{post.category}</span>
 								{#each post.tags.slice(0, 2) as tag (tag.name)}
 									<span class="article-list-card__divider" aria-hidden="true">/</span>

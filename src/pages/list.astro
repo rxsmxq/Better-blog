@@ -183,6 +183,15 @@ const articleListPosts = await Promise.all(
 
 const defaultLayout = siteConfig.postListLayout.defaultMode || "list";
 const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
+const umamiConfig = siteConfig.analytics?.umamiAnalytics;
+const umamiPageviews = {
+	enabled:
+		!!umamiConfig?.pageviews?.enabled &&
+		!!umamiConfig.shareId &&
+		!!umamiConfig.scriptUrl,
+	apiBase: umamiConfig?.scriptUrl ? new URL(umamiConfig.scriptUrl).origin : "",
+	shareId: umamiConfig?.shareId || "",
+};
 ---
 
 <MainGridLayout title={title} description={description}>
@@ -209,6 +218,7 @@ const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
 			posts={articleListPosts}
 			defaultView={defaultLayout === "grid" ? "grid" : "list"}
 			postsPerPage={siteConfig.pagination.postsPerPage}
+			umamiPageviews={umamiPageviews}
 		/>
 	</section>
 </MainGridLayout>
