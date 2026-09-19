@@ -1,0 +1,174 @@
+---
+/**
+ * 侧边栏目录挂件
+ *
+ * 上游 Firefly 的版本依赖 @/utils/toc-shared 的 computeTocItems（本项目没有该模块），
+ * 这里直接基于 Astro 的 MarkdownHeading[] 渲染：
+ *  - 按 depth 缩进的扁平列表（对 h2~h4 跳跃层级同样稳健）
+ *  - 滚动时高亮当前小节，并自动把激活项滚进可视区
+ *  - 与文章页浮动目录 ArticleTocPanel 相互独立，两者可共存
+ */
+import type { MarkdownHeading } from "astro";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { WidgetComponentConfig } from "@/types/sidebarConfig";
+
+interface Props {
+	class?: string;
+	style?: string;
+	headings?: MarkdownHeading[];
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style, widgetConfig } = Astro.props;
+
+// 目录只显示 h2~h4，h1 是文章标题本身。
+// text 需要剥掉尾部 "#"：本项目的 rehypeAutolinkHeadings 会给每个标题追加
+// `<span class="anchor-icon">#</span>`，而 Astro 的 headings 是在 rehype 之后抽取的，
+// 于是锚点符号被并进了标题文本（"一、问题与目标#"）。
+const stripAnchor = (text: string) => text.replace(/\s*#+\s*$/, "").trim();
+
+const headings = (Astro.props.headings || [])
+	.filter((h) => h.depth >= 2 && h.depth <= 4)
+	.map((h) => ({ ...h, text: stripAnchor(h.text) }))
+	.filter((h) => h.text.length > 0);
+
+const showTitle = widgetConfig?.showTitle !== false;
+---
+
+{
+	headings.length > 0 && (
+		<WidgetLayout
+			name={i18n(I18nKey.tableOfContents)}
+			showTitle={showTitle}
+			id="sidebar-toc"
+			class={className}
+			style={style}
+		>
+			<nav class="sidebar-toc" aria-label={i18n(I18nKey.tableOfContents)}>
+				<ul class="sidebar-toc__list">
+					{headings.map((heading) => (
+						<li
+							class="sidebar-toc__item"
+							data-depth={heading.depth}
+						>
+							<a
+								href={`#${heading.slug}`}
+								class="sidebar-toc__link"
+								data-toc-slug={heading.slug}
+							>
+								{heading.text}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+		</WidgetLayout>
+	)
+}
+
+<style>
+	.sidebar-toc {
+		max-height: calc(100vh - 14rem);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.sidebar-toc__list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.sidebar-toc__link {
+		display: block;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.375rem;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--content-meta);
+		text-decoration: none;
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease;
+	}
+
+	.sidebar-toc__item[data-depth="3"] .sidebar-toc__link {
+		padding-left: 1.25rem;
+	}
+
+	.sidebar-toc__item[data-depth="4"] .sidebar-toc__link {
+		padding-left: 2rem;
+	}
+
+	.sidebar-toc__link:hover {
+		background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+		color: var(--primary);
+	}
+
+	.sidebar-toc__link.is-active {
+		background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+		font-weight: 500;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sidebar-toc__link {
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	function initSidebarToc() {
+		const root = document.querySelector<HTMLElement>("#sidebar-toc");
+		if (!root || root.dataset.tocReady === "true") return;
+
+		const links = Array.from(
+			root.querySelectorAll<HTMLAnchorElement>(".sidebar-toc__link"),
+		);
+		if (links.length === 0) return;
+
+		root.dataset.tocReady = "true";
+
+		const setActive = (slug: string) => {
+			for (const link of links) {
+				link.classList.toggle("is-active", link.dataset.tocSlug === slug);
+			}
+		};
+
+		// 找当前视口顶部往下 ACTIVE_OFFSET 处、最后一个已滚过的标题
+		const ACTIVE_OFFSET = 120;
+		const update = () => {
+			let current = links[0]?.dataset.tocSlug ?? "";
+			for (const link of links) {
+				const target = document.getElementById(link.dataset.tocSlug || "");
+				if (target && target.getBoundingClientRect().top <= ACTIVE_OFFSET) {
+					current = link.dataset.tocSlug || current;
+				}
+			}
+			setActive(current);
+		};
+
+		let ticking = false;
+		const onScroll = () => {
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				update();
+				ticking = false;
+			});
+		};
+
+		window.addEventListener("scroll", onScroll, { passive: true });
+		window.addEventListener("resize", onScroll);
+		update();
+	}
+
+	initSidebarToc();
+	document.addEventListener("swup:contentReplaced", initSidebarToc);
+</script>

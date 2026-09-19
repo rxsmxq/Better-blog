@@ -149,6 +149,43 @@ Firefly-Mod 是个性化魔改版本，已独立演进。
 | `collectionsApiConfig.ts` | 收藏 API 配置 |
 | `llmsConfig.ts` | `/llms.txt` 和 LLM Wiki 的机器入口配置 |
 
+## 侧边栏挂件系统
+
+侧边栏由一组可独立开关、可单独配置可见性的「挂件（widget）」组成，配置集中在 `src/config/sidebarConfig.ts`。布局列（左 / 右 / 双侧）由 `position`、`tabletSidebar` 控制；每个挂件的渲染与隐藏由下面的开关组合决定。隐藏逻辑在 SSR（`SideBar.astro`）和 Swup 客户端导航（`grid-layout-utils.ts`）两处同步切换，保证无刷新跳转后状态一致。
+
+### 当前挂件清单
+
+- **左侧**（768–1279px 按 `tabletSidebar: "left"` 显一侧）：`announcement`（top）→ `categories`（sticky，分类 >5 折叠）→ `tags`（sticky，标签 >12 折叠）
+- **右侧**：`site-stats`（top，站点统计）→ `calendar`（sticky，文章日历热力图）；`music`（Now Playing，当前 `enable:false` 关闭，改 `true` 即恢复）
+- **移动端底部**（<768px 侧栏不进布局，改由这里承担）：`mobileBottomComponents`，目前 `announcement` / `categories` 均 `enable:false`
+- **已删除**：`sidebarToc`（与原生浮动目录 `ArticleTocPanel` 功能重叠，不再复活）
+
+### 挂件级开关
+
+每个挂件可配置以下字段（类型见 `src/types/sidebarConfig.ts`）：
+
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `enable` | `true` | 总开关；`false` 时该挂件完全不渲染（关挂件用这个，不必删配置/删文件） |
+| `position` | — | `top`（跟随滚动）/ `sticky`（吸顶） |
+| `showOnPostPage` | `true` | `false` 时在文章**详情页** `/posts/*` 隐藏 |
+| `hideOnNonPostPage` | `false` | `true` 时仅在文章详情页显示，其它页隐藏 |
+| `hideOnPostListPage` | `false` | `true` 时在文章**列表页** `/list/`（导航「文档」）隐藏 |
+
+> ⚠️ **`showOnPostPage` 不覆盖列表页**：它只匹配文章**详情页** `/posts/*`，**不**匹配文章列表页 `/list/`。要同时隐藏「整个文章界面」（详情页 + 列表页），需 `showOnPostPage:false` 配合 `hideOnPostListPage:true`，正如 `site-stats` 当前配置——在文章界面（详情 / 列表）+ 首页（无侧栏自动不显示）隐藏，其余页面（归档 / 分类 / 关于 / 友链 / 画廊…）保留。页面类型判定见 `src/utils/layout-utils.ts` 的 `isPostPage` / `isPostListPage` / `isHomePage`。
+
+### Tailwind v4 层陷阱（隐藏必须保留的规则）
+
+隐藏依赖给挂件加 `widget-hide-on-*` 类与 `hidden` 类。但 `.sidebar-widget` 是 `src/styles/components/sidebar-widget.css` 里的**无层（unlayered）**规则 `display:block`，而 Tailwind 的 `.hidden { display:none }` 属于 `@layer utilities`（有层）。CSS 规范中**无层样式优先级高于有层样式**，于是 `.sidebar-widget` 会盖掉 `.hidden`，导致上述所有隐藏开关失效。
+
+已在 `sidebar-widget.css` 补一条规则修复：
+
+```css
+.sidebar-widget.hidden { display: none; }
+```
+
+它是「无层 + 更高特异性」，能正确还原隐藏。修改任何挂件隐藏逻辑、或调整侧边栏基础样式时，**务必保留此规则**，否则隐藏开关会再次失效。
+
 ## CI/CD 工作流
 
 | 工作流 | 触发条件 | 说明 |

@@ -5,14 +5,19 @@ import ArticleTocPanel from "@components/layout/ArticleTocPanel.astro";
 import Footer from "@components/layout/Footer.astro";
 import Navbar from "@components/layout/Navbar.astro";
 import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
+import SideBar from "@components/layout/SideBar.astro";
+import SidebarColumn from "@components/layout/SidebarColumn.astro";
 
 import {
 	live2dModelConfig,
 	navBarConfig,
+	sidebarLayoutConfig,
 	siteConfig,
 	spineModelConfig,
 } from "@/config";
 import { LinkPresets } from "@/constants/link-presets";
+import { isHomePage, isGuestbookPage } from "@/utils/layout-utils";
+import { getEffectiveSidebarState } from "@/utils/sidebar-effective-utils";
 import Layout from "./Layout.astro";
 
 import "@/styles/markdown.css";
@@ -62,6 +67,16 @@ const {
 const isPostPage = !!postSlug;
 const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
 
+// 侧栏派生状态与列几何（SSR；客户端由 grid-layout-utils 按同一真源重算）
+const sidebar = getEffectiveSidebarState({
+	isPostPage,
+	isHomePage: isHomePage(Astro.url.pathname),
+	isGuestbookPage: isGuestbookPage(Astro.url.pathname),
+});
+const hasMobileBottomComponents =
+	sidebarLayoutConfig.enable &&
+	sidebarLayoutConfig.mobileBottomComponents.some((comp) => comp.enable);
+
 const navLinks = navBarConfig.links.map((item) => {
 	if (typeof item === "number") return LinkPresets[item];
 	return item;
@@ -87,23 +102,57 @@ const navLinks = navBarConfig.links.map((item) => {
 	<NavMenuPanel links={navLinks} />
 
 	<div class="relative w-full" id="main-grid-wrapper">
-		<div class="mx-auto max-w-5xl px-4 md:px-6" data-sidebar-position="none" id="main-grid">
-			<div id="left-sidebar-dynamic" class="hidden"></div>
-			<div id="right-sidebar-dynamic" class="hidden"></div>
+		{/* 列几何写在 #main-grid 的内联 style 上，gridDataAttrs 供客户端切页后重算 */}
+		<div
+			class="mx-auto max-w-[100rem] px-4 md:px-6 mobile-no-sidebar"
+			id="main-grid"
+			style={sidebar.gridColumnStyle}
+			{...sidebar.gridDataAttrs}
+		>
+			<SidebarColumn
+				side="left"
+				position={sidebarLayoutConfig.position}
+				enable={sidebarLayoutConfig.enable}
+				hideSidebarOnPostPage={sidebar.hideSidebarOnPostPage}
+				hasLeftComponents={sidebar.hasLeftComponents}
+				hasRightComponents={sidebar.hasRightComponents}
+				sidebarClass={sidebar.sidebarClass}
+			/>
 
-			<main id="swup-container" class="transition-swup-main" data-current-post-category={postCategory || ""}>
-				{isPostPage && <ArticleTocPanel />}
-				{/* 页面组件有自己的 H1 时不再输出布局兜底标题，确保每页只有一个 H1。 */}
-				{!isPostPage && !hasOwnH1 && <h1 class="sr-only">{title}</h1>}
+			<div id="content-column" class={sidebar.staticBarClass}>
+				<main id="swup-container" class="transition-swup-main" data-current-post-category={postCategory || ""}>
+					{isPostPage && <ArticleTocPanel />}
+					{/* 页面组件有自己的 H1 时不再输出布局兜底标题，确保每页只有一个 H1。 */}
+					{!isPostPage && !hasOwnH1 && <h1 class="sr-only">{title}</h1>}
 
-				<div id="content-wrapper" class="onload-animation">
-					<slot></slot>
-				</div>
-			</main>
+					<div id="content-wrapper" class="onload-animation">
+						<slot></slot>
+					</div>
+				</main>
 
-			{spineModelConfig.enable && <SpineModel />}
-			{live2dModelConfig.enable && <Live2DWidget config={live2dModelConfig} />}
+				{/* 移动端底部挂件：<768px 时 #main-grid 退回块级布局，必须排在页脚之前 */}
+				{hasMobileBottomComponents && (
+					<div id="mobile-bottom-sidebar" class="block md:hidden mt-4">
+						<SideBar side="bottom" />
+					</div>
+				)}
+			</div>
+
+			<SidebarColumn
+				side="right"
+				position={sidebarLayoutConfig.position}
+				enable={sidebarLayoutConfig.enable}
+				hideSidebarOnPostPage={sidebar.hideSidebarOnPostPage}
+				hasLeftComponents={sidebar.hasLeftComponents}
+				hasRightComponents={sidebar.hasRightComponents}
+				sidebarClass={sidebar.sidebarClass}
+			/>
 		</div>
+
+		{/* Live2D / Spine 移出 #main-grid：否则会成为 grid item 占位影响列几何 */}
+		{spineModelConfig.enable && <SpineModel />}
+		{live2dModelConfig.enable && <Live2DWidget config={live2dModelConfig} />}
+
 		<Footer></Footer>
 	</div>
 </Layout>

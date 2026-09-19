@@ -6,19 +6,19 @@ export const homeConfig: HomeConfig = {
 	// 1. public 目录（以 "/" 开头，不优化）："/assets/images/avatar.webp"
 	// 2. src 目录（不以 "/" 开头，自动优化但会增加构建时间，推荐）："assets/images/avatar.webp"
 	// 3. 远程 URL："https://example.com/avatar.jpg"
-	avatar: "assets/images/avatar.webp",
+	avatar: "assets/images/touxiang1.jpg",
 
 	// 名字
-	name: "MmzMing",
+	name: "Better",
 
 	// 首页展示名字（留空则使用 name）
-	displayName: "MmzMing",
+	displayName: "Better",
 
 	// 职业/身份标签
-	occupation: "[全干工程师 / 技术博主]",
+	occupation: "[学生 / 技术爱好者]",
 
 	// 个人签名（支持多条，会循环打字+删除效果）
-	bio: ["且视他人之疑目如盏盏鬼火，大胆地去走你的夜路"],
+	bio: ["道阻且长，行则将至；行而不辍，未来可期。"],
 
 	hero: {
 		backgroundImage: "/assets/images/home/home.avif",
@@ -49,24 +49,27 @@ export const homeConfig: HomeConfig = {
 		},
 		contact: {
 			platform: "B站",
-			handle: "Mmz明崽",
+			handle: "-_-Better-",
 		},
 		sticker: {
 			image: "/assets/images/home/character.avif",
-			alt: "黑猫角色贴纸",
+			alt: "角色贴纸",
 			eye: {
-				xPercent: 41.1,
+				xPercent: 42.1,
 				yPercent: 48.2,
+				widthPercent: 7,
 				travelXPercent: 1.4,
 				travelYPercent: 1,
 			},
 			rightEye: {
-				xPercent: 64.1,
+				xPercent: 63.1,
 				yPercent: 44.7,
+				widthPercent: 7,
 			},
 			mouth: {
+				// 静息态尺寸；说话中另可用 talkWidthPercent / talkHeightPercent 覆盖
 				xPercent: 53.4,
-				yPercent: 50.7,
+				yPercent: 53.7,
 				widthPercent: 7.2,
 				heightPercent: 1.9,
 				rotation: -6,
@@ -77,56 +80,48 @@ export const homeConfig: HomeConfig = {
 		dialogue: {
 			enabled: true,
 			speakers: {
-				host: "哈基墩",
+				host: "哈基妮",
 				visitor: "访客",
 			},
-			menuTitle: "想聊点什么？",
+			menuTitle: "想了解什么？",
 			typingSpeed: 45,
 			autoDelay: 1600,
 			// 默认逐句播放的简介，末句后弹出话题菜单
 			intro: [
-				{ speaker: "host", text: "欸——来客人了喵～随便坐，别客气。" },
-				{ speaker: "host", text: "我是喵墩，老爸在摸鱼，这儿归我管了喵～" },
+				{ speaker: "host", text: "欸——来客人喽，随便坐，别客气。" },
+				{ speaker: "host", text: "我是菈妮，Better可能在玩游戏，现在这儿归我管。" },
 				{
 					speaker: "host",
-					text: "对了喵，得搬上简介了~喵找找：且视他人之疑目如盏盏鬼火，大胆地去走你的夜路。",
+					text: "对了，得搬上简介了：道阻且长，行则将至；行而不辍，未来可期。",
 				},
-				{ speaker: "host", text: "想打听啥喵？戳戳下面的话题，喵跟你慢慢唠～" },
+				{ speaker: "host", text: "想打听啥？戳戳下面的话题，我都能告诉你。" },
 			],
 			// 话题菜单：点击进入逐句对话，末句后返回菜单
 			topics: [
 				{
-					title: "关于我",
+					title: "关于Better",
 					lines: [
-						{ speaker: "visitor", text: "你爸是哪方面选手呀？" },
+						{ speaker: "visitor", text: "Better是做什么的？" },
 						{
 							speaker: "host",
-							text: "嘛……算个半桶水全栈喵，外加一个不务正业的博客写手。",
+							text: "目前还是学生，建这个博客是因为他太无聊了。",
 						},
+						{ speaker: "visitor", text: "学生有这么闲吗。" },
 						{
 							speaker: "host",
-							text: "前端后端都摸一点，俗称「全干工程师」喵～",
-						},
-						{ speaker: "visitor", text: "听起来很忙的样子。" },
-						{
-							speaker: "host",
-							text: "忙归忙，但好玩呀——折腾本身就是浪漫喵～如果你感兴趣也可以加QQ群喵，放心，傻爸爸不咬人的",
+							text: "是的，因为专业的原因，他现在正在经历一个很长的假期。",
 						},
 					],
 				},
 				{
-					title: "博客特色",
+					title: "博客内容",
 					lines: [
-						{ speaker: "visitor", text: "有什么好玩的功能吗？" },
+						{ speaker: "visitor", text: "一般更新什么类型的文章呢？" },
 						{
 							speaker: "host",
-							text: "有个音乐3D可视化播放，但博客重点不是文章吗喵~老爸整站基本是AI搓出来的，喵爪都没动几下。",
+							text: "主要是记录学习和生活，如果有值得分享的学习笔记或开源项目也会发布。",
 						},
-						{
-							speaker: "host",
-							text: "傻爸爸最近在捣鼓Agent，不知道又要整啥活喵～",
-						},
-						{ speaker: "host", text: "慢慢逛，角落里藏着不少彩蛋呢喵！" },
+						{ speaker: "host", text: "慢慢逛，希望你玩的开心！" },
 					],
 				},
 			],
@@ -147,6 +142,7 @@ export const homeConfig: HomeConfig = {
 	},
 
 	// 桌面端双层影像交互：固定背景揭示 → 五幕画面横向叙事
+	// 主题「樱笋年光」：樱桃花与新笋同上市的三月，一年里最短暂的一段春光
 	homeBlinds: {
 		enabled: true,
 		reveal: {
@@ -158,8 +154,8 @@ export const homeConfig: HomeConfig = {
 			// 长条横移揭示的入场标题：标题单行显示（版式按 4 字排），
 			// 祝福语单行显示（版式按 5 字排），可自由增减条数
 			headline: {
-				title: "祝愿各位",
-				messages: ["夜路有星光", "岁岁皆欢愉", "所念皆星河", "版本无回滚"],
+				title: "",
+				messages: [""],
 				enterDuration: 0.6,
 				messageHold: 2.6,
 				messageFlipDuration: 0.75,
@@ -167,49 +163,55 @@ export const homeConfig: HomeConfig = {
 		},
 		scenes: {
 			scrollDistance: 3400,
-			// 背景跑马灯：列表从右往左无缝循环，只有一张也会自动复制到铺满
-			cycleImages: ["/assets/images/home-blinds/act-cycle/1.webp"],
+			// 背景跑马灯：列表从右往左无缝循环，只有一张也会自动复制到铺满。
+			// 第二张是第一张的水平镜像：相邻两格的接缝全是镜像边界，像素级连续，
+			// 避免「同一张图自身首尾硬拼」在连续留白的宣纸底色上出现竖向断层
+			cycleImages: [
+				"/assets/images/home-blinds/act-cycle/1.webp",
+				"/assets/images/home-blinds/act-cycle/2.webp",
+			],
 			cycleDuration: 26,
 			composite: {
-				eyebrow: "PROLOGUE / RUN",
-				title: "筑一间小屋",
-				description: "以代码为梁、热爱为瓦，荒原上筑起一间自己的小屋。",
-				alt: "第一幕插画",
-				// 明信片右下角的落款日期，按每张图的实际日期改；删掉即不显示
-				date: "2026 / 05 / 07",
+				eyebrow: "PROLOGUE / BLOOM",
+				title: "樱笋年光",
+				description: "樱桃花与新笋一同上市，一年里最短的春光，就从这一刻开始。",
+				alt: "暮春庭院樱笋同框水墨插画",
+				// 明信片右下角的落款文字：五幕依次对应惊蛰→春分→清明→谷雨→立夏，
+				// 用节气代替具体日期，删掉即不显示
+				date: "惊蛰·樱笋",
 			},
 			items: [
 				{
-					eyebrow: "SCENE 02 / LIGHT",
-					title: "小屋落户",
-					description: "一纸备案落定，小屋自此有门有牌，堂堂正正晒着太阳。",
+					eyebrow: "SCENE 02 / BLOSSOM",
+					title: "一树樱开",
+					description: "风过巷口，一树花全开了，粉白压弯枝头，落满青石板路。",
 					image: "/assets/images/home-blinds/act3/1.webp",
-					alt: "第二幕插画",
-					date: "2026 / 06 / 10",
+					alt: "巷口樱花盛开水墨插画",
+					date: "春分·花朝",
 				},
 				{
-					eyebrow: "SCENE 03 / WIND",
-					title: "尘满窗台",
-					description: "人往学海拾新，倦意悄悄落了窗，小屋静候，蒙上薄尘。",
+					eyebrow: "SCENE 03 / SPROUT",
+					title: "春笋破土",
+					description: "一夜雨过后，泥里钻出尖尖的笋，裹着褐衣，一夜长半尺。",
 					image: "/assets/images/home-blinds/act3/2.webp",
-					alt: "第三幕插画",
-					date: "2026 / 06 / 21",
+					alt: "春笋破土而出水墨插画",
+					date: "清明·新笋",
 				},
 				{
-					eyebrow: "SCENE 04 / PAGE",
-					title: "重燃灯火",
-					description: "拂去薄尘，重燃灯火，一砖一瓦再把小屋细细打磨。",
+					eyebrow: "SCENE 04 / PETALS",
+					title: "花落成雪",
+					description: "花期只七日，风一起便纷纷落，落满石阶与流水，春过半。",
 					image: "/assets/images/home-blinds/act3/3.webp",
-					alt: "第四幕插画",
-					date: "2026 / 08 / 18",
+					alt: "樱花飘落石阶流水水墨插画",
+					date: "谷雨·落花",
 				},
 				{
-					eyebrow: "FINALE / ARRIVE",
-					title: "抵达之前",
-					description: "笔墨暂歇，来日方长；下一程山水，且歌且行。",
+					eyebrow: "FINALE / DAYLIGHT",
+					title: "年光渐长",
+					description: "樱尽笋成竹，昼长夜短，年光往前挪了一格，只剩温软旧色。",
 					image: "/assets/images/home-blinds/act3/4.webp",
-					alt: "第五幕插画",
-					date: "2026 / 09 / 01",
+					alt: "初夏绿荫细竹日影水墨插画",
+					date: "立夏·年光",
 				},
 			],
 			standImages: ["/assets/images/home-blinds/act4/1.webp"],
@@ -226,19 +228,19 @@ export const homeConfig: HomeConfig = {
 		{
 			name: "qq",
 			icon: "fa7-brands:qq",
-			url: "https://qm.qq.com/q/2R07cjGTZ0",
+			url: "https://qm.qq.com/q/rZBqjUc0Ks",
 			showName: false,
 		},
 		{
 			name: "B站",
 			icon: "fa7-brands:bilibili",
-			url: "https://space.bilibili.com/15446538",
+			url: "https://space.bilibili.com/119850018",
 			showName: false,
 		},
 		{
 			name: "GitHub",
 			icon: "fa7-brands:github",
-			url: "https://github.com/MmzMing",
+			url: "https://github.com/rxsmxq",
 			showName: false,
 		},
 		{

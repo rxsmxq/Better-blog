@@ -1,0 +1,89 @@
+/* ============================================
+   侧边栏挂件外壳 —— WidgetLayout.astro
+   ============================================
+   本主题在 @layer components 里把 .card-base 统一降级为「透明无边框」的极简样式，
+   挂件若沿用 card-base 会失去容器感，因此使用独立的 .sidebar-widget。
+   配色全部走主题变量（--primary / --content-meta / --line-divider），深浅色自动适配。
+   ============================================ */
+
+.sidebar-widget {
+	display: block;
+	border-radius: 0.75rem;
+	padding-bottom: 0.75rem;
+	background-color: color-mix(in srgb, var(--content-meta) 6%, transparent);
+	border: 1px solid color-mix(in srgb, var(--line-divider) 55%, transparent);
+	overflow: hidden;
+}
+
+/* Tailwind v4 陷阱：.sidebar-widget 是本文件里的「无层」(unlayered) 规则，
+   而 .hidden 属于 @layer utilities（有层）。CSS 里「无层样式」优先级高于「有层样式」，
+   于是 .sidebar-widget { display:block } 会盖掉 .hidden { display:none }，
+   导致 showOnPostPage:false / hideOnNonPostPage:true 的挂件在文章页仍可见
+   （SideBar.astro 与 grid-layout-utils 都靠给元素加 .hidden 来隐藏）。
+   这里用「无层 + 更高特异性」显式补回隐藏，确保挂件的隐藏开关真正生效。*/
+.sidebar-widget.hidden {
+	display: none;
+}
+
+.sidebar-widget__title {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin: 1rem 1rem 0.5rem 1.75rem;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--deep-text);
+}
+
+/* 标题左侧的主题色短竖条 */
+.sidebar-widget__title::before {
+	content: "";
+	position: absolute;
+	left: -1rem;
+	top: 0.15rem;
+	width: 0.25rem;
+	height: 1rem;
+	border-radius: 0.25rem;
+	background-color: var(--primary);
+}
+
+.sidebar-widget__body {
+	padding: 0 1rem;
+	overflow: hidden;
+}
+
+.sidebar-widget__expand {
+	padding: 0 1rem;
+	margin-bottom: -0.5rem;
+}
+
+/* 键盘可见焦点：向内偏移，避免被容器 overflow 裁掉 */
+.focus-ring-inset:focus-visible {
+	outline-offset: -2px;
+}
+
+/* 计数徽标 —— ButtonLink.astro
+   本主题的 --primary 已中性化为灰阶（深色下 #dadada），不能像上游那样当强调底色用，
+   否则会与 --deep-text 文字色撞成同色。这里用 --deep-text 的低透明度浮层。 */
+.count-badge {
+	background-color: color-mix(in srgb, var(--deep-text) 12%, transparent);
+	color: var(--deep-text);
+}
+
+/* 标签胶囊 —— ButtonTag.astro（同步自 Firefly 的 styles/tags.css） */
+.tag-item {
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--btn-content) 8%, transparent);
+	color: var(--btn-content);
+}
+
+.tag-item:hover {
+	background: color-mix(in srgb, var(--btn-content) 18%, transparent);
+	color: var(--primary);
+}
+
+.tag-item:active {
+	background: color-mix(in srgb, var(--btn-content) 24%, transparent);
+}

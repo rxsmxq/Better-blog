@@ -1,0 +1,38 @@
+---
+/**
+ * 侧边栏通用的「链接 + 计数徽标」行
+ * 从 Firefly 上游同步（CuteLeaf/Firefly v6.16.8）
+ */
+interface Props {
+	badge?: string;
+	url?: string;
+	label?: string;
+}
+const { badge, url, label } = Astro.props;
+---
+
+<a
+    href={url}
+    aria-label={label}
+    class="flex items-center focus-ring-inset w-full h-10 rounded-lg bg-none
+           hover:bg-(--btn-plain-bg-hover) active:bg-(--btn-plain-bg-active)
+           transition-all pl-2 hover:pl-3
+           text-neutral-700 hover:text-(--primary)
+           dark:text-neutral-300 dark:hover:text-(--primary)"
+>
+    <div class="flex w-full min-w-0 items-center justify-between relative mr-2">
+        <div class="overflow-hidden text-left whitespace-nowrap text-ellipsis">
+            <slot></slot>
+        </div>
+        { badge !== undefined && badge !== null && badge !== '' &&
+            /* 上游 Firefly 用 --primary 作徽标底色 + --deep-text 作文字色，
+               但本主题把 --primary 中性化成灰阶（深色下 = #dadada），
+               与 --deep-text 撞成同色导致数字不可见。
+               改用 --deep-text 的低透明度浮层作底，文字同色但对比度足够
+               （详见 sidebar-widget.css 的 .count-badge）。 */
+            <div class="count-badge transition px-2 h-7 ml-4 min-w-8 rounded-lg text-sm font-bold flex items-center justify-center">
+                { badge }
+            </div>
+        }
+    </div>
+</a>

@@ -1,0 +1,141 @@
+---
+/**
+ * 侧边栏挂件外壳
+ *
+ * 从 Firefly 上游同步（CuteLeaf/Firefly v6.16.8），两处本地化改动：
+ *  - 图标改用本项目的 @components/common/Icon.astro（强制 is:inline，规避 astro-icon v1 sprite bug）
+ *  - 容器类由 card-base 改为 sidebar-widget：本主题在 @layer components 里把 card-base
+ *    统一降级为透明无边框（极简风格），挂件需要自己的表面样式，否则会与 !important 打架
+ */
+import Icon from "@components/common/Icon.astro";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+
+interface Props {
+	id: string;
+	name?: string;
+	showTitle?: boolean;
+	isCollapsed?: boolean;
+	collapsedHeight?: string;
+	useExpandedButtonSpacing?: boolean;
+	moreUrl?: string;
+	class?: string;
+	style?: string;
+}
+const {
+	id,
+	name,
+	showTitle = true,
+	isCollapsed,
+	collapsedHeight,
+	useExpandedButtonSpacing = false,
+	moreUrl,
+	style,
+} = Astro.props;
+const className = Astro.props.class;
+---
+
+<widget-layout
+    data-id={id}
+    data-is-collapsed={String(isCollapsed)}
+    data-use-expanded-button-spacing={String(useExpandedButtonSpacing)}
+    class:list={["sidebar-widget", className]}
+    style={style}
+>
+    {name && showTitle && (
+        <div class="sidebar-widget__title">
+            <span class="sidebar-widget__name">{name}</span>
+            <slot name="title-icon" />
+        </div>
+    )}
+    <div id={id} class:list={["sidebar-widget__body", {"is-collapsed": isCollapsed}]}>
+        <slot></slot>
+    </div>
+    {isCollapsed && <div class="sidebar-widget__expand">
+        {moreUrl ? (
+            <a
+                href={moreUrl}
+                class="btn-plain rounded-lg w-full h-9 flex items-center justify-center"
+                title={i18n(I18nKey.more)}
+            >
+                <div class="text-(--primary) flex items-center justify-center gap-2 -translate-x-2">
+                    <Icon name="material-symbols:more-horiz" class="text-[1.75rem]" aria-hidden="true" />
+                    <span>{i18n(I18nKey.more)}</span>
+                </div>
+            </a>
+        ) : (
+            <button
+                class="btn-plain rounded-lg w-full h-9"
+                title={i18n(I18nKey.more)}
+                aria-label={i18n(I18nKey.more)}
+                data-show-more={i18n(I18nKey.more)}
+                data-show-less={i18n(I18nKey.collapse)}
+                data-expanded="false"
+            >
+                <div class="text-(--primary) flex items-center justify-center gap-2 -translate-x-2">
+                    <Icon name="material-symbols:more-horiz" class="toggle-icon-more text-[1.75rem]" aria-hidden="true" />
+                    <Icon name="material-symbols:keyboard-arrow-up-rounded" class="toggle-icon-less hidden text-[1.75rem]" aria-hidden="true" />
+                    <span class="toggle-text">{i18n(I18nKey.more)}</span>
+                </div>
+            </button>
+        )}
+    </div>}
+</widget-layout>
+
+<style define:vars={{ collapsedHeight }}>
+    .sidebar-widget__body.is-collapsed {
+        height: var(--collapsedHeight);
+    }
+
+    widget-layout[data-is-collapsed="true"][data-expanded="true"][data-use-expanded-button-spacing="true"] .sidebar-widget__expand {
+        padding-top: 0.5rem;
+    }
+</style>
+
+<script>
+    class WidgetLayout extends HTMLElement {
+        constructor() {
+            super();
+
+            if (this.dataset.isCollapsed !== "true")
+                return;
+
+            this.dataset.expanded = 'false';
+
+            const id = this.dataset.id;
+            const btn = this.querySelector('.sidebar-widget__expand button') as HTMLButtonElement | null;
+            const wrapper = this.querySelector(`#${id}`)
+
+            if (!btn || !wrapper)
+                return;
+
+            const text = btn.querySelector('.toggle-text');
+            const moreIcon = btn.querySelector('.toggle-icon-more');
+            const lessIcon = btn.querySelector('.toggle-icon-less');
+            const updateButtonState = (expanded: boolean) => {
+                const label = expanded
+                    ? btn.dataset.showLess || ''
+                    : btn.dataset.showMore || '';
+
+                btn.dataset.expanded = String(expanded);
+                this.dataset.expanded = String(expanded);
+                btn.title = label;
+                btn.setAttribute('aria-label', label);
+                if (text)
+                    text.textContent = label;
+                moreIcon?.classList.toggle('hidden', expanded);
+                lessIcon?.classList.toggle('hidden', !expanded);
+            };
+
+            btn.addEventListener('click', () => {
+                const expanded = btn.dataset.expanded === 'true';
+                wrapper.classList.toggle('is-collapsed', expanded);
+                updateButtonState(!expanded);
+            });
+        }
+    }
+
+    if (!customElements.get("widget-layout")) {
+        customElements.define("widget-layout", WidgetLayout);
+    }
+</script>

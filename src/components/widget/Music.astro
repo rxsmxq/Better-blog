@@ -1,0 +1,379 @@
+---
+/**
+ * 侧边栏「正在播放」音乐卡片
+ *
+ * 设计要点：
+ *  - 不实例化第二个播放器。桌面端播放器是 Swup 容器外的持久单例（MusicPlayer + MusicManager），
+ *    本卡片只订阅全局引擎 window.__fireflyMusic 的事件，展示当前曲目并转发 播放/暂停/上一首/下一首/模式 控制。
+ *  - 引擎字段：track.{name,artist,pic}；事件 fm:track / fm:play-state / fm:mode / fm:time / fm:init。
+ *  - 卡片位于 Swup 容器内，每次导航会重新渲染；脚本用 AbortController 在重新绑定时清理上次的全局监听，避免堆叠。
+ *  - 导航钩子使用 astro:page-load（本项目唯一）。
+ */
+import Icon from "@components/common/Icon.astro";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { WidgetComponentConfig } from "@/types/sidebarConfig";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style, widgetConfig } = Astro.props;
+
+const showTitle = widgetConfig?.showTitle !== false;
+---
+
+<WidgetLayout name={i18n(I18nKey.music)} showTitle={showTitle} id="music-card-widget" class={className} style={style}>
+	<div class="music-card" data-music-card>
+		<div class="music-card__head">
+			<div class="music-card__cover">
+				<img data-music-cover class="music-card__cover-img hidden" src="" alt="" />
+				<Icon
+					data-music-cover-fallback
+					name="material-symbols:music-note-rounded"
+					class="music-card__cover-fallback text-2xl"
+					aria-hidden="true"
+				/>
+			</div>
+			<div class="music-card__meta">
+				<p class="music-card__title" data-music-title>{i18n(I18nKey.musicNoPlaying)}</p>
+				<p class="music-card__artist" data-music-artist></p>
+			</div>
+		</div>
+
+		<div class="music-card__progress-row">
+			<span class="music-card__time" data-music-time-cur>0:00</span>
+			<div class="music-card__progress" role="progressbar" aria-label={i18n(I18nKey.musicProgress)} aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+				<div class="music-card__progress-bar" data-music-progress-bar></div>
+			</div>
+			<span class="music-card__time" data-music-time-tot>0:00</span>
+		</div>
+
+		<div class="music-card__controls">
+			<button class="music-card__btn" data-music-mode data-tooltip={i18n(I18nKey.musicPlayMode)} aria-label={i18n(I18nKey.musicPlayMode)} type="button">
+				<Icon data-music-icon-mode-list name="material-symbols:repeat-rounded" class="text-xl" aria-hidden="true" />
+				<Icon data-music-icon-mode-one name="material-symbols:repeat-one-rounded" class="text-xl hidden" aria-hidden="true" />
+				<Icon data-music-icon-mode-shuffle name="material-symbols:shuffle-rounded" class="text-xl hidden" aria-hidden="true" />
+			</button>
+			<button class="music-card__btn" data-music-prev data-tooltip={i18n(I18nKey.musicPrev)} aria-label={i18n(I18nKey.musicPrev)} type="button">
+				<Icon name="material-symbols:skip-previous-rounded" class="text-2xl" aria-hidden="true" />
+			</button>
+			<button class="music-card__btn music-card__btn--play" data-music-play data-tooltip={i18n(I18nKey.musicPlay)} aria-label={i18n(I18nKey.musicPlay)} type="button">
+				<Icon data-music-icon-play name="material-symbols:play-arrow-rounded" class="text-3xl" aria-hidden="true" />
+				<Icon data-music-icon-pause name="material-symbols:pause-rounded" class="text-3xl hidden" aria-hidden="true" />
+			</button>
+			<button class="music-card__btn" data-music-next data-tooltip={i18n(I18nKey.musicNext)} aria-label={i18n(I18nKey.musicNext)} type="button">
+				<Icon name="material-symbols:skip-next-rounded" class="text-2xl" aria-hidden="true" />
+			</button>
+		</div>
+	</div>
+</WidgetLayout>
+
+<script>
+	// 跨导航复用的 AbortController，重新绑定时先清理上一次的全局监听
+	let musicCardAbort: AbortController | null = null;
+
+	function engine(): any {
+		return (window as any).__fireflyMusic;
+	}
+
+	function setupMusicCard(root: HTMLElement) {
+		if (!root) return;
+
+		if (musicCardAbort) musicCardAbort.abort();
+		const ac = new AbortController();
+		musicCardAbort = ac;
+		const signal = ac.signal;
+
+		const cover = root.querySelector<HTMLImageElement>("[data-music-cover]");
+		const coverFallback = root.querySelector<HTMLElement>("[data-music-cover-fallback]");
+		const titleEl = root.querySelector<HTMLElement>("[data-music-title]");
+		const artistEl = root.querySelector<HTMLElement>("[data-music-artist]");
+		const playBtn = root.querySelector<HTMLButtonElement>("[data-music-play]");
+		const playIcon = root.querySelector<HTMLElement>("[data-music-icon-play]");
+		const pauseIcon = root.querySelector<HTMLElement>("[data-music-icon-pause]");
+		const prevBtn = root.querySelector<HTMLButtonElement>("[data-music-prev]");
+		const nextBtn = root.querySelector<HTMLButtonElement>("[data-music-next]");
+		const modeBtn = root.querySelector<HTMLButtonElement>("[data-music-mode]");
+		const modeListIcon = root.querySelector<HTMLElement>("[data-music-icon-mode-list]");
+		const modeOneIcon = root.querySelector<HTMLElement>("[data-music-icon-mode-one]");
+		const modeShuffleIcon = root.querySelector<HTMLElement>("[data-music-icon-mode-shuffle]");
+		const progressBar = root.querySelector<HTMLElement>("[data-music-progress-bar]");
+		const progressEl = root.querySelector<HTMLElement>("[data-music-progress]");
+		const timeCur = root.querySelector<HTMLElement>("[data-music-time-cur]");
+		const timeTot = root.querySelector<HTMLElement>("[data-music-time-tot]");
+
+		function syncTrack(track: any) {
+			if (track && track.name) {
+				if (titleEl) {
+					titleEl.textContent = track.name;
+					titleEl.title = track.name;
+				}
+				if (artistEl) {
+					artistEl.textContent = track.artist || "";
+					artistEl.title = track.artist || "";
+				}
+				if (track.pic) {
+					if (cover) {
+						cover.src = track.pic;
+						cover.alt = `${track.name} - ${track.artist}`;
+						cover.classList.remove("hidden");
+					}
+					if (coverFallback) coverFallback.classList.add("hidden");
+				} else {
+					if (cover) {
+						cover.classList.add("hidden");
+						cover.removeAttribute("src");
+					}
+					if (coverFallback) coverFallback.classList.remove("hidden");
+				}
+			} else {
+				if (titleEl) titleEl.textContent = (window as any).__musicNoPlayingText || titleEl.textContent;
+				if (artistEl) artistEl.textContent = "";
+				if (cover) cover.classList.add("hidden");
+				if (coverFallback) coverFallback.classList.remove("hidden");
+			}
+		}
+
+		function applyPlayState(isPlaying: boolean) {
+			if (playIcon) playIcon.classList.toggle("hidden", isPlaying);
+			if (pauseIcon) pauseIcon.classList.toggle("hidden", !isPlaying);
+		}
+
+		function updateModeUI(playMode: number) {
+			const m = playMode == null ? 0 : playMode;
+			if (modeListIcon) modeListIcon.classList.toggle("hidden", m !== 0);
+			if (modeOneIcon) modeOneIcon.classList.toggle("hidden", m !== 1);
+			if (modeShuffleIcon) modeShuffleIcon.classList.toggle("hidden", m !== 2);
+		}
+
+		function applyTime(d: any) {
+			if (progressBar) progressBar.style.width = `${d.progress || 0}%`;
+			if (progressEl) progressEl.setAttribute("aria-valuenow", String(Math.round(d.progress || 0)));
+			if (timeCur) timeCur.textContent = d.currentTimeStr || "0:00";
+			if (timeTot) timeTot.textContent = d.durationStr || "0:00";
+		}
+
+		// 初始同步：读取当前引擎状态
+		const m = engine();
+		if (m && m.getState) {
+			const s = m.getState();
+			syncTrack(s.track);
+			applyPlayState(s.isPlaying);
+			updateModeUI(s.playMode);
+			applyTime(s);
+		}
+
+		// 控制按钮
+		if (playBtn)
+			playBtn.addEventListener(
+				"click",
+				() => {
+					const e = engine();
+					if (e && e.togglePlay) e.togglePlay();
+				},
+				{ signal },
+			);
+		if (prevBtn)
+			prevBtn.addEventListener(
+				"click",
+				() => {
+					const e = engine();
+					if (e && e.playPrev) e.playPrev();
+				},
+				{ signal },
+			);
+		if (nextBtn)
+			nextBtn.addEventListener(
+				"click",
+				() => {
+					const e = engine();
+					if (e && e.playNext) e.playNext();
+				},
+				{ signal },
+			);
+		if (modeBtn)
+			modeBtn.addEventListener(
+				"click",
+				() => {
+					const e = engine();
+					if (e && e.cyclePlayMode) e.cyclePlayMode();
+				},
+				{ signal },
+			);
+
+		// 订阅引擎事件（一次性绑定，signal 控制清理）
+		window.addEventListener(
+			"fm:track",
+			(e: any) => syncTrack(e.detail && e.detail.track),
+			{ signal },
+		);
+		window.addEventListener(
+			"fm:play-state",
+			(e: any) => applyPlayState(e.detail && e.detail.isPlaying),
+			{ signal },
+		);
+		window.addEventListener(
+			"fm:mode",
+			(e: any) => updateModeUI(e.detail && e.detail.playMode),
+			{ signal },
+		);
+		window.addEventListener(
+			"fm:time",
+			(e: any) => applyTime(e.detail || {}),
+			{ signal },
+		);
+		window.addEventListener(
+			"fm:init",
+			() => {
+				const e = engine();
+				if (!e || !e.getState) return;
+				const s = e.getState();
+				syncTrack(s.track);
+				applyPlayState(s.isPlaying);
+				updateModeUI(s.playMode);
+			},
+			{ signal },
+		);
+	}
+
+	function initMusicCard() {
+		const root = document.querySelector<HTMLElement>("[data-music-card]");
+		setupMusicCard(root as HTMLElement);
+	}
+
+	initMusicCard();
+
+	// 首次加载若引擎尚未就绪，记录占位文案，待 fm:init / fm:track 再覆盖
+	const placeholder = document.querySelector<HTMLElement>("[data-music-title]");
+	if (placeholder) (window as any).__musicNoPlayingText = placeholder.textContent;
+
+	if (!(window as any).__musicCardInit) {
+		(window as any).__musicCardInit = true;
+		document.addEventListener("astro:page-load", () => {
+			setTimeout(initMusicCard, 50);
+		});
+	}
+</script>
+
+<style>
+	.music-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.625rem;
+	}
+
+	.music-card__head {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.music-card__cover {
+		flex: 0 0 auto;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.625rem;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--btn-plain-bg-hover);
+		color: var(--content-meta);
+	}
+
+	.music-card__cover-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.music-card__meta {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.music-card__title {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--deep-text);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.music-card__artist {
+		font-size: 0.75rem;
+		color: var(--content-meta);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.music-card__progress-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.music-card__time {
+		font-size: 0.625rem;
+		color: var(--content-meta);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.music-card__progress {
+		flex: 1 1 auto;
+		height: 4px;
+		border-radius: 999px;
+		background-color: var(--btn-plain-bg-hover);
+		overflow: hidden;
+	}
+
+	.music-card__progress-bar {
+		height: 100%;
+		width: 0%;
+		border-radius: 999px;
+		background-color: var(--primary);
+		transition: width 0.2s linear;
+	}
+
+	.music-card__controls {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+	}
+
+	.music-card__btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.625rem;
+		color: var(--content-meta);
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease;
+	}
+
+	.music-card__btn:hover {
+		background-color: var(--btn-plain-bg-hover);
+		color: var(--primary);
+	}
+
+	.music-card__btn--play {
+		width: 2.75rem;
+		height: 2.75rem;
+		color: var(--primary);
+	}
+
+	.music-card__btn--play:hover {
+		background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+	}
+</style>

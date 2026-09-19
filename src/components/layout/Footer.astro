@@ -9,7 +9,7 @@ import { url } from "@/utils/url-utils";
 
 const currentYear = new Date().getFullYear();
 const siteStartDate = siteConfig.siteStartDate || "";
-const { socialLinks, beian, poweredBy } = footerConfig;
+const { socialLinks, beian, poweredBy, showUtilityLinks } = footerConfig;
 const bioText = Array.isArray(homeConfig.bio)
 	? homeConfig.bio[0] || ""
 	: homeConfig.bio || "";
@@ -114,27 +114,29 @@ const opensInNewTab = (href: string) => !/^(mailto:|tel:)/i.test(href);
 						</li>
 					))}
 				</ul>
-				<div class="site-footer__utility-links">
-					<a href={url("sitemap-index.xml")} target="_blank" rel="noreferrer">Sitemap</a>
-					<span aria-hidden="true">/</span>
-					<a href={url("rss/")} target="_blank" rel="noreferrer">RSS</a>
-					<span aria-hidden="true">/</span>
-					<button
-						class="site-footer__utility-button"
-						onclick="window.openPrivacyModal && window.openPrivacyModal()"
-						type="button"
-					>
-						{i18n(I18nKey.privacyPolicy)}
-					</button>
-					<span aria-hidden="true">/</span>
-					<button
-						class="site-footer__utility-button"
-						onclick="window.openUserAgreementModal && window.openUserAgreementModal()"
-						type="button"
-					>
-						{i18n(I18nKey.userAgreement)}
-					</button>
-				</div>
+				{showUtilityLinks && (
+					<div class="site-footer__utility-links">
+						<a href={url("sitemap-index.xml")} target="_blank" rel="noreferrer">Sitemap</a>
+						<span aria-hidden="true">/</span>
+						<a href={url("rss/")} target="_blank" rel="noreferrer">RSS</a>
+						<span aria-hidden="true">/</span>
+						<button
+							class="site-footer__utility-button"
+							onclick="window.openPrivacyModal && window.openPrivacyModal()"
+							type="button"
+						>
+							{i18n(I18nKey.privacyPolicy)}
+						</button>
+						<span aria-hidden="true">/</span>
+						<button
+							class="site-footer__utility-button"
+							onclick="window.openUserAgreementModal && window.openUserAgreementModal()"
+							type="button"
+						>
+							{i18n(I18nKey.userAgreement)}
+						</button>
+					</div>
+				)}
 			</nav>
 		</div>
 

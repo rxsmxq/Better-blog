@@ -372,20 +372,33 @@ export type HeroStickerConfig = {
 	eye: {
 		xPercent: number;
 		yPercent: number;
+		/** 左瞳孔直径，相对贴纸宽度的百分比。省略则用 CSS 默认值 8.5% */
+		widthPercent?: number;
 		travelXPercent: number;
 		travelYPercent: number;
 	};
 	rightEye: {
 		xPercent: number;
 		yPercent: number;
+		/** 右瞳孔直径，相对贴纸宽度的百分比。省略则用 CSS 默认值 8.5% */
+		widthPercent?: number;
 	};
 	mouth: {
 		xPercent: number;
 		yPercent: number;
+		/** 静息态（不说话）的嘴宽 / 嘴高，相对贴纸宽（高）的百分比 */
 		widthPercent: number;
 		heightPercent: number;
 		rotation: number;
 		travelScale: number;
+		/**
+		 * 说话时（打字机输出中，data-typing="true"）的嘴宽 / 嘴高，
+		 * 口径同静息态：相对贴纸宽（高）的百分比。
+		 * 省略则沿用内置的响应式尺寸 ——
+		 * clamp(1.35rem, 2vw, 1.85rem) / clamp(0.65rem, 0.9vw, 0.8rem)。
+		 */
+		talkWidthPercent?: number;
+		talkHeightPercent?: number;
 	};
 };
 
@@ -631,6 +644,7 @@ export type FooterConfig = {
 	socialLinks: FooterSocialLink[]; // 社交链接
 	beian: FooterBeianConfig; // 备案信息
 	poweredBy: FooterPoweredByItem[]; // Powered by 信息
+	showUtilityLinks: boolean; // 是否显示页脚工具链接（Sitemap / RSS / 隐私政策 / 用户协议）
 };
 
 export type CoverImageConfig = {

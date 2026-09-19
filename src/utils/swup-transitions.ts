@@ -8,6 +8,10 @@
  */
 
 import { expressiveCodeConfig, siteConfig } from "@/config";
+import {
+	updateMainGridCols,
+	updateSidebarComponentsVisibility,
+} from "@/utils/grid-layout-utils";
 import { finishProgressBar, startProgressBar } from "@/utils/progress-bar";
 import { onSwupHook } from "@/utils/swup-lifecycle";
 
@@ -26,17 +30,15 @@ function clearTocFlagResetTimer(): void {
 }
 
 /**
- * 侧边栏挂件在 Swup 容器之外，切页后要按新路径重算显隐。
- * 首次加载不必跑：服务端渲染出来的类名已经是对的。
+ * 侧边栏在 Swup 容器之外，切页后要按新路径重算两件事：
+ *   1. 各挂件的显隐（showOnPostPage / hideOnNonPostPage / hideSidebarOnPostPage）
+ *   2. #main-grid 的列几何（文章页与非文章页的挂件集合不同，列数可能变化）
+ *
+ * 具体逻辑在 grid-layout-utils.ts，与 SSR 共用 computeGridColumns() 这一真源。
  */
-function updateSidebarWidgetVisibility(): void {
-	const isPost = window.location.pathname.includes("/posts/");
-	document.querySelectorAll(".widget-hide-on-post").forEach((element) => {
-		element.classList.toggle("hidden", isPost);
-	});
-	document.querySelectorAll(".widget-hide-on-non-post").forEach((element) => {
-		element.classList.toggle("hidden", !isPost);
-	});
+function syncSidebarAfterNavigation(): void {
+	updateSidebarComponentsVisibility();
+	updateMainGridCols();
 }
 
 /**
@@ -61,7 +63,7 @@ function syncExpressiveCodeTheme(): void {
 /** 注册 Swup 切页钩子。实例就绪时序由 `onSwupHook` 处理。 */
 export function setupSwupTransitions(): void {
 	// content:replace 时 URL 已更新，此刻同步显隐即可，page:view 不必再来一遍
-	onSwupHook("content:replace", updateSidebarWidgetVisibility);
+	onSwupHook("content:replace", syncSidebarAfterNavigation);
 
 	onSwupHook("visit:start", () => {
 		clearTocFlagResetTimer();

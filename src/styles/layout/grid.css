@@ -1,14 +1,128 @@
 /* ============================================
    主网格布局 — 来自 MainGridLayout.astro
+   ============================================
+   #main-grid 的列几何全部由 CSS 变量驱动，变量由 computeGridColumns() 生成
+   （src/utils/responsive-utils.ts），SSR 与客户端共用同一真源。
+
+   断点行为：
+     < 768px    单列，侧栏不参与布局，改由 #mobile-bottom-sidebar 承担
+     768–1279px 按 tabletSidebar 显示一侧
+     ≥ 1280px   按 position 显示（both 则双栏）
+
+   侧栏包裹层用 display:contents，真正的 grid item 是其内层元素，
+   因此按 DOM 顺序自动落位，无需额外的定位类。
    ============================================ */
 
 #main-grid {
 	--page-width: 64rem;
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-auto-rows: min-content;
 }
 
 /* Swup 容器最小高度保护，防止页面过渡时高度塌陷导致 Footer 跳动 */
 #swup-container {
 	min-height: 60vh;
+}
+
+/* <768px：侧栏一律不参与布局 */
+#main-grid > #left-sidebar-wrapper,
+#main-grid > #left-sidebar-dynamic,
+#main-grid > #right-sidebar-static,
+#main-grid > #right-sidebar-dynamic {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	#main-grid {
+		grid-template-columns: var(--cols-md, 1fr);
+	}
+	#main-grid > #left-sidebar-wrapper,
+	#main-grid > #left-sidebar-dynamic {
+		display: var(--left-display-md, contents);
+	}
+	#main-grid > #right-sidebar-static,
+	#main-grid > #right-sidebar-dynamic {
+		display: var(--right-display-md, contents);
+	}
+	#main-grid #left-sidebar,
+	#main-grid #right-sidebar {
+		max-width: var(--grid-sidebar-width);
+	}
+
+	/* 有侧栏列时 --content-max-md 为 100%（实际宽度由 1fr 决定）；
+	   无侧栏列时收窄到配置的绝对宽度，保持改造前的 64rem 版心。
+	   width:100% 不可省（否则 auto 外边距会取消 stretch） */
+	#main-grid > #content-column {
+		width: 100%;
+		max-width: var(--content-max-md, 100%);
+		margin-inline: auto;
+	}
+}
+
+@media (min-width: 1280px) {
+	#main-grid {
+		grid-template-columns: var(--cols-xl, 1fr);
+	}
+	#main-grid > #left-sidebar-wrapper,
+	#main-grid > #left-sidebar-dynamic {
+		display: var(--left-display-xl, contents);
+	}
+	#main-grid > #right-sidebar-static,
+	#main-grid > #right-sidebar-dynamic {
+		display: var(--right-display-xl, contents);
+	}
+	#main-grid > #content-column {
+		max-width: var(--content-max-xl, 100%);
+	}
+}
+
+/* 首页的内容列不裁横向。
+   首页在雨景（GSAP pin）之后还有一整组全宽层 —— ticker / data-layer / blinds
+   都按「相对内容列居中 + width:100vw」铺满视口（实测 left:-5 / width:1440），
+   天然比无侧栏时的 64rem 版心内容列宽。staticBarClass 上的 overflow-x-clip
+   会把它们多出来的两侧裁掉，表现为「雨景段之后左右被挡住/切掉一半」。
+   这里按页型放开：:has 随 Swup 替换 .home-page 自动失配，无需客户端重算几何。 */
+#main-grid:has(#swup-container .home-page) > #content-column {
+	overflow-x: visible;
+}
+
+/* 留言页同样用「width:100vw + 负边距」做全宽铺满（.guestbook-page，
+   guestbook-chat.css:5），天然比无侧栏时的 64rem 版心内容列宽。
+   #content-column 上的 overflow-x-clip 会把它多出来的两侧对称裁掉，
+   表现为「留言界面两侧被遮挡 / 切掉一半」。与首页豁免同源：按页型放开内容列横向溢出。
+   :has 随 Swup 替换 .guestbook-page 自动失配，无需客户端重算几何。 */
+#main-grid:has(#swup-container .guestbook-page) > #content-column {
+	overflow-x: visible;
+}
+
+/* 404 页同样是「width:100vw + 负边距」全宽铺满（.page-404，404.css:14），
+   而且比前两者更需要整幅视口 —— 电梯楼梯 canvas 是满屏画布，
+   标题与按钮居中在整幅画面里。被 #content-column 裁到 822px 后，
+   两侧楼梯被切、居中标题还会被左右侧栏压住。同源豁免：按页型放开横向溢出。 */
+#main-grid:has(#swup-container .page-404) > #content-column {
+	overflow-x: visible;
+}
+
+/* 移动端单列兜底：即便上面给了 grid 也要退回块级流式布局 */
+@media (max-width: 767px) {
+	.mobile-no-sidebar {
+		display: block !important;
+		width: 100% !important;
+	}
+
+	.mobile-no-sidebar main {
+		width: 100% !important;
+		max-width: 100% !important;
+		margin: 0 !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+	}
+
+	.mobile-no-sidebar #content-wrapper {
+		width: 100% !important;
+		max-width: 100% !important;
+	}
 }
 
 /* .onload-animation 统一定义在 transition.css 中，避免 CSS 冲突 */

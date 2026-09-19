@@ -1,7 +1,16 @@
 /* 404 电梯场景 */
 
+/* 本页要铺满整幅视口，但位于
+   #main-grid > #content-column > #swup-container > #content-wrapper > .page-404，
+   #content-column 在侧栏存在时很窄（1024px 视口下约 660px）且 overflow-x 为 clip。
+   因此用 fixed 直接把页面钉在视口上：宽高按视口取，与任何祖先宽度无关，
+   也不会再把祖先撑出横向滚动（原先 width:100vw + 负边距在窄内容列里会溢出 135px）。
+   fixed 需要祖先没有 transform/filter 等包含块，故一并把这几层的变换类效果关掉。 */
 html:has(.page-404) #content-wrapper:has(> .page-404) {
 	animation: none;
+	transform: none;
+	filter: none;
+	will-change: auto;
 }
 
 html:has(.page-404) .site-footer {
@@ -9,12 +18,13 @@ html:has(.page-404) .site-footer {
 }
 
 .page-404 {
-	position: relative;
+	position: fixed;
+	inset: 0;
+	z-index: 1;
 	isolation: isolate;
 	width: 100vw;
 	height: 100svh;
 	min-height: 34rem;
-	margin-inline: calc(50% - 50vw);
 	overflow: hidden;
 	background: var(--page-bg);
 	color: var(--deep-text);
@@ -100,6 +110,16 @@ html:has(.page-404) .site-footer {
 	width: min(22rem, calc(100vw - 3rem));
 	padding: 0.625rem 1.5rem 0.625rem 1.25rem;
 	text-align: right;
+}
+
+/* 双栏布局下右侧栏（17.5rem）会盖住靠右定位的标题与按钮：
+   404 画面铺满整幅视口，而内容区仍按 right 让位，二者必然重叠。
+   这里在 ≥1280px（双栏出现）时把内容整体左移到侧栏之外。
+   单侧栏（768–1279px 且只显示右栏）同样需要，故统一按侧栏宽度让位。 */
+@media (min-width: 1280px) {
+	.page-404__content {
+		right: calc(var(--grid-sidebar-width, 17.5rem) + clamp(1.5rem, 3vw, 3rem));
+	}
 }
 
 .page-404__content::before {

@@ -14,6 +14,10 @@
 
 import { ArticleTocPanelRuntime } from "@/utils/article-toc-panel-controller";
 import { scheduleContentOverflowEnhancements } from "@/utils/content-overflow";
+import {
+	refreshSidebarStickyState,
+	updateSidebarStickySpacing,
+} from "@/utils/grid-layout-utils";
 import { installLazyCollapsibleCodeController } from "@/utils/lazy-collapsible-code-controller";
 import { initPageLoader } from "@/utils/page-loader-controller.js";
 import { installSwupCssPrefetch } from "@/utils/swup-css-prefetch";
@@ -37,6 +41,15 @@ export function initLayout(): void {
 	definePersistentIsland("layout:article-toc-panel", () => {
 		window.__articleTocPanelRuntime = new ArticleTocPanelRuntime();
 		window.__articleTocPanelRuntime.start();
+	});
+
+	// 侧栏 sticky 顶部间距：首次挂载时读一次布局缓存，之后滚动只切换 top 类名。
+	// 切页后的重算由 swup-transitions 的 syncSidebarAfterNavigation 触发。
+	definePersistentIsland("layout:sidebar-sticky-spacing", () => {
+		refreshSidebarStickyState();
+		window.addEventListener("scroll", updateSidebarStickySpacing, {
+			passive: true,
+		});
 	});
 
 	// 进度条、回顶、主题校正、侧边栏显隐

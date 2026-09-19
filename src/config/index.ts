@@ -42,6 +42,11 @@ export type {
 	MermaidConfig,
 	MermaidThemeName,
 } from "../types/mermaidConfig";
+export type {
+	SidebarLayoutConfig,
+	WidgetComponentConfig,
+	WidgetComponentType,
+} from "../types/sidebarConfig";
 // 核心配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 export { calendarConfig } from "./calendarConfig"; // 日历配置
@@ -66,4 +71,5 @@ export { live2dModelConfig, spineModelConfig } from "./pioConfig"; // 看板娘�
 export { plantumlConfig } from "./plantumlConfig"; // PlantUML 图表配置
 // 布局配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
+export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 export { sponsorConfig } from "./sponsorConfig"; // 赞助配置

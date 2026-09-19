@@ -7,21 +7,22 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "MmzMing的博客",
+	title: "Better的博客",
 
 	// 站点副标题
-	subtitle: "MmzMing",
+	subtitle: "Better",
 
 	// 站点 URL
-	site_url: "https://tblog.mmzhiku.xyz",
+	// ⚠️ 占位值，务必改成你自己的域名：它决定 sitemap / RSS / canonical / OG 的绝对链接
+	site_url: "https://example.com",
 
 	// 站点描述
 	description:
-		"一个记录学习、工作实践、开发经验与生活随笔的个人博客，持续整理值得分享的知识、项目和思考。",
+		"一个记录学习、生活，分享经验的个人博客。",
 
 	// 站点关键词
 	keywords: [
-		"MmzMing",
+		"Better",
 		"JAVA",
 		"AI",
 		"Astro",
@@ -112,7 +113,7 @@ export const siteConfig: SiteConfig = {
 			alt: "logo",
 		},
 		// 导航栏标题
-		title: "MmzMing的博客",
+		title: "Better的博客",
 		// 全宽导航栏，导航栏是否占满屏幕宽度
 		widthFull: false,
 	},
@@ -162,7 +163,9 @@ export const siteConfig: SiteConfig = {
 		// 友链页面开关
 		friends: true,
 		// 打赏页面开关
-		sponsor: true,
+		// ⚠️ 已关闭：public/assets/images/wechat-pay.avif 还是原作者的收款码，
+		// 换上你自己的收款码图片后再改回 true
+		sponsor: false,
 		// 留言板页面开关，需要配置评论系统
 		guestbook: true,
 		// 相册页面开关
@@ -194,18 +197,20 @@ export const siteConfig: SiteConfig = {
 		// Microsoft Clarity ID
 		microsoftClarityId: "",
 		// Umami 统计配置
+		// ⚠️ 原配置指向原作者的统计实例（会把访客数据上报到别人的服务器），已清空。
+		// 自建 Umami 后填入这三项即可恢复；websiteId 为空时统计脚本不会加载。
 		umamiAnalytics: {
-			websiteId: "d47eea8b-7ad5-472b-a838-c873ba859c4f",
-			shareId: "HZrqqAfVdx1UEVNm",
-			scriptUrl: "https://stats.mmzhiku.xyz/script.js",
+			websiteId: "",
+			shareId: "",
+			scriptUrl: "",
 			// 使用 Umami 的 PV 展示文章详情、列表与网格浏览量；启用时优先于评论系统统计
 			pageviews: {
-				enabled: true,
+				enabled: false,
 			},
 			// 是否追踪出站链接
-			trackOutboundLinks: true,
+			trackOutboundLinks: false,
 			// 是否收集浏览器性能指标
-			collectWebVitals: true,
+			collectWebVitals: false,
 			// 会话回放配置
 			relpays: {
 				// 是否启用会话回放

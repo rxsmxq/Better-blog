@@ -1,0 +1,187 @@
+---
+/**
+ * 站点统计挂件
+ * 从 Firefly 上游同步（CuteLeaf/Firefly v6.16.8），类型导入改为本项目的 @/types/sidebarConfig
+ */
+import Icon from "@components/common/Icon.astro";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { WidgetComponentConfig } from "@/types/sidebarConfig";
+import {
+	getCategoryList,
+	getSortedPosts,
+	getTagList,
+} from "@/utils/content-utils";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style, widgetConfig } = Astro.props;
+
+const showTitle = widgetConfig?.showTitle !== false;
+
+const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
+
+const posts = await getSortedPosts();
+const categories = await getCategoryList();
+const tags = await getTagList();
+
+// 计算总字数（剔除代码块后再统计，避免代码量淹没正文）
+let totalWords = 0;
+for (const post of posts) {
+	if (post.body) {
+		const text = post.body
+			.replace(/```[\s\S]*?```/g, "")
+			.replace(/`[^`]*`/g, "")
+			.replace(/\s+/g, " ")
+			.trim();
+
+		const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+		const englishChars = text.match(/[a-zA-Z]/g) || [];
+
+		totalWords += chineseChars.length + englishChars.length;
+	}
+}
+
+function formatNumber(num: number): string {
+	return num.toLocaleString();
+}
+
+// 「最后活动」= 全站所有文章中 published / updated 取较新者的最大值
+const getActivityDate = (post: (typeof posts)[number]): Date => {
+	const { published, updated } = post.data;
+	if (updated && updated > published) return updated;
+	return published;
+};
+
+const lastActivityDate = posts.reduce<Date | null>((latest, post) => {
+	const current = getActivityDate(post);
+	if (!latest || current > latest) return current;
+	return latest;
+}, null);
+
+const lastPostDate = lastActivityDate ? lastActivityDate.toISOString() : null;
+
+const todayText = i18n(I18nKey.today);
+
+const stats = [
+	{
+		icon: "material-symbols:article-outline",
+		label: i18n(I18nKey.siteStatsPostCount),
+		value: posts.length,
+	},
+	{
+		icon: "material-symbols:folder-outline",
+		label: i18n(I18nKey.siteStatsCategoryCount),
+		value: categories.length,
+	},
+	{
+		icon: "material-symbols:label-outline",
+		label: i18n(I18nKey.siteStatsTagCount),
+		value: tags.length,
+	},
+	{
+		icon: "material-symbols:text-ad-outline-rounded",
+		label: i18n(I18nKey.siteStatsTotalWords),
+		value: totalWords,
+		formatted: true,
+	},
+	{
+		icon: "material-symbols:calendar-clock-outline",
+		label: i18n(I18nKey.siteStatsRunningDays),
+		value: 0, // 由客户端更新
+		suffix: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
+		id: "running-days",
+	},
+	{
+		icon: "mingcute:heartbeat-line",
+		label: i18n(I18nKey.siteStatsLastUpdate),
+		value: 0, // 由客户端更新
+		suffix: i18n(I18nKey.siteStatsDaysAgo).replace("{days}", ""),
+		id: "last-update",
+	},
+];
+---
+
+<WidgetLayout
+	name={i18n(I18nKey.siteStats)}
+	showTitle={showTitle}
+	id="site-stats"
+	class={className}
+	style={style}
+>
+	<div class="flex flex-col gap-2">
+		{stats.map((stat) => (
+			<div class="flex items-center justify-between px-3 py-1.5">
+				<div class="flex items-center gap-2.5">
+					<div class="text-(--primary) text-xl">
+						<Icon name={stat.icon} />
+					</div>
+					<span class="text-neutral-700 dark:text-neutral-300 font-medium text-sm">
+						{stat.label}
+					</span>
+				</div>
+				<div class="flex items-center">
+					<span
+						class="text-base font-bold text-neutral-900 dark:text-neutral-100"
+						data-stat-id={stat.id}
+					>
+						{stat.formatted ? formatNumber(stat.value) : stat.value}
+					</span>
+					{stat.suffix && (
+						<span class="ml-1 text-sm text-neutral-500 dark:text-neutral-400">
+							{stat.suffix}
+						</span>
+					)}
+				</div>
+			</div>
+		))}
+	</div>
+</WidgetLayout>
+
+<script is:inline define:vars={{ siteStartDate, lastPostDate, todayText }}>
+	function updateDynamicStats() {
+		const today = new Date();
+
+		const startDate = new Date(siteStartDate);
+		const diffDays = Math.ceil(
+			Math.abs(today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+		);
+
+		document.querySelectorAll('[data-stat-id="running-days"]').forEach((el) => {
+			el.textContent = diffDays.toString();
+		});
+
+		if (lastPostDate) {
+			const lastPost = new Date(lastPostDate);
+			const daysSince = Math.floor(
+				Math.abs(today.getTime() - lastPost.getTime()) / (1000 * 60 * 60 * 24),
+			);
+
+			document.querySelectorAll('[data-stat-id="last-update"]').forEach((el) => {
+				if (daysSince === 0) {
+					el.textContent = todayText;
+					if (el.nextElementSibling) el.nextElementSibling.style.display = "none";
+				} else {
+					el.textContent = daysSince.toString();
+					if (el.nextElementSibling) el.nextElementSibling.style.display = "";
+				}
+			});
+		}
+	}
+
+	updateDynamicStats();
+
+	// 防止 Swup 切页重跑脚本时重复注册
+	if (!window.__siteStatsInit) {
+		window.__siteStatsInit = true;
+		document.addEventListener("swup:contentReplaced", () => {
+			setTimeout(updateDynamicStats, 100);
+		});
+	}
+</script>

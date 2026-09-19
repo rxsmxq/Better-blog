@@ -36,20 +36,6 @@ export const sponsorConfig: SponsorConfig = {
 	],
 
 	// 赞助者列表（可选）
-	sponsors: [
-		// 示例：已实名赞助者
-		{
-			name: "高赞首富",
-			amount: "¥648",
-			date: "2026-01-01",
-		},
-		// 示例：匿名赞助者
-		{
-			name: "哈基墩",
-			amount: "¥0.01",
-			date: "2026-01-01",
-			avatar:
-				"https://i.stardots.io/784774835/StarDots-2026060803504474780.png",
-		},
-	],
+	// 原列表是原作者的示例数据（含其图床头像），已清空；有真实赞助者后再往里加
+	sponsors: [],
 };

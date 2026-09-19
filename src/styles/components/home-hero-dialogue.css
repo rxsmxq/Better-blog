@@ -511,12 +511,16 @@
 	animation: home-hero-sticker-blink 5.4s ease-in-out 0.8s infinite;
 }
 
+/* 瞳孔直径：8.5% 是兜底值，配置给了 eye/rightEye.widthPercent 时由变量覆盖。
+   尺寸按贴纸宽度百分比走，因此随 .home-hero__sticker 的整体缩放等比变化。 */
 .home-hero__sticker-eye--left {
+	width: var(--home-hero-left-eye-width, 8.5%);
 	left: var(--home-hero-left-eye-x);
 	top: var(--home-hero-left-eye-y);
 }
 
 .home-hero__sticker-eye--right {
+	width: var(--home-hero-right-eye-width, 8.5%);
 	left: var(--home-hero-right-eye-x);
 	top: var(--home-hero-right-eye-y);
 }
@@ -538,8 +542,10 @@
 		.home-hero__dialogue-box[data-typing="true"]
 	)
 	.home-hero__sticker-mouth {
-	width: clamp(1.35rem, 2vw, 1.85rem);
-	height: clamp(0.65rem, 0.9vw, 0.8rem);
+	/* 说话态尺寸可由 mouth.talkWidthPercent / talkHeightPercent 覆盖；
+	   省略时沿用原来的响应式 clamp，行为与加配置项之前完全一致 */
+	width: var(--home-hero-mouth-talk-width, clamp(1.35rem, 2vw, 1.85rem));
+	height: var(--home-hero-mouth-talk-height, clamp(0.65rem, 0.9vw, 0.8rem));
 	border-radius: 0.16rem;
 	clip-path: inset(0 round 0.16rem);
 	animation: home-hero-sticker-talk 180ms steps(2, end) infinite;

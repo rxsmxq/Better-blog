@@ -1,0 +1,141 @@
+---
+/**
+ * 公告挂件
+ *
+ * 上游 Firefly 的公告是「单条 content + link」结构，本项目 announcementConfig 已重构为
+ * 多条目列表（items: [{tag, title, content, time, link, sort}]），故这里按列表渲染：
+ * 取 sort 最大的前若干条，每条展示 tag / 标题 / 正文 / 时间 / 可选链接。
+ */
+import Icon from "@components/common/Icon.astro";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import { announcementConfig } from "@/config/announcementConfig";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { WidgetComponentConfig } from "@/types/sidebarConfig";
+import { url } from "@/utils/url-utils";
+
+const config = announcementConfig;
+
+// 侧栏空间有限，最多展示 3 条（sort 越大越靠前）
+const MAX_ITEMS = 3;
+const items = [...config.items].sort((a, b) => b.sort - a.sort).slice(0, MAX_ITEMS);
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+const { class: className, style, widgetConfig } = Astro.props;
+
+const showTitle = widgetConfig?.showTitle !== false;
+---
+
+{
+	items.length > 0 && (
+		<WidgetLayout
+			name={config.title || i18n(I18nKey.announcement)}
+			showTitle={showTitle}
+			id="announcement"
+			class={className}
+			style={style}
+		>
+			<div class="flex flex-col gap-3">
+				{items.map((item) => (
+					<div class="announcement-item">
+						<div class="announcement-item__head">
+							<span class="announcement-item__tag">{item.tag}</span>
+							<span class="announcement-item__time">{item.time}</span>
+						</div>
+						{item.title && (
+							<div class="announcement-item__title">{item.title}</div>
+						)}
+						<p class="announcement-item__content">{item.content}</p>
+						{item.link && (
+							<a
+								href={url(item.link)}
+								class="announcement-item__link"
+							>
+								{i18n(I18nKey.more)}
+							</a>
+						)}
+					</div>
+				))}
+			</div>
+
+			{config.closable && (
+				<button
+					class="announcement-close"
+					onclick="this.closest('widget-layout').style.display='none'"
+					aria-label={i18n(I18nKey.announcementClose)}
+				>
+					<Icon name="fa7-solid:xmark" class="text-sm" />
+				</button>
+			)}
+		</WidgetLayout>
+	)
+}
+
+<style>
+	.announcement-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.announcement-item__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.announcement-item__tag {
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		color: var(--primary);
+	}
+
+	.announcement-item__time {
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+
+	.announcement-item__title {
+		font-weight: 500;
+		color: var(--deep-text);
+	}
+
+	.announcement-item__content {
+		margin: 0;
+		font-size: 0.8125rem;
+		line-height: 1.6;
+		color: var(--content-meta);
+	}
+
+	.announcement-item__link {
+		font-size: 0.8125rem;
+		color: var(--primary);
+		text-decoration: none;
+	}
+
+	.announcement-item__link:hover {
+		text-decoration: underline;
+	}
+
+	.announcement-close {
+		margin-top: 0.5rem;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--content-meta);
+	}
+
+	.announcement-close:hover {
+		background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+	}
+</style>

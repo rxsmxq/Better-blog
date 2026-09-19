@@ -6,6 +6,28 @@ interface Props {
 }
 
 const { config } = Astro.props;
+
+// 尺寸类的可选覆盖：配置里给了数字才写变量，否则一律走 CSS 的兜底值
+// （眼睛 8.5% / 说话态嘴的 clamp(...)）。瞳孔左右分开给，便于处理
+// 贴纸四分之三侧脸时两眼大小不一致的情况。
+const sizeVars: string[] = [];
+if (typeof config.eye.widthPercent === "number") {
+	sizeVars.push(`--home-hero-left-eye-width: ${config.eye.widthPercent}%`);
+}
+if (typeof config.rightEye.widthPercent === "number") {
+	sizeVars.push(`--home-hero-right-eye-width: ${config.rightEye.widthPercent}%`);
+}
+if (typeof config.mouth.talkWidthPercent === "number") {
+	sizeVars.push(
+		`--home-hero-mouth-talk-width: ${config.mouth.talkWidthPercent}%`,
+	);
+}
+if (typeof config.mouth.talkHeightPercent === "number") {
+	sizeVars.push(
+		`--home-hero-mouth-talk-height: ${config.mouth.talkHeightPercent}%`,
+	);
+}
+
 const stickerStyle = [
 	`--home-hero-left-eye-x: ${config.eye.xPercent}%`,
 	`--home-hero-left-eye-y: ${config.eye.yPercent}%`,
@@ -16,6 +38,7 @@ const stickerStyle = [
 	`--home-hero-mouth-width: ${config.mouth.widthPercent}%`,
 	`--home-hero-mouth-height: ${config.mouth.heightPercent}%`,
 	`--home-hero-mouth-rotation: ${config.mouth.rotation}deg`,
+	...sizeVars,
 ].join(";");
 ---
 

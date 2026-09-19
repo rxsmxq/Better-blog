@@ -11,23 +11,9 @@ import { siteConfig } from "./siteConfig";
 // 原先挂在 LinkPreset.Feibichi 的「个人主站」外链收编为第一项，该预设已删除。
 // name 是站长自维护的站点名（展示在右侧 CTA 上，明文即可）；左侧切换按钮的
 // 文案是固定的 i18n 文案（I18nKey.otherSites），不从这里取
-const personalSites: PersonalSite[] = [
-	{
-		name: "个人主站",
-		url: "https://www.mmzhiku.xyz/",
-		icon: "material-symbols:link",
-	},
-	{
-		name: "记事本",
-		url: "https://memos.mmzhiku.xyz/",
-		icon: "material-symbols:link",
-	},
-	{
-		name: "站点统计",
-		url: "https://stats.mmzhiku.xyz/share/HZrqqAfVdx1UEVNm",
-		icon: "material-symbols:link",
-	},
-];
+// 清空即隐藏资料卡里的「个人网站」一栏（组件有 length > 0 判空）
+// 需要展示自己的站点时按同样格式往下面数组里加即可
+const personalSites: PersonalSite[] = [];
 
 /**
  * 构建导航栏链接配置

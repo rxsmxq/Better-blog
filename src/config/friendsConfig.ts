@@ -15,17 +15,20 @@ export const friendsPageConfig: FriendsPageConfig = {
 	randomizeSort: false,
 
 	// 友链申请链接，填写后会在友链页面显示申请按钮
-	// 使用模板参数直接跳转到友链申请模板
-	applyLink:
-		"https://github.com/MmzMing/my-blog/issues/new?template=friend-link.yml",
+	// ⚠️ 已换成你自己的 GitHub（原先指向原作者仓库）；若仓库里没有 friend-link.yml
+	// 模板，可删掉 `?template=...` 直接用 issues/new
+	applyLink: "https://github.com/rxsmxq/my-blog/issues/new?template=friend-link.yml",
 
 	// 本站信息，用于友链申请指南弹窗中的站点信息展示
 	siteInfo: {
-		name: "MmzMing的知识库",
-		desc: "哈基米，南北绿豆",
-		url: "https://tblog.mmzhiku.xyz",
+		name: "Better的博客",
+		desc: "一个记录学习、生活，分享经验的个人博客。",
+		// ⚠️ 占位值，改成你自己的域名（与 siteConfig.site_url 保持一致）
+		url: "https://example.com",
+		// ⚠️ 仍是原作者的头像链接，换成你自己的头像后这里才真正干净
 		avatar: "https://i.stardots.io/784774835/StarDots-2026052116374135506.jpg",
-		email: "784774835@qq.com",
+		// 与 footerConfig 里的邮箱保持一致
+		email: "1904253070@qq.com",
 	},
 
 	// 注意事项，用于友链申请指南弹窗中的注意事项展示
@@ -327,8 +330,8 @@ export const friendsConfig: FriendLink[] = [
 		title: "Meet Blog 博客星图",
 		imgurl: "https://meet-blog.buyixiao.xyz/favicon.svg",
 		desc: "Meet Blog 博客星图",
-		siteurl:
-			"https://meet-blog.buyixiao.xyz/?ref=https%3A%2F%2Ftblog.mmzhiku.xyz/",
+		// 去掉了原作者的 ?ref=... 带参，只保留对方站点地址
+		siteurl: "https://meet-blog.buyixiao.xyz/",
 		image: "/assets/images/friends/buyixiao.webp",
 		tags: ["星图"],
 		weight: 5,

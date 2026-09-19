@@ -23,7 +23,7 @@ export const llmsConfig: LlmsConfig = {
 	/** 站点作者和内容领域，帮助 AI 判断知识来源与专业范围。 */
 	author: {
 		heading: "作者",
-		description: "Mmzming，专注分享JAVA、python、AI Agent和博客相关内容。",
+		description: "Better，一个记录学习、生活、分享经验的个人博客。",
 	},
 	/**
 	 * 提供给机器读取的稳定入口。
