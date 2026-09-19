@@ -94,6 +94,11 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/music/",
 		icon: "material-symbols:graphic-eq-rounded",
 	},
+	[LinkPreset.Moments]: {
+		name: i18n(I18nKey.moments),
+		url: "/moments/",
+		icon: "material-symbols:motion-photos-on",
+	},
 	[LinkPreset.NavLinks]: {
 		name: i18n(I18nKey.navLinks),
 		// 父项有子菜单时渲染为按钮，不使用该 url；此处保持与主要子项一致

@@ -648,6 +648,12 @@ export const en: Translation = {
 	[Key.rssMotto]: "No need to chase the tide; let it flow to you on its own.",
 	[Key.postsMotto]:
 		"We write things down so the thoughts we once had are not scattered by the wind.",
+	[Key.moments]: "Moments",
+	[Key.momentsDescription]:
+		"Short notes that never became posts: a line I read, a script that finally ran, the rain that started outside.",
+	[Key.momentsMotto]:
+		"The thoughts too small for a post deserve somewhere to stay too.",
+	[Key.momentsEmpty]: "No moments yet.",
 	[Key.searchMotto]: "Every answer is hidden in the way the question is asked.",
 	[Key.kgStats]: "{visible} / {total} nodes · {links} links",
 	[Key.kgRelations]: "{count} connections",

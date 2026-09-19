@@ -94,11 +94,20 @@ const buildNavBarConfig = (): NavBarConfig => {
 		? LinkPresets[LinkPreset.NavLinks]
 		: null;
 
-	// 5. 统一组装导航栏链接（顺序：主页 → 导航 → 文章 → 联系我 → 其他）
+	// 4.5 动态：一级项，直接指向 /moments/，页面开关控制显隐
+	const momentsNav: NavBarLink | null = siteConfig.pages.moments
+		? {
+				...LinkPresets[LinkPreset.Moments],
+				activePathPrefixes: ["/moments/"],
+			}
+		: null;
+
+	// 5. 统一组装导航栏链接（顺序：主页 → 导航 → 文章 → 动态 → 联系我 → 其他）
 	const links: (NavBarLink | LinkPreset)[] = [
 		LinkPreset.Home,
 		...(linksNav ? [linksNav] : []),
 		...(postsNav ? [postsNav] : []),
+		...(momentsNav ? [momentsNav] : []),
 		...(contactNav ? [contactNav] : []),
 		...(myNav ? [myNav] : []),
 	];

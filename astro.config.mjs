@@ -223,6 +223,9 @@ export default defineConfig({
 				if (pathname === "/categories/" && !siteConfig.pages.categories) {
 					return false;
 				}
+				if (pathname === "/moments/" && !siteConfig.pages.moments) {
+					return false;
+				}
 				if (pathname === "/collections/" && !siteConfig.pages.collections) {
 					return false;
 				}
@@ -248,9 +251,11 @@ export default defineConfig({
 					item.priority = 0.8;
 					item.changefreq = "monthly";
 				} else if (
-					["/archive/", "/categories/", "/tags/"].includes(pathname)
+					["/archive/", "/categories/", "/tags/", "/moments/"].includes(
+						pathname,
+					)
 				) {
-					// 归档/分类/标签列表页：中优先级，有新文章时会更新
+					// 归档/分类/标签/动态列表页：中优先级，有新内容时会更新
 					item.priority = 0.6;
 					item.changefreq = "weekly";
 				} else {

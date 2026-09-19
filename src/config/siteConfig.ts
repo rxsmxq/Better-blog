@@ -181,7 +181,9 @@ export const siteConfig: SiteConfig = {
 		// 关于页面开关
 		about: true,
 		// 图谱页面开关（/categories/，导航栏显示为「图谱」）
-		categories: true,
+		categories: false,
+		// 动态页面开关（/moments/，说说 / 短内容流）
+		moments: true,
 	},
 
 	// 分页配置

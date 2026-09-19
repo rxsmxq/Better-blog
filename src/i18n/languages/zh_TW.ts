@@ -630,6 +630,11 @@ export const zh_TW: Translation = {
 	[Key.galleryMotto]: "快門落下的那一瞬，時間才第一次有了形狀。",
 	[Key.rssMotto]: "不必追著潮水跑，讓它自己流到你面前。",
 	[Key.postsMotto]: "寫下來，是為了讓想過的那些事不至於隨風散去。",
+	[Key.moments]: "動態",
+	[Key.momentsDescription]:
+		"記錄那些不成篇的零碎念頭：讀到的一句話、終於跑通的腳本、窗外突然落下的雨。",
+	[Key.momentsMotto]: "不成篇的那些念頭，也不必急著交給風。",
+	[Key.momentsEmpty]: "還沒有發布任何動態。",
 	[Key.searchMotto]: "所有答案，都藏在提問的方式裡。",
 	[Key.kgStats]: "{visible} / {total} 節點 · {links} 連線",
 	[Key.kgRelations]: "關聯 {count} 個節點",

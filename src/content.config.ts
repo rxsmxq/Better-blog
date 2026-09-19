@@ -38,7 +38,24 @@ const specCollection = defineCollection({
 	schema: z.object({}),
 });
 
+// 说说 / 动态：正文即内容，通常没有标题
+const momentsCollection = defineCollection({
+	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/moments" }),
+	schema: z.object({
+		// 发布时间，支持 `2026-09-19` 或带引号的 `2026-09-19 17:30`
+		date: z.date(),
+		draft: z.boolean().optional().default(false),
+		tags: z.array(z.string()).optional().default([]),
+		// 图片地址数组：站内绝对路径（/assets/...）或完整外链
+		images: z.array(z.string()).optional().default([]),
+		location: z.string().optional().default(""),
+		mood: z.string().optional().default(""),
+		pinned: z.boolean().optional().default(false),
+	}),
+});
+
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
+	moments: momentsCollection,
 };

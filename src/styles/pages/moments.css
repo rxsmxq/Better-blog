@@ -1,0 +1,228 @@
+/* 动态 / 说说页（/moments/）
+   时间轴分组：左侧年月标记，右侧卡片流。图片网格类名 .moment-images
+   是 FancyboxManager 的既有选择器，直接用即可复用灯箱。 */
+
+.moments-empty {
+	padding: 3rem 0;
+	text-align: center;
+	font-size: 0.875rem;
+	color: var(--content-meta);
+}
+
+.moments-group {
+	display: grid;
+	grid-template-columns: 3.75rem minmax(0, 1fr);
+	gap: 0 1.25rem;
+}
+
+.moments-group + .moments-group {
+	margin-top: 2rem;
+	padding-top: 2rem;
+	border-top: 1px solid var(--line-divider);
+}
+
+.moments-group__marker {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding-top: 0.125rem;
+	font-variant-numeric: tabular-nums;
+	user-select: none;
+}
+
+.moments-group__year {
+	font-size: 0.6875rem;
+	letter-spacing: 0.08em;
+	color: var(--content-meta);
+}
+
+.moments-group__month {
+	font-size: 1.5rem;
+	font-weight: 700;
+	line-height: 1.1;
+	color: var(--deep-text);
+}
+
+.moments-group__list {
+	position: relative;
+	margin: 0;
+	padding: 0 0 0 1.5rem;
+	list-style: none;
+	border-left: 1px solid var(--line-divider);
+}
+
+.moment {
+	position: relative;
+}
+
+.moment + .moment {
+	margin-top: 1.25rem;
+}
+
+.moment__dot {
+	position: absolute;
+	top: 1.125rem;
+	left: -1.5rem;
+	width: 0.5rem;
+	height: 0.5rem;
+	transform: translateX(-0.25rem);
+	border-radius: 9999px;
+	background: var(--line-divider);
+}
+
+.moment:hover .moment__dot {
+	background: var(--primary);
+}
+
+.moment__card {
+	padding: 0.875rem 1rem 1rem;
+	border: 1px solid var(--line-divider);
+	border-radius: var(--radius-medium);
+	background: var(--card-bg);
+	transition: border-color 0.2s ease;
+}
+
+.moment:hover .moment__card {
+	border-color: var(--primary);
+}
+
+.moment__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+	font-size: 0.75rem;
+	color: var(--content-meta);
+}
+
+.moment__date {
+	font-variant-numeric: tabular-nums;
+}
+
+.moment__pin,
+.moment__place {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.moment__pin svg,
+.moment__place svg {
+	width: 0.875rem;
+	height: 0.875rem;
+}
+
+.moment__pin {
+	color: var(--primary);
+}
+
+.moment__mood {
+	font-size: 0.875rem;
+	line-height: 1;
+}
+
+.moment__body {
+	font-size: 0.9375rem;
+	line-height: 1.8;
+	color: var(--deep-text);
+	overflow-wrap: break-word;
+}
+
+.moment__body p {
+	margin: 0.5rem 0;
+}
+
+.moment__body > :first-child {
+	margin-top: 0;
+}
+
+.moment__body > :last-child {
+	margin-bottom: 0;
+}
+
+.moment__body code {
+	padding: 0.1em 0.35em;
+	border-radius: 0.25rem;
+	background: var(--btn-plain-bg-hover);
+	font-size: 0.875em;
+}
+
+.moment-images {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+/* 单图时放大展示，避免被压成小方块 */
+.moment-images:has(> :only-child) {
+	grid-template-columns: minmax(0, 22rem);
+}
+
+.moment-images a {
+	display: block;
+	overflow: hidden;
+	border-radius: var(--radius-small);
+	line-height: 0;
+}
+
+.moment-images img {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	transition: transform 0.3s ease;
+}
+
+.moment-images a:hover img {
+	transform: scale(1.04);
+}
+
+.moment__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.375rem;
+	margin: 0.75rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.moment__tag {
+	display: inline-block;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	color: var(--content-meta);
+	background: var(--btn-plain-bg-hover);
+	transition: color 0.2s ease;
+}
+
+.moment__tag:hover {
+	color: var(--primary);
+}
+
+@media (max-width: 640px) {
+	.moments-group {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+	}
+
+	.moments-group__marker {
+		flex-direction: row;
+		align-items: baseline;
+		gap: 0.375rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.moments-group__month {
+		font-size: 1.125rem;
+	}
+
+	.moments-group__list {
+		padding-left: 1.125rem;
+	}
+
+	.moment__dot {
+		left: -1.125rem;
+	}
+}

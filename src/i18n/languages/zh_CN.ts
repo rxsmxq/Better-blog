@@ -627,6 +627,11 @@ export const zh_CN: Translation = {
 	[Key.galleryMotto]: "快门落下的那一瞬，时间才第一次有了形状。",
 	[Key.rssMotto]: "不必追着潮水跑，让它自己流到你面前。",
 	[Key.postsMotto]: "写下来，是为了让想过的那些事不至于随风散去。",
+	[Key.moments]: "动态",
+	[Key.momentsDescription]:
+		"记录那些不成篇的零碎念头：读到的一句话、终于跑通的脚本、窗外突然落下的雨。",
+	[Key.momentsMotto]: "不成篇的那些念头，也不必急着交给风。",
+	[Key.momentsEmpty]: "还没有发布任何动态。",
 	[Key.searchMotto]: "所有答案，都藏在提问的方式里。",
 	[Key.kgStats]: "{visible} / {total} 节点 · {links} 连线",
 	[Key.kgRelations]: "关联 {count} 个节点",

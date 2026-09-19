@@ -86,6 +86,7 @@ export type SiteConfig = {
 		archive: boolean; // 归档页面开关
 		about: boolean; // 关于页面开关
 		categories: boolean; // 图谱页面开关（/categories/，导航栏显示为「图谱」）
+		moments: boolean; // 动态页面开关（/moments/，说说 / 短内容流）
 	};
 
 	// 分页配置
@@ -201,6 +202,7 @@ export enum LinkPreset {
 	NavMy = 17,
 	Music = 18,
 	NavLinks = 19,
+	Moments = 20,
 }
 
 export type NavBarLink = {

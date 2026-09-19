@@ -1,0 +1,156 @@
+---
+import { getCollection, render } from "astro:content";
+import Icon from "@/components/common/Icon.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { formatDateI18n } from "@/utils/date-utils";
+import { getTagUrl } from "@/utils/url-utils";
+import "@/styles/pages/moments.css";
+
+// 页面开关：关闭时重定向到 404（与 archive / categories 等页面保持一致）
+if (!siteConfig.pages.moments) {
+	return Astro.redirect("/404/");
+}
+
+const entries = await getCollection("moments");
+
+// 草稿不进页面；置顶优先，其余按时间倒序
+const visible = entries
+	.filter((entry) => !entry.data.draft)
+	.sort((a, b) => {
+		if (a.data.pinned !== b.data.pinned) return a.data.pinned ? -1 : 1;
+		return b.data.date.getTime() - a.data.date.getTime();
+	});
+
+const moments = await Promise.all(
+	visible.map(async (entry) => {
+		const { Content } = await render(entry);
+		return { entry, Content };
+	}),
+);
+
+// 按年月分组，分隔符用纯数字（YYYY / MM），避免各语言下的月份文案差异
+const timezone = siteConfig.timezone ?? "UTC";
+const partsFormatter = new Intl.DateTimeFormat("en-US", {
+	timeZone: timezone,
+	year: "numeric",
+	month: "2-digit",
+});
+function getYearMonth(date: Date): { key: string; year: string; month: string } {
+	const parts = partsFormatter.formatToParts(date);
+	const year = parts.find((part) => part.type === "year")?.value ?? "";
+	const month = parts.find((part) => part.type === "month")?.value ?? "";
+	return { key: `${year}-${month}`, year, month };
+}
+
+const groups: {
+	key: string;
+	year: string;
+	month: string;
+	items: typeof moments;
+}[] = [];
+for (const moment of moments) {
+	const { key, year, month } = getYearMonth(moment.entry.data.date);
+	const last = groups[groups.length - 1];
+	if (last && last.key === key) {
+		last.items.push(moment);
+	} else {
+		groups.push({ key, year, month, items: [moment] });
+	}
+}
+
+const title = i18n(I18nKey.moments);
+const description = i18n(I18nKey.momentsDescription);
+---
+
+<MainGridLayout title={title} description={description} hasOwnH1={true}>
+  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+    <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+      <div class="mb-6">
+        <PageTitle
+          title={title}
+          eyebrow="Moments"
+          description={i18n(I18nKey.momentsMotto)}
+          variant="stacked"
+        />
+      </div>
+
+      {moments.length === 0 ? (
+        <p class="moments-empty">{i18n(I18nKey.momentsEmpty)}</p>
+      ) : (
+        <div class="moments-timeline">
+          {groups.map((group) => (
+            <section class="moments-group" aria-label={`${group.year} / ${group.month}`}>
+              <div class="moments-group__marker" aria-hidden="true">
+                <span class="moments-group__year">{group.year}</span>
+                <span class="moments-group__month">{group.month}</span>
+              </div>
+
+              <ol class="moments-group__list">
+                {group.items.map(({ entry, Content }) => (
+                  <li class="moment" id={entry.id.replace(/[^\w-]/g, "-")}>
+                    <span class="moment__dot" aria-hidden="true"></span>
+
+                    <article class="moment__card">
+                      <header class="moment__meta">
+                        <time class="moment__date" datetime={entry.data.date.toISOString()}>
+                          {formatDateI18n(entry.data.date, true)}
+                        </time>
+                        {entry.data.pinned && (
+                          <span class="moment__pin" title={i18n(I18nKey.pinned)}>
+                            <Icon name="material-symbols:push-pin" />
+                            <span class="sr-only">{i18n(I18nKey.pinned)}</span>
+                          </span>
+                        )}
+                        {entry.data.location && (
+                          <span class="moment__place">
+                            <Icon name="material-symbols:location-on" />
+                            {entry.data.location}
+                          </span>
+                        )}
+                        {entry.data.mood && (
+                          <span class="moment__mood">{entry.data.mood}</span>
+                        )}
+                      </header>
+
+                      <div class="moment__body custom-md">
+                        <Content />
+                      </div>
+
+                      {entry.data.images.length > 0 && (
+                        <div class="moment-images">
+                          {entry.data.images.map((src: string, index: number) => (
+                            <a
+                              href={src}
+                              data-fancybox={`moment-${entry.id.replace(/[^\w-]/g, "-")}`}
+                              aria-label={`${title} ${index + 1}`}
+                            >
+                              <img src={src} alt="" loading="lazy" decoding="async" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {entry.data.tags.length > 0 && (
+                        <ul class="moment__tags">
+                          {entry.data.tags.map((tag: string) => (
+                            <li>
+                              <a class="moment__tag" href={getTagUrl(tag)}>#{tag}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</MainGridLayout>
