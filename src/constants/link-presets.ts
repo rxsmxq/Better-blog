@@ -94,10 +94,18 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		url: "/music/",
 		icon: "material-symbols:graphic-eq-rounded",
 	},
+	// 动态：父项，渲染为下拉按钮（子项：说说 / 相册）
 	[LinkPreset.Moments]: {
 		name: i18n(I18nKey.moments),
+		// 有子菜单时渲染为按钮，不使用该 url；此处与主要子项保持一致
 		url: "/moments/",
 		icon: "material-symbols:motion-photos-on",
+	},
+	// 说说：动态下拉里的文字动态
+	[LinkPreset.MomentsNotes]: {
+		name: i18n(I18nKey.momentsNotes),
+		url: "/moments/",
+		icon: "material-symbols:edit-note",
 	},
 	[LinkPreset.NavLinks]: {
 		name: i18n(I18nKey.navLinks),

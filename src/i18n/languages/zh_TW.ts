@@ -635,6 +635,7 @@ export const zh_TW: Translation = {
 		"記錄那些不成篇的零碎念頭：讀到的一句話、終於跑通的腳本、窗外突然落下的雨。",
 	[Key.momentsMotto]: "不成篇的那些念頭，也不必急著交給風。",
 	[Key.momentsEmpty]: "還沒有發布任何動態。",
+	[Key.momentsNotes]: "說說",
 	[Key.searchMotto]: "所有答案，都藏在提問的方式裡。",
 	[Key.kgStats]: "{visible} / {total} 節點 · {links} 連線",
 	[Key.kgRelations]: "關聯 {count} 個節點",

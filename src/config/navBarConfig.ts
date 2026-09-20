@@ -64,10 +64,8 @@ const buildNavBarConfig = (): NavBarConfig => {
 			: null;
 
 	// 3. 构建我的下拉菜单
+	//    相册已移到「动态」下拉，这里不再重复出现
 	const myChildren: (NavBarLink | LinkPreset)[] = [];
-	if (siteConfig.pages.gallery) {
-		myChildren.push(LinkPreset.Gallery);
-	}
 	if (siteConfig.pages.sponsor) {
 		myChildren.push(LinkPreset.Sponsor);
 	}
@@ -94,13 +92,24 @@ const buildNavBarConfig = (): NavBarConfig => {
 		? LinkPresets[LinkPreset.NavLinks]
 		: null;
 
-	// 4.5 动态：一级项，直接指向 /moments/，页面开关控制显隐
-	const momentsNav: NavBarLink | null = siteConfig.pages.moments
-		? {
-				...LinkPresets[LinkPreset.Moments],
-				activePathPrefixes: ["/moments/"],
-			}
-		: null;
+	// 4.5 构建动态下拉菜单（子项顺序：说说 → 相册）
+	const momentsChildren: (NavBarLink | LinkPreset)[] = [];
+	if (siteConfig.pages.moments) {
+		momentsChildren.push(LinkPreset.MomentsNotes);
+	}
+	if (siteConfig.pages.gallery) {
+		momentsChildren.push(LinkPreset.Gallery);
+	}
+
+	// 子项全部关闭时不渲染空的下拉菜单
+	const momentsNav: NavBarLink | null =
+		momentsChildren.length > 0
+			? {
+					...LinkPresets[LinkPreset.Moments],
+					activePathPrefixes: ["/moments/", "/gallery/"],
+					children: momentsChildren,
+				}
+			: null;
 
 	// 5. 统一组装导航栏链接（顺序：主页 → 导航 → 文章 → 动态 → 联系我 → 其他）
 	const links: (NavBarLink | LinkPreset)[] = [

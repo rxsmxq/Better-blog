@@ -168,8 +168,8 @@ export const siteConfig: SiteConfig = {
 		sponsor: false,
 		// 留言板页面开关，需要配置评论系统
 		guestbook: true,
-		// 相册页面开关
-		gallery: false,
+		// 相册页面开关（/gallery/，导航栏「动态」下拉里显示为「相册」）
+		gallery: true,
 		// 收藏API页面开关
 		collections: true,
 		// 音乐可视化页面开关

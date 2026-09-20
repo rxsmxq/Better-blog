@@ -654,6 +654,7 @@ export const en: Translation = {
 	[Key.momentsMotto]:
 		"The thoughts too small for a post deserve somewhere to stay too.",
 	[Key.momentsEmpty]: "No moments yet.",
+	[Key.momentsNotes]: "Notes",
 	[Key.searchMotto]: "Every answer is hidden in the way the question is asked.",
 	[Key.kgStats]: "{visible} / {total} nodes · {links} links",
 	[Key.kgRelations]: "{count} connections",

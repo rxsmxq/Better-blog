@@ -660,6 +660,7 @@ export const ru: Translation = {
 	[Key.momentsMotto]:
 		"Мыслям, слишком маленьким для статьи, тоже нужно место, чтобы остаться.",
 	[Key.momentsEmpty]: "Пока нет ни одной записи.",
+	[Key.momentsNotes]: "Заметки",
 	[Key.searchMotto]: "Каждый ответ скрыт в том, как задан вопрос.",
 	[Key.kgStats]: "{visible} / {total} узлов · {links} связей",
 	[Key.kgRelations]: "{count} связей",

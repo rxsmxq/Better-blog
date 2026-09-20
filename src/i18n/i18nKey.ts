@@ -474,6 +474,7 @@ enum I18nKey {
 	momentsDescription = "momentsDescription",
 	momentsMotto = "momentsMotto",
 	momentsEmpty = "momentsEmpty",
+	momentsNotes = "momentsNotes",
 	noDescriptionFallback = "noDescriptionFallback",
 	searchDescription = "searchDescription",
 	aboutDescription = "aboutDescription",

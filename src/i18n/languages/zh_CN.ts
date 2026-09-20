@@ -632,6 +632,7 @@ export const zh_CN: Translation = {
 		"记录那些不成篇的零碎念头：读到的一句话、终于跑通的脚本、窗外突然落下的雨。",
 	[Key.momentsMotto]: "不成篇的那些念头，也不必急着交给风。",
 	[Key.momentsEmpty]: "还没有发布任何动态。",
+	[Key.momentsNotes]: "说说",
 	[Key.searchMotto]: "所有答案，都藏在提问的方式里。",
 	[Key.kgStats]: "{visible} / {total} 节点 · {links} 连线",
 	[Key.kgRelations]: "关联 {count} 个节点",

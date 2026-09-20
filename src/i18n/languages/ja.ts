@@ -663,6 +663,7 @@ export const ja: Translation = {
 		"記事にならない小さな記録：読んだ一文、やっと動いたスクリプト、突然降りだした雨。",
 	[Key.momentsMotto]: "記事にならない思いつきにも、留まれる場所を。",
 	[Key.momentsEmpty]: "まだ近況はありません。",
+	[Key.momentsNotes]: "ひとこと",
 	[Key.searchMotto]: "すべての答えは、問いかけ方のなかに隠れている。",
 	[Key.kgStats]: "{visible} / {total} ノード · {links} リンク",
 	[Key.kgRelations]: "{count} 件の関連",
