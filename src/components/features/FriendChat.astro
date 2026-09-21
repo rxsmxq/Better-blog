@@ -9,9 +9,10 @@ import type { FriendChatMessage } from "@/types/config";
 
 interface Props {
 	messages: FriendChatMessage[];
+	showChat?: boolean; // 是否显示对话气泡区，默认 true
 }
 
-const { messages } = Astro.props;
+const { messages, showChat = true } = Astro.props;
 
 const site = friendsPageConfig.siteInfo;
 const notes = friendsPageConfig.notes;
@@ -49,6 +50,7 @@ const siteInfoRows = site
 
 <section class="friend-chat" data-friend-chat>
   <!-- 对话气泡：滚动进入视口后逐个弹出，气泡内打字机逐字显示 -->
+  {showChat && (
   <div class="friend-chat__messages" aria-label={i18n(I18nKey.friendRulesTitle)}>
     {messages.map((msg) => (
       <div
@@ -91,6 +93,7 @@ const siteInfoRows = site
       </div>
     ))}
   </div>
+  )}
 
   <!-- 规则与复制区 -->
   <div class="friend-apply">

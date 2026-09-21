@@ -53,6 +53,8 @@ export const friendsPageConfig: FriendsPageConfig = {
 
 	// 对话气泡文案，滚动到申请区时逐个弹出并打字机显示
 	// role: "cat" = 喵墩（左侧，作者头像）；"owner" = 站长（右侧，文字头像）
+	// showChat: false 隐藏整个对话气泡区（友链规则/申请区不受影响）
+	showChat: false,
 	chat: [
 		{
 			role: "cat",

@@ -814,6 +814,7 @@ export type FriendsPageConfig = {
 	siteInfo?: FriendSiteInfo; // 本站信息，用于复制展示
 	notes?: FriendNote[]; // 注意事项，用于申请区展示
 	chat?: FriendChatMessage[]; // 对话气泡文案，滚动到该区域时逐个弹出并打字机显示
+	showChat?: boolean; // 是否显示对话气泡区（喵墩/站长），默认 true；友链规则/申请区不受影响
 };
 
 // 音乐播放器配置

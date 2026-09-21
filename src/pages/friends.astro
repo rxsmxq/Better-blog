@@ -119,7 +119,7 @@ const description =
       )}
 
       <!-- 对话气泡 + 友链规则/本站信息 -->
-      <FriendChat messages={chatMessages} />
+      <FriendChat messages={chatMessages} showChat={friendsPageConfig.showChat ?? true} />
 
       <!-- 手风琴展开/收起：纯 CSS 高度过渡，JS 仅切换状态 -->
       <!-- 以下两个脚本必须放在 MainGridLayout 内部（#swup-container 中），否则 swup 导航到本页时脚本不会执行 -->
