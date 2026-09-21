@@ -4,7 +4,7 @@ import ChangelogGraph from "@components/about/ChangelogGraph.astro";
 import Markdown from "@components/common/Markdown.astro";
 import PageTitle from "@/components/common/PageTitle.astro";
 import SiteStructuredData from "@/components/seo/SiteStructuredData.astro";
-import { siteConfig } from "@/config";
+import { aboutConfig, siteConfig } from "@/config";
 import "@/styles/components/about-chat-bubble.css";
 import "@/styles/components/about-profile-card.css";
 import "@/styles/components/about-social-links.css";
@@ -41,8 +41,10 @@ const { Content } = await render(aboutPost);
 		<Markdown class="mb-6 markdown-content onload-animation">
 			<Content />
 		</Markdown>
-		<section class="about-page__changelog" aria-label={i18n(I18nKey.aboutChangelogTitle)}>
-			<ChangelogGraph />
-		</section>
+		{aboutConfig.showChangelog && (
+			<section class="about-page__changelog" aria-label={i18n(I18nKey.aboutChangelogTitle)}>
+				<ChangelogGraph />
+			</section>
+		)}
 	</div>
 </MainGridLayout>

@@ -1030,3 +1030,9 @@ export type CalendarConfig = {
 	// 建站纪念日（Logo 资料卡右侧进度条展示）
 	siteAnniversary: AnniversaryItem;
 };
+
+export type AboutConfig = {
+	// 是否显示关于页底部的「更新日志」模块（数据来自 src/content/spec/log.md）
+	// 设为 false 时整个 section 不渲染，组件脚本也不会执行
+	showChangelog: boolean;
+};

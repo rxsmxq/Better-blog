@@ -3,6 +3,7 @@
 
 // 类型导出
 export type {
+	AboutConfig,
 	AnniversaryItem,
 	AnnouncementConfig,
 	AnnouncementItem,
@@ -48,6 +49,7 @@ export type {
 	WidgetComponentType,
 } from "../types/sidebarConfig";
 // 核心配置
+export { aboutConfig } from "./aboutConfig"; // 关于页配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 export { calendarConfig } from "./calendarConfig"; // 日历配置
 export { collectionsApiConfig } from "./collectionsApiConfig"; // 收藏API配置
