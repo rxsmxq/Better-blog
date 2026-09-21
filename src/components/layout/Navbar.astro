@@ -67,21 +67,21 @@ if (isLocalSrcLogo) {
 					<Icon name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} is:inline class="text-[1.35rem] flex-shrink-0" />
 				) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
 					logoImg.format === "svg" ? (
-						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img h-8 w-8 object-contain flex-shrink-0" fetchpriority="high" />
 					) : (
 					<Picture
 						src={logoImg}
 						alt={siteConfig.navbar.logo.alt || siteConfig.title}
-						class="h-6 w-6 object-contain flex-shrink-0"
+						class="navbar-logo-img h-8 w-8 object-contain flex-shrink-0"
 						formats={getImageFormats()}
 						fallbackFormat={getFallbackFormat()}
-						widths={[24, 48]}
+						widths={[32, 64]}
 						loading="eager"
 						fetchpriority="high"
 					/>
 					)
 				) : siteConfig.navbar.logo?.type === "image" ? (
-					<img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+					<img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img h-8 w-8 object-contain flex-shrink-0" fetchpriority="high" />
 				) : siteConfig.navbar.logo?.type === "url" ? (
 					<img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
 				) : (
