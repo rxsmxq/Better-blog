@@ -7,6 +7,7 @@
 ```
 src/config/
 ├── index.ts                   # 配置索引文件 - 统一导出
+├── aboutConfig.ts             # 关于页配置（底部「更新日志」模块开关）
 ├── siteConfig.ts              # 站点基础配置
 ├── homeConfig.ts              # 首页与用户资料配置（含首页图片、技能图标、作品百叶窗）
 ├── musicConfig.ts             # 音乐播放器配置
@@ -46,6 +47,7 @@ import { homeConfig } from '../config/homeConfig';
 ## 📋 配置文件列表
 
 - `siteConfig.ts` - 站点基础配置（标题、描述、主题色等）
+- `aboutConfig.ts` - 关于页配置（是否显示底部「更新日志」模块，数据来自 `src/content/spec/log.md`）
 - `homeConfig.ts` - 首页与用户资料配置（头像、姓名、社交链接、首页图片、技能图标、作品百叶窗等）
 - `musicConfig.ts` - 音乐播放器配置（导出 `musicPlayerConfig`）
 - `commentConfig.ts` - 评论系统配置（Waline / Twikoo / Giscus / Artalk / Disqus）
