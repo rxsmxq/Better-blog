@@ -163,8 +163,8 @@ export const siteConfig: SiteConfig = {
 		// 友链页面开关
 		friends: true,
 		// 打赏页面开关
-		// ⚠️ 已关闭：public/assets/images/wechat-pay.avif 还是原作者的收款码，
-		// 换上你自己的收款码图片后再改回 true
+		// 已关闭：收款方式列表（sponsorConfig.methods）目前是空的，
+		// 放上自己的收款码后再改回 true
 		sponsor: false,
 		// 留言板页面开关，需要配置评论系统
 		guestbook: true,
