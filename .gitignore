@@ -32,6 +32,9 @@ yarn.lock
 *.iml
 .claude
 
+# workbuddy local workspace (memory logs, tmp scripts, verify tools)
+.workbuddy/
+
 # docs
 Firefly-docs/
 
