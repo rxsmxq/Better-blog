@@ -46,11 +46,14 @@ export const commentConfig: CommentConfig = {
 	},
 
 	//giscus评论系统配置
-	// ⚠️ 原先指向原作者的仓库，已换成你的 GitHub；repoId / categoryId 必须在
-	// 你的仓库启用 Giscus 后重新获取（https://giscus.app），当前用的是 waline，改前不生效
+	// ⚠️ 当前 commentConfig.type 是 "waline"，此段配置尚未生效（giscus 分支不会渲染）
+	// 若要启用 giscus，需先完成两步：
+	//   1) 在仓库 rxsmxq/Better-blog 安装 giscus App 并开启 Discussions
+	//   2) 到 https://giscus.app 用该仓库重新生成 repoId / categoryId
+	//      （当前二者为空字符串，为空时即便把 type 改成 giscus 也无法工作）
 	giscus: {
 		// 设置 Giscus 评论系统仓库
-		repo: "rxsmxq/my-blog",
+		repo: "rxsmxq/Better-blog",
 		// 设置 Giscus 评论系统仓库ID
 		repoId: "",
 		// 设置 Giscus 评论系统分类
