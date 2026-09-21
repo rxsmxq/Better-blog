@@ -25,8 +25,9 @@ export const friendsPageConfig: FriendsPageConfig = {
 		desc: "一个记录学习、生活，分享经验的个人博客。",
 		// ⚠️ 占位值，改成你自己的域名（与 siteConfig.site_url 保持一致）
 		url: "https://example.com",
-		// ⚠️ 仍是原作者的头像链接，换成你自己的头像后这里才真正干净
-		avatar: "https://i.stardots.io/784774835/StarDots-2026052116374135506.jpg",
+		// 头像直链：部署后对方可通过 https://你的域名/assets/images/avatar.webp 访问
+		// （site_url 定下来后，这里建议改成完整 URL）
+		avatar: "/assets/images/avatar.webp",
 		// 与 footerConfig 里的邮箱保持一致
 		email: "1904253070@qq.com",
 	},
