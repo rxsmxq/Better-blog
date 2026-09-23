@@ -62,7 +62,7 @@ export const calendarConfig: CalendarConfig = {
 	// 支持公历或农历（农历需 type: "lunar"，构建期自动换算为当年公历日期）
 	siteAnniversary: {
 		name: "建站日",
-		date: { type: "solar", month: 5, day: 7 },
+		date: { type: "solar", month: 9, day: 23 },
 		icon: "material-symbols:rocket-launch",
 		note: "Better的博客上线纪念日",
 	},
