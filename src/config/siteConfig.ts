@@ -145,7 +145,7 @@ export const siteConfig: SiteConfig = {
 
 	// 站点默认 OG 图：供 JSON-LD 结构化数据（SiteStructuredData）与无封面文章的结构化图片兜底使用。
 	// 与 coverImageConfig.randomCoverImage.fallback（随机封面图 API 失败的回退）互不相干，两者指向同一张图并非重复配置
-	defaultOgImage: "/assets/images/aut.webp",
+	defaultOgImage: "/assets/images/default-cover.jpg",
 
 	// 页面加载动画配置
 	pageLoader: {
