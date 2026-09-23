@@ -15,9 +15,10 @@ export const friendsPageConfig: FriendsPageConfig = {
 	randomizeSort: false,
 
 	// 友链申请链接，填写后会在友链页面显示申请按钮
-	// ⚠️ 已换成你自己的 GitHub（原先指向原作者仓库）；若仓库里没有 friend-link.yml
-	// 模板，可删掉 `?template=...` 直接用 issues/new
-	applyLink: "https://github.com/rxsmxq/my-blog/issues/new?template=friend-link.yml",
+	// 指向 rxsmxq/Better-blog（本仓库）；`?template=friend-link.yml` 对应
+	// .github/ISSUE_TEMPLATE/friend-link.yml，配套的自动校验见
+	// .github/workflows/friend-link-checker.yml，删掉模板前别删这个参数
+	applyLink: "https://github.com/rxsmxq/Better-blog/issues/new?template=friend-link.yml",
 
 	// 本站信息，用于友链申请指南弹窗中的站点信息展示
 	siteInfo: {
@@ -76,19 +77,19 @@ export const friendsPageConfig: FriendsPageConfig = {
 };
 
 // 友链配置
-export const friendsConfig: FriendLink[] = [
-	// 友链列表已清空（原先是 fork 来源作者的友链数据，连同其头像图一并清理）
-	// 添加一条友链的格式：
-	// {
-	// 	title: "站点名",
-	// 	imgurl: "https://example.com/avatar.png",   // 头像直链（推荐，省得自己存图）
-	// 	// image: "/assets/images/friends/xxx.webp",  // 也可以用 public 下的本地图
-	// 	desc: "一句话简介",
-	// 	siteurl: "https://example.com",
-	// 	tags: ["Blog"],
-	// 	weight: 5,        // 越大越靠前
-	// 	enabled: true,    // false 则不显示
-	// },
+export const friendsConfig: FriendLink[] = [
+	// 友链列表已清空（原先是 fork 来源作者的友链数据，连同其头像图一并清理）
+	// 添加一条友链的格式：
+	// {
+	// 	title: "站点名",
+	// 	imgurl: "https://example.com/avatar.png",   // 头像直链（推荐，省得自己存图）
+	// 	// image: "/assets/images/friends/xxx.webp",  // 也可以用 public 下的本地图
+	// 	desc: "一句话简介",
+	// 	siteurl: "https://example.com",
+	// 	tags: ["Blog"],
+	// 	weight: 5,        // 越大越靠前
+	// 	enabled: true,    // false 则不显示
+	// },
 ];
 
 // 获取启用的友链并进行排序
