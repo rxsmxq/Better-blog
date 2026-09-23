@@ -1,7 +1,6 @@
 ---
 import { join, normalize } from "node:path";
 import Icon from "@components/common/Icon.astro";
-import masterAvatar from "@/assets/images/avatar-master.webp";
 import { friendsPageConfig, homeConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -18,8 +17,9 @@ const site = friendsPageConfig.siteInfo;
 const notes = friendsPageConfig.notes;
 const applyLink = friendsPageConfig.applyLink;
 
-// 喵墩头像：使用作者头像（homeConfig.avatar，本地资源走 glob 导入，取构建后 src）
-let catAvatarImg: string | null = null;
+// 气泡头像统一使用站长自己的头像（homeConfig.avatar，本地资源走 glob 导入，取构建后 src）
+// ⚠️ 原先这里用的是原作者头像 avatar-master.webp，已删除并改为站点头像
+let siteAvatarImg: string | null = null;
 const avatarValue = homeConfig.avatar || "";
 if (
 	avatarValue &&
@@ -35,8 +35,11 @@ if (
 		"/",
 	);
 	const mod = await files[normalizedPath]?.();
-	if (mod?.src) catAvatarImg = mod.src;
+	if (mod?.src) siteAvatarImg = mod.src;
 }
+
+// 取不到本地资源时退回配置里的原始值（远程 URL 或 public 路径）
+const avatarSrc = siteAvatarImg || avatarValue;
 
 const siteInfoRows = site
 	? [
@@ -62,29 +65,17 @@ const siteInfoRows = site
         data-text={msg.text}
       >
         <span class="friend-chat__avatar" aria-hidden="true">
-          {msg.role === "cat"
-            ? (
-              catAvatarImg || avatarValue ? (
-                <img
-                  class="friend-chat__avatar-img"
-                  src={catAvatarImg || avatarValue}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
-                <span class="friend-chat__avatar-text">{msg.name}</span>
-              )
-            )
-            : (
-              <img
-                class="friend-chat__avatar-img"
-                src={masterAvatar.src}
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-            )}
+          {avatarSrc ? (
+            <img
+              class="friend-chat__avatar-img"
+              src={avatarSrc}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span class="friend-chat__avatar-text">{msg.name}</span>
+          )}
         </span>
         <div class="friend-chat__bubble">
           <span class="friend-chat__name">{msg.name}</span>
