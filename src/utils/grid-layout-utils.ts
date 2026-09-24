@@ -5,7 +5,12 @@
  * isArticleDetailPage 替换为本项目 layout-utils 的 isPostPage。
  */
 
-import { isHomePage, isPostPage, isPostListPage, isGuestbookPage } from "@/utils/layout-utils";
+import {
+	isGuestbookPage,
+	isHomePage,
+	isPostListPage,
+	isPostPage,
+} from "@/utils/layout-utils";
 import {
 	computeGridColumns,
 	gridColumnVarsToStyle,
@@ -55,8 +60,7 @@ export function updateMainGridCols(): void {
 		hideSidebarOnHomePage:
 			mainGrid.getAttribute("data-grid-hide-sidebar-on-home") === "true",
 		hideSidebarOnGuestbookPage:
-			mainGrid.getAttribute("data-grid-hide-sidebar-on-guestbook") ===
-			"true",
+			mainGrid.getAttribute("data-grid-hide-sidebar-on-guestbook") === "true",
 		isPostPage: isPost,
 		isHomePage: isHomePage(window.location.pathname),
 		isGuestbookPage: isGuestbookPage(window.location.pathname),
@@ -98,9 +102,7 @@ export function updateSidebarComponentsVisibility(): void {
 
 	// 组件级别的 showOnPostPage === false
 	document.querySelectorAll(".widget-hide-on-post").forEach((widget) => {
-		isPost
-			? widget.classList.add("hidden")
-			: widget.classList.remove("hidden");
+		isPost ? widget.classList.add("hidden") : widget.classList.remove("hidden");
 	});
 
 	// 组件级别的 hideOnNonPostPage === true

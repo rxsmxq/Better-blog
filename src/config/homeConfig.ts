@@ -89,7 +89,10 @@ export const homeConfig: HomeConfig = {
 			// 默认逐句播放的简介，末句后弹出话题菜单
 			intro: [
 				{ speaker: "host", text: "欸——来客人喽，随便坐，别客气。" },
-				{ speaker: "host", text: "我是菈妮，Better可能在玩游戏，现在这儿归我管。" },
+				{
+					speaker: "host",
+					text: "我是菈妮，Better可能在玩游戏，现在这儿归我管。",
+				},
 				{
 					speaker: "host",
 					text: "对了，得搬上简介了：道阻且长，行则将至；行而不辍，未来可期。",

@@ -9,18 +9,18 @@
  *  - 类型从 @/types/sidebarConfig 导入
  */
 import Announcement from "@/components/widget/Announcement.astro";
+import Calendar from "@/components/widget/Calendar.astro";
 import Categories from "@/components/widget/Categories.astro";
+import Music from "@/components/widget/Music.astro";
 import SiteStats from "@/components/widget/SiteStats.astro";
 import Tags from "@/components/widget/Tags.astro";
-import Music from "@/components/widget/Music.astro";
-import Calendar from "@/components/widget/Calendar.astro";
 import { sidebarLayoutConfig } from "@/config";
 import type {
 	MobileBottomComponentConfig,
 	WidgetComponentConfig,
 	WidgetComponentType,
 } from "@/types/sidebarConfig";
-import { isPostPage, isPostListPage } from "@/utils/layout-utils";
+import { isPostListPage, isPostPage } from "@/utils/layout-utils";
 import { isWidgetVisibleOnPageType } from "@/utils/responsive-utils";
 
 interface Props {

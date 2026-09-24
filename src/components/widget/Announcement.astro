@@ -18,7 +18,9 @@ const config = announcementConfig;
 
 // 侧栏空间有限，最多展示 3 条（sort 越大越靠前）
 const MAX_ITEMS = 3;
-const items = [...config.items].sort((a, b) => b.sort - a.sort).slice(0, MAX_ITEMS);
+const items = [...config.items]
+	.sort((a, b) => b.sort - a.sort)
+	.slice(0, MAX_ITEMS);
 
 interface Props {
 	class?: string;

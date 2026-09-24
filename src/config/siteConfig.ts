@@ -17,8 +17,7 @@ export const siteConfig: SiteConfig = {
 	site_url: "https://example.com",
 
 	// 站点描述
-	description:
-		"一个记录学习、生活，分享经验的个人博客。",
+	description: "一个记录学习、生活，分享经验的个人博客。",
 
 	// 站点关键词
 	keywords: [

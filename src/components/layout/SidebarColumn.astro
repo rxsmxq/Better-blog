@@ -38,7 +38,11 @@ const staticShown = position === "both" || position === side;
 const hasComponents = side === "left" ? hasLeftComponents : hasRightComponents;
 // 左侧静态容器在非双侧栏时 side 传 undefined（SideBar 内部回退为 "left"）
 const staticSideBarSide =
-	side === "left" ? (position === "both" ? "left" : undefined) : ("right" as const);
+	side === "left"
+		? position === "both"
+			? "left"
+			: undefined
+		: ("right" as const);
 ---
 
 {

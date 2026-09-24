@@ -1,1 +1,7 @@
+# 语言统计：把 .js 归到 astro（模板自带，勿删）
 *.js linguist-language=astro
+
+# 统一行尾为 LF：
+# CI 的 Biome 会在 CRLF 上误报 "File content differs from formatting output"，
+# 而 Windows 编辑器默认存 CRLF。钉死成 LF 后，本地与 CI 看到的文件内容一致。
+* text=auto eol=lf

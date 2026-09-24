@@ -18,7 +18,8 @@ export const friendsPageConfig: FriendsPageConfig = {
 	// 指向 rxsmxq/Better-blog（本仓库）；`?template=friend-link.yml` 对应
 	// .github/ISSUE_TEMPLATE/friend-link.yml，配套的自动校验见
 	// .github/workflows/friend-link-checker.yml，删掉模板前别删这个参数
-	applyLink: "https://github.com/rxsmxq/Better-blog/issues/new?template=friend-link.yml",
+	applyLink:
+		"https://github.com/rxsmxq/Better-blog/issues/new?template=friend-link.yml",
 
 	// 本站信息，用于友链申请指南弹窗中的站点信息展示
 	siteInfo: {
