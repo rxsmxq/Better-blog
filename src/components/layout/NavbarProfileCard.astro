@@ -42,9 +42,13 @@ if (
 }
 
 // 建站日事件序列：构建期展开前后三年内联进面板，客户端据此算周期进度，无运行时请求
+// date 为 null（建站日期未定）时不生成事件序列，事件卡也不渲染
 const currentYear = new Date().getFullYear();
-const anniversaryOccurrences = [currentYear - 1, currentYear, currentYear + 1]
-	.map((year) => resolveYearlyDate(calendarConfig.siteAnniversary.date, year))
+const anniversaryDate = calendarConfig.siteAnniversary.date;
+const anniversaryOccurrences = (
+	anniversaryDate ? [currentYear - 1, currentYear, currentYear + 1] : []
+)
+	.map((year) => resolveYearlyDate(anniversaryDate, year))
 	.filter((date): date is string => date !== null)
 	.sort((a, b) => a.localeCompare(b));
 
@@ -209,6 +213,7 @@ const profileConfig = JSON.stringify({
 					</div>
 				</article>
 
+			{anniversaryDate && (
 				<article class="profile-card__event" data-profile-event="anniversary">
 					<div class="profile-card__event-main">
 						<strong class="profile-card__event-title" data-profile-event-title>--</strong>
@@ -225,12 +230,13 @@ const profileConfig = JSON.stringify({
 						>
 							<span data-profile-event-progress-fill></span>
 						</span>
-						<span class="profile-card__remaining" data-profile-event-remaining>--</span>
-					</div>
-				</article>
-			</div>
+					<span class="profile-card__remaining" data-profile-event-remaining>--</span>
+				</div>
+			</article>
+			)}
+		</div>
 
-			<div class="profile-card__pane" data-profile-pane="site" hidden>
+		<div class="profile-card__pane" data-profile-pane="site" hidden>
 				{navBarConfig.personalSites.map((site) => (
 					<a
 						class="profile-card__site-cta"

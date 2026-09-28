@@ -25,7 +25,7 @@ const { class: className, style, widgetConfig } = Astro.props;
 
 const showTitle = widgetConfig?.showTitle !== false;
 
-const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
+const siteStartDate = siteConfig.siteStartDate || "";
 
 const posts = await getSortedPosts();
 const categories = await getCategoryList();
@@ -148,13 +148,17 @@ const stats = [
 	function updateDynamicStats() {
 		const today = new Date();
 
-		const startDate = new Date(siteStartDate);
-		const diffDays = Math.ceil(
-			Math.abs(today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-		);
+		// 建站日期未定（siteStartDate 为空）时，「运行天数」显示占位符而不是假数据
+		const startDate = siteStartDate ? new Date(siteStartDate) : null;
+		const diffDays =
+			startDate && !Number.isNaN(startDate.getTime())
+				? Math.ceil(
+						Math.abs(today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+					)
+				: null;
 
 		document.querySelectorAll('[data-stat-id="running-days"]').forEach((el) => {
-			el.textContent = diffDays.toString();
+			el.textContent = diffDays === null ? "--" : diffDays.toString();
 		});
 
 		if (lastPostDate) {

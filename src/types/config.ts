@@ -1010,7 +1010,8 @@ export type HolidayItem = {
 // 建站纪念日项（按年重复，公历或农历）
 export type AnniversaryItem = {
 	name: string; // 事件名
-	date: SolarOrLunarDate;
+	// 建站日期未定时可为 null（资料卡将不渲染该事件卡）
+	date: SolarOrLunarDate | null;
 	icon?: string;
 	note?: string;
 };

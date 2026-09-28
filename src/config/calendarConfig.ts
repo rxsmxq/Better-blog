@@ -60,9 +60,11 @@ export const calendarConfig: CalendarConfig = {
 
 	// 建站纪念日 — Logo 资料卡右侧进度条展示
 	// 支持公历或农历（农历需 type: "lunar"，构建期自动换算为当年公历日期）
+	// ⚠️ 建站日期未定：date 为 null 时不渲染纪念日卡；定下日期后填回即可，例如：
+	// date: { type: "solar", month: 9, day: 25 }
 	siteAnniversary: {
 		name: "建站日",
-		date: { type: "solar", month: 9, day: 25 },
+		date: null,
 		icon: "material-symbols:rocket-launch",
 		note: "Better的博客上线纪念日",
 	},
