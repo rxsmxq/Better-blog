@@ -34,7 +34,9 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		// 类型：song=单曲, playlist=歌单, album=专辑, search=搜索, artist=艺术家
 		type: "playlist",
 		// 歌单/专辑/单曲 ID 或搜索关键词
-		id: "17955431099",
+		// 示例占位歌单（网易云官方热歌榜），请换成自己的歌单 id：
+		// 网易云网页版打开自己的歌单，地址栏 playlist?id= 后面的数字
+		id: "3778678",
 		// 认证 token（可选）
 		auth: "",
 		// 备用 API 配置（当主 API 失败时使用）。
@@ -46,20 +48,14 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	},
 
 	// 本地音乐配置（当 mode 为 'local' 时使用）
+	// 条目格式：{ name, artist, url, cover, lrc }，url/cover 填 /assets/music/ 下的路径
 	// 1. 支持传入歌词文件的路径
-	// lrc: "/assets/music/lrc/使一颗心免于哀伤-哼唱.lrc",
+	// lrc: "/assets/music/lrc/xxx.lrc",
 	// 2. 或者直接填入歌词字符串内容
 	// lrc: "[00:00.00]歌词内容...",
 	local: {
-		playlist: [
-			{
-				name: "使一颗心免于哀伤",
-				artist: "知更鸟 / HOYO-MiX / Chevy",
-				url: "/assets/music/使一颗心免于哀伤-哼唱.mp3",
-				cover: "/assets/music/cover/109951169585655912.webp",
-				lrc: "",
-			},
-		],
+		// 暂清空（原条目为原作者音频，已随清理删除）；填入自己的本地音频即可切 local 模式
+		playlist: [],
 	},
 
 	// 可视化器配置

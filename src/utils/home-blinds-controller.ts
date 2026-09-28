@@ -294,8 +294,8 @@ function setupScenes(context: SetupContext) {
 		"[data-blinds-background]",
 	);
 	// 前景图自身的 autoAlpha 由 setupReveal 的时间线独占，这里只切外层窗口的显隐。
-	const stageForegroundWindow = selectRequired<HTMLElement>(
-		stage,
+	// 前景层可被配置移除（不填 foregroundImage），因此允许查不到。
+	const stageForegroundWindow = stage.querySelector<HTMLElement>(
 		"[data-reveal-window]",
 	);
 	// 入场标题同理：根节点的 autoAlpha 归 setupHeadline / setupReveal，这里只切窗口。
@@ -632,9 +632,12 @@ function setupScenes(context: SetupContext) {
 
 	function applyPhase() {
 		gsap.set(stage, { autoAlpha: rootInView && phase !== "done" ? 1 : 0 });
-		gsap.set([stageBackground, stageForegroundWindow, stageHeadlineWindow], {
-			autoAlpha: phase === "reveal" ? 1 : 0,
-		});
+		gsap.set(
+			[stageBackground, stageForegroundWindow, stageHeadlineWindow].filter(
+				(element): element is HTMLElement => element !== null,
+			),
+			{ autoAlpha: phase === "reveal" ? 1 : 0 },
+		);
 		gsap.set(portal, { autoAlpha: phase === "shrink" ? 1 : 0 });
 	}
 
@@ -835,17 +838,19 @@ function setupScenes(context: SetupContext) {
 			scene.active = false;
 		}
 		renderMeter(0, false);
-		gsap.killTweensOf([
-			...cards,
-			...swings,
-			...stands,
-			...standJumpTargets,
-			portal,
-			portalImage,
-			stageBackground,
-			stageForegroundWindow,
-			stageHeadlineWindow,
-		]);
+		gsap.killTweensOf(
+			[
+				...cards,
+				...swings,
+				...stands,
+				...standJumpTargets,
+				portal,
+				portalImage,
+				stageBackground,
+				stageForegroundWindow,
+				stageHeadlineWindow,
+			].filter((element): element is HTMLElement => element !== null),
+		);
 		rootTrigger.kill();
 		pinTrigger?.kill();
 		shrinkTrigger?.kill();
@@ -868,20 +873,22 @@ function setupReveal(context: SetupContext) {
 		section,
 		"[data-reveal-viewport]",
 	);
-	const foreground = selectRequired<HTMLElement>(
-		root,
+	// 前景层可被配置移除（不填 foregroundImage），查不到时跳过前景相关动画
+	const foreground = root.querySelector<HTMLElement>(
 		"[data-reveal-foreground]",
 	);
 	const headline = selectRequired<HTMLElement>(root, "[data-blinds-headline]");
 
 	const foregroundOpacity = clamp(config.reveal.foregroundOpacity, 0, 1);
-	gsap.set(foreground, {
-		xPercent: -50,
-		yPercent: 34,
-		x: 0,
-		y: 0,
-		autoAlpha: 0,
-	});
+	if (foreground) {
+		gsap.set(foreground, {
+			xPercent: -50,
+			yPercent: 34,
+			x: 0,
+			y: 0,
+			autoAlpha: 0,
+		});
+	}
 	const revealTimeline = gsap.timeline({
 		scrollTrigger: {
 			id: "home-blinds-reveal",
@@ -905,78 +912,87 @@ function setupReveal(context: SetupContext) {
 
 	// 前景图的 autoAlpha 只由这条 scrub 时间线写入，refresh 时会按进度重新渲染，
 	// 因此滚过揭示层后缩放窗口不会让它重新出现。
-	revealTimeline
-		.fromTo(
-			foreground,
-			{ yPercent: 34, autoAlpha: 0 },
-			{
-				yPercent: 0,
-				autoAlpha: foregroundOpacity,
-				duration: REVEAL_ENTER_END,
-				ease: "power3.out",
-				immediateRender: false,
-			},
-			0,
-		)
-		.fromTo(
-			foreground,
-			{ yPercent: 0, autoAlpha: foregroundOpacity },
-			{
-				yPercent: -38,
-				autoAlpha: 0,
-				duration: 1 - REVEAL_EXIT_START,
-				ease: "power3.in",
-				immediateRender: false,
-			},
-			REVEAL_EXIT_START,
-		)
-		// 入场标题不做 scrub 进场（它有自己的 0.5s 时间线），只在这里跟着前景图一起滑出
-		.fromTo(
-			headline,
-			{ yPercent: 0, autoAlpha: 1 },
-			{
-				yPercent: -38,
-				autoAlpha: 0,
-				duration: 1 - REVEAL_EXIT_START,
-				ease: "power3.in",
-				immediateRender: false,
-			},
-			REVEAL_EXIT_START,
-		);
+	if (foreground) {
+		revealTimeline
+			.fromTo(
+				foreground,
+				{ yPercent: 34, autoAlpha: 0 },
+				{
+					yPercent: 0,
+					autoAlpha: foregroundOpacity,
+					duration: REVEAL_ENTER_END,
+					ease: "power3.out",
+					immediateRender: false,
+				},
+				0,
+			)
+			.fromTo(
+				foreground,
+				{ yPercent: 0, autoAlpha: foregroundOpacity },
+				{
+					yPercent: -38,
+					autoAlpha: 0,
+					duration: 1 - REVEAL_EXIT_START,
+					ease: "power3.in",
+					immediateRender: false,
+				},
+				REVEAL_EXIT_START,
+			);
+	}
+	// 入场标题不做 scrub 进场（它有自己的 0.5s 时间线），只在这里跟着前景图一起滑出
+	revealTimeline.fromTo(
+		headline,
+		{ yPercent: 0, autoAlpha: 1 },
+		{
+			yPercent: -38,
+			autoAlpha: 0,
+			duration: 1 - REVEAL_EXIT_START,
+			ease: "power3.in",
+			immediateRender: false,
+		},
+		REVEAL_EXIT_START,
+	);
 
-	const travel = Math.max(0, config.reveal.pointerTravel);
-	const setPointerX = gsap.quickTo(foreground, "x", {
-		duration: 0.58,
-		ease: "power3.out",
-	});
-	const setPointerY = gsap.quickTo(foreground, "y", {
-		duration: 0.58,
-		ease: "power3.out",
-	});
-	viewport.addEventListener(
-		"pointermove",
-		(event) => {
-			const bounds = viewport.getBoundingClientRect();
-			const normalizedX =
-				((event.clientX - bounds.left) / Math.max(bounds.width, 1) - 0.5) * 2;
-			const normalizedY =
-				((event.clientY - bounds.top) / Math.max(bounds.height, 1) - 0.5) * 2;
-			setPointerX(normalizedX * travel);
-			setPointerY(normalizedY * travel * 0.58);
-		},
-		{ signal },
-	);
-	viewport.addEventListener(
-		"pointerleave",
-		() => {
-			setPointerX(0);
-			setPointerY(0);
-		},
-		{ signal },
-	);
+	if (foreground) {
+		// 前景图跟随鼠标的位移（前景层不存在时整段跳过）
+		const travel = Math.max(0, config.reveal.pointerTravel);
+		const setPointerX = gsap.quickTo(foreground, "x", {
+			duration: 0.58,
+			ease: "power3.out",
+		});
+		const setPointerY = gsap.quickTo(foreground, "y", {
+			duration: 0.58,
+			ease: "power3.out",
+		});
+		viewport.addEventListener(
+			"pointermove",
+			(event) => {
+				const bounds = viewport.getBoundingClientRect();
+				const normalizedX =
+					((event.clientX - bounds.left) / Math.max(bounds.width, 1) - 0.5) * 2;
+				const normalizedY =
+					((event.clientY - bounds.top) / Math.max(bounds.height, 1) - 0.5) * 2;
+				setPointerX(normalizedX * travel);
+				setPointerY(normalizedY * travel * 0.58);
+			},
+			{ signal },
+		);
+		viewport.addEventListener(
+			"pointerleave",
+			() => {
+				setPointerX(0);
+				setPointerY(0);
+			},
+			{ signal },
+		);
+	}
 
 	return () => {
-		gsap.killTweensOf([foreground, headline]);
+		gsap.killTweensOf(
+			[foreground, headline].filter(
+				(element): element is HTMLElement => element !== null,
+			),
+		);
 		revealTimeline.scrollTrigger?.kill();
 		revealTimeline.kill();
 	};

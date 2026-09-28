@@ -81,16 +81,18 @@ const runtimeConfig = {
 			data-blinds-background
 		/>
 
-		<div class="home-blinds__foreground-window" data-reveal-window>
-			<img
-				class="home-blinds__foreground"
-				src={config.reveal.foregroundImage}
-				alt=""
-				loading="eager"
-				decoding="async"
-				data-reveal-foreground
-			/>
-		</div>
+		{config.reveal.foregroundImage && (
+			<div class="home-blinds__foreground-window" data-reveal-window>
+				<img
+					class="home-blinds__foreground"
+					src={config.reveal.foregroundImage}
+					alt=""
+					loading="eager"
+					decoding="async"
+					data-reveal-foreground
+				/>
+			</div>
+		)}
 
 		<!-- 入场标题：长条与标题同色，长条内缘退开时标题才「从背面」显露；
 		     长条固定在两侧后往外缩放消失，退场随整个揭示层一起上滑 -->

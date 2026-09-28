@@ -150,8 +150,7 @@ export const homeConfig: HomeConfig = {
 		enabled: true,
 		reveal: {
 			backgroundImage: "/assets/images/home-blinds/act2/1.webp",
-			foregroundImage: "/assets/images/home-blinds/act1/1.webp",
-			foregroundAlt: "奔跑人物剪影",
+			// 前景层已移除（原图为作者素材剪影，已随清理删除）；不填 foregroundImage 则不渲染前景层
 			foregroundOpacity: 0.5,
 			pointerTravel: 28,
 			// 长条横移揭示的入场标题：标题单行显示（版式按 4 字排），

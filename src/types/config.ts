@@ -265,9 +265,9 @@ export type HomeBlindsConfig = {
 	reveal: {
 		/** 固定背景图（首屏揭示层与首幕画面共用） */
 		backgroundImage: string;
-		/** 透明前景图 */
-		foregroundImage: string;
-		foregroundAlt: string;
+		/** 透明前景图（不填则不渲染前景层） */
+		foregroundImage?: string;
+		foregroundAlt?: string;
 		/** 前景图完全进入后的透明度，取值 0-1 */
 		foregroundOpacity: number;
 		/** 前景图跟随鼠标移动的最大像素距离 */
