@@ -26,9 +26,9 @@ export const friendsPageConfig: FriendsPageConfig = {
 		name: "Better的博客",
 		desc: "一个记录学习、生活，分享经验的个人博客。",
 		// ⚠️ 与 siteConfig.site_url 保持一致
-		url: "https://472100.xyz",
+		url: "https://blog.472100.xyz",
 		// 头像直链：对方可通过此 URL 访问本站头像
-		avatar: "https://472100.xyz/assets/images/avatar.webp",
+		avatar: "https://blog.472100.xyz/assets/images/avatar.webp",
 		// 与 footerConfig 里的邮箱保持一致
 		email: "1904253070@qq.com",
 	},

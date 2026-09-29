@@ -14,7 +14,7 @@ export const siteConfig: SiteConfig = {
 
 	// 站点 URL
 	// 决定 sitemap / RSS / canonical / OG 的绝对链接
-	site_url: "https://472100.xyz",
+	site_url: "https://blog.472100.xyz",
 
 	// 站点描述
 	description: "一个记录学习、生活，分享经验的个人博客。",
