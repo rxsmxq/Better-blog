@@ -66,6 +66,7 @@ const heatmapWeekTemplate = i18n(I18nKey.calendarHeatmapWeek);
 const currentLang = siteConfig.lang || "en";
 
 const calendarDataUrl = url("/api/allPostMeta.json");
+const holidaysDataUrl = url("/api/holidays.json");
 const postUrlPrefix = url("/posts/");
 ---
 
@@ -182,6 +183,7 @@ const postUrlPrefix = url("/posts/");
 		yearText,
 		currentLang,
 		calendarDataUrl,
+		holidaysDataUrl,
 		postUrlPrefix,
 		heatmapWeekTemplate,
 	}}
@@ -193,6 +195,88 @@ const postUrlPrefix = url("/posts/");
 	let postDateMap = {};
 	let allPostsData = [];
 	let availableYears = [];
+
+	// 节日数据：dateKey("YYYY-MM-DD") -> { names[], isOfficial, isWorkday }
+	let holidayMap = {};
+
+	// 共享悬浮提示（fixed 定位，不被父容器裁剪；热力图与节日格子共用）
+	function ensureFixedTooltip() {
+		let tooltipEl = document.getElementById("widget-fixed-tooltip");
+		if (!tooltipEl) {
+			tooltipEl = document.createElement("div");
+			tooltipEl.id = "widget-fixed-tooltip";
+			Object.assign(tooltipEl.style, {
+				position: "fixed",
+				padding: "4px 8px",
+				borderRadius: "6px",
+				fontSize: "0.75rem",
+				lineHeight: "1.2",
+				background: "rgba(0,0,0,0.8)",
+				color: "#fff",
+				boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+				pointerEvents: "none",
+				opacity: "0",
+				transition: "opacity 0.15s ease",
+				zIndex: "9999",
+				whiteSpace: "nowrap",
+			});
+			document.body.appendChild(tooltipEl);
+		}
+		return tooltipEl;
+	}
+
+	function bindTooltip(el, getText) {
+		const tooltipEl = ensureFixedTooltip();
+		el.addEventListener("mouseenter", () => {
+			tooltipEl.textContent = getText();
+			tooltipEl.style.opacity = "1";
+			const rect = el.getBoundingClientRect();
+			tooltipEl.style.left = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2 + "px";
+			tooltipEl.style.top = rect.top - tooltipEl.offsetHeight - 6 + "px";
+		});
+		el.addEventListener("mouseleave", () => {
+			tooltipEl.style.opacity = "0";
+		});
+	}
+
+	async function fetchHolidays() {
+		try {
+			let data;
+			if (window.__holidaysCache) {
+				data = window.__holidaysCache;
+			} else {
+				const response = await fetch(holidaysDataUrl);
+				data = await response.json();
+				window.__holidaysCache = data;
+			}
+			buildHolidayMap(data);
+			// 数据到达后重渲染（日历可能已先用空节日表渲染过一轮）
+			renderCalendar();
+		} catch (error) {
+			// 节日数据加载失败不影响日历本体
+			console.warn("Failed to fetch holidays", error);
+		}
+	}
+
+	function buildHolidayMap(list) {
+		holidayMap = {};
+		(Array.isArray(list) ? list : []).forEach((h) => {
+			if (!h || !h.date) return;
+			if (!holidayMap[h.date]) {
+				holidayMap[h.date] = { names: [], isOfficial: false, isWorkday: false };
+			}
+			const entry = holidayMap[h.date];
+			if (h.name && !entry.names.includes(h.name)) entry.names.push(h.name);
+			if (h.isOfficial) entry.isOfficial = true;
+			if (h.isWorkday) entry.isWorkday = true;
+		});
+	}
+
+	function holidayTooltipText(holiday) {
+		if (!holiday || holiday.names.length === 0) return "";
+		const label = holiday.names.join("、");
+		return holiday.isWorkday && !holiday.isOfficial ? `${label}（补班）` : label;
+	}
 
 	async function fetchData() {
 		try {
@@ -284,39 +368,9 @@ const postUrlPrefix = url("/posts/");
 			});
 		});
 
-		// 热力图提示框 (fixed 定位，不被父容器裁剪)
-		let tooltipEl = document.getElementById("heatmap-tooltip");
-		if (!tooltipEl) {
-			tooltipEl = document.createElement("div");
-			tooltipEl.id = "heatmap-tooltip";
-			Object.assign(tooltipEl.style, {
-				position: "fixed",
-				padding: "4px 8px",
-				borderRadius: "6px",
-				fontSize: "0.75rem",
-				lineHeight: "1.2",
-				background: "rgba(0,0,0,0.8)",
-				color: "#fff",
-				boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-				pointerEvents: "none",
-				opacity: "0",
-				transition: "opacity 0.15s ease",
-				zIndex: "9999",
-				whiteSpace: "nowrap",
-			});
-			document.body.appendChild(tooltipEl);
-		}
+		// 热力图提示框（复用共享 fixed tooltip）
 		gridEl.querySelectorAll(".heatmap-cell[data-tooltip]").forEach((cell) => {
-			cell.addEventListener("mouseenter", () => {
-				tooltipEl.textContent = cell.getAttribute("data-tooltip");
-				tooltipEl.style.opacity = "1";
-				const rect = cell.getBoundingClientRect();
-				tooltipEl.style.left = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2 + "px";
-				tooltipEl.style.top = rect.top - tooltipEl.offsetHeight - 6 + "px";
-			});
-			cell.addEventListener("mouseleave", () => {
-				tooltipEl.style.opacity = "0";
-			});
+			bindTooltip(cell, () => cell.getAttribute("data-tooltip"));
 		});
 	}
 
@@ -418,12 +472,23 @@ const postUrlPrefix = url("/posts/");
 		calendarGrid.innerHTML = calendarDays
 			.map(({ day, hasPost, count, dateKey }) => {
 				const isToday = day === currentDate && isCurrentMonth;
+				const holiday = day ? holidayMap[dateKey] : null;
+				const isLegalHoliday = !!(holiday && holiday.isOfficial);
+				const isWorkday = !!(holiday && holiday.isWorkday && !holiday.isOfficial);
+				const hasHoliday = !!(holiday && holiday.names.length > 0);
 				const classes = [
 					"calendar-day aspect-square flex items-center justify-center rounded-sm text-sm relative cursor-pointer",
 				];
 
 				if (!day) {
 					classes.push("text-neutral-400 dark:text-neutral-600");
+				} else if (isLegalHoliday) {
+					// 法定假日：中国习惯标红
+					classes.push(
+						hasPost
+							? "text-red-500 dark:text-red-400 font-bold"
+							: "text-red-500 dark:text-red-400",
+					);
 				} else if (!hasPost) {
 					classes.push("text-neutral-700 dark:text-neutral-300");
 				} else {
@@ -434,19 +499,38 @@ const postUrlPrefix = url("/posts/");
 					classes.push("ring-2 ring-(--primary)");
 				}
 
+				// 文章圆点（主色）与节日圆点（橙色）：同时存在时左右错开
+				const postDotHtml = hasPost
+					? `<span class="absolute bottom-0 ${hasHoliday ? "left-[38%]" : "left-1/2"} -translate-x-1/2 w-1 h-1 rounded-full bg-(--primary)"></span>`
+					: "";
+				const holidayDotHtml = hasHoliday
+					? `<span class="absolute bottom-0 ${hasPost ? "left-[62%]" : "left-1/2"} -translate-x-1/2 w-1 h-1 rounded-full bg-orange-400"></span>`
+					: "";
+				const workdayBadgeHtml = isWorkday
+					? '<span class="absolute top-0 right-0.5 text-[9px] leading-none text-neutral-400 dark:text-neutral-500 font-medium">班</span>'
+					: "";
+
 				return `
         <div
           class="${classes.join(" ")}"
           data-date="${dateKey}"
           data-has-post="${hasPost}"
+          ${hasHoliday ? `data-has-holiday="true" data-holiday-name="${holidayTooltipText(holiday)}"` : ""}
         >
           ${day || ""}
-          ${hasPost ? '<span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-(--primary)"></span>' : ""}
+          ${postDotHtml}
+          ${holidayDotHtml}
           ${hasPost && count > 1 ? `<span class="absolute top-0 right-0 text-[10px] text-(--primary) font-bold">${count}</span>` : ""}
+          ${workdayBadgeHtml}
         </div>
       `;
 			})
 			.join("");
+
+		// 节日格子悬停显示节日名
+		calendarGrid.querySelectorAll(".calendar-day[data-has-holiday]").forEach((el) => {
+			bindTooltip(el, () => el.getAttribute("data-holiday-name") || "");
+		});
 
 		// 获取当月所有文章
 		const currentMonthPosts = allPostsData.filter((post) => {
@@ -576,8 +660,10 @@ const postUrlPrefix = url("/posts/");
 			dayElement.addEventListener("click", () => {
 				const dateKey = dayElement.getAttribute("data-date");
 				const hasPost = dayElement.getAttribute("data-has-post") === "true";
+				const holiday = dateKey ? holidayMap[dateKey] : null;
+				const hasHoliday = !!(holiday && holiday.names.length > 0);
 
-				if (!hasPost || !dateKey) return;
+				if ((!hasPost && !hasHoliday) || !dateKey) return;
 
 				// 切换选中状态
 				if (currentSelectedDay === dayElement) {
@@ -600,24 +686,33 @@ const postUrlPrefix = url("/posts/");
 				// 获取该日期的文章
 				const posts = postDateMap[dateKey] || [];
 
-				if (posts.length > 0 && postsList) {
+				if (posts.length === 0 && !hasHoliday) return;
+
+				if (postsList) {
 					if (postsWrapper) {
 						postsWrapper.style.display = "block";
 					}
 
+					// 节日信息行（橙点 + 节日名）置于文章列表之前
+					const holidayHtml = hasHoliday
+						? `<div class="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400 px-2 py-1"><span class="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0"></span><span class="truncate">${holiday.names.join(" · ")}</span></div>`
+						: "";
+
 					// 渲染文章列表
-					postsList.innerHTML = posts
-						.map((post) => {
-							const date = new Date(post.published);
-							const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
-							return `
+					postsList.innerHTML =
+						holidayHtml +
+						posts
+							.map((post) => {
+								const date = new Date(post.published);
+								const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
+								return `
             <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded-sm hover:bg-(--btn-plain-bg-hover)">
               <span class="truncate">${post.title}</span>
               <span class="text-xs text-neutral-500 dark:text-neutral-400 ml-2 whitespace-nowrap">${dateStr}</span>
             </a>
           `;
-						})
-						.join("");
+							})
+							.join("");
 
 					// 显示分割线
 					if (divider) {
@@ -659,6 +754,7 @@ const postUrlPrefix = url("/posts/");
 		displayMonth = now.getMonth();
 
 		fetchData();
+		fetchHolidays();
 
 		// Bind events
 		const prevBtn = document.getElementById("prev-month-btn");
@@ -701,7 +797,8 @@ const postUrlPrefix = url("/posts/");
 		min-height: 32px;
 	}
 
-	:global(.calendar-day[data-has-post="true"]:hover) {
+	:global(.calendar-day[data-has-post="true"]:hover),
+	:global(.calendar-day[data-has-holiday="true"]:hover) {
 		transform: translateY(-2px);
 	}
 
