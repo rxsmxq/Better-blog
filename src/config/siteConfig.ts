@@ -13,8 +13,8 @@ export const siteConfig: SiteConfig = {
 	subtitle: "Better",
 
 	// 站点 URL
-	// ⚠️ 占位值，务必改成你自己的域名：它决定 sitemap / RSS / canonical / OG 的绝对链接
-	site_url: "https://example.com",
+	// 决定 sitemap / RSS / canonical / OG 的绝对链接
+	site_url: "https://472100.xyz",
 
 	// 站点描述
 	description: "一个记录学习、生活，分享经验的个人博客。",

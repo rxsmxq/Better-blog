@@ -25,11 +25,10 @@ export const friendsPageConfig: FriendsPageConfig = {
 	siteInfo: {
 		name: "Better的博客",
 		desc: "一个记录学习、生活，分享经验的个人博客。",
-		// ⚠️ 占位值，改成你自己的域名（与 siteConfig.site_url 保持一致）
-		url: "https://example.com",
-		// 头像直链：部署后对方可通过 https://你的域名/assets/images/avatar.webp 访问
-		// （site_url 定下来后，这里建议改成完整 URL）
-		avatar: "/assets/images/avatar.webp",
+		// ⚠️ 与 siteConfig.site_url 保持一致
+		url: "https://472100.xyz",
+		// 头像直链：对方可通过此 URL 访问本站头像
+		avatar: "https://472100.xyz/assets/images/avatar.webp",
 		// 与 footerConfig 里的邮箱保持一致
 		email: "1904253070@qq.com",
 	},
