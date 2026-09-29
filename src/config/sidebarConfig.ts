@@ -89,11 +89,11 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			hideOnNonPostPage: false,
 		},
 		{
-			// 文章日历热力图
+			// 文章日历热力图：仅文章详情页 /posts/* 隐藏，列表页 /list/ 及其它页面保留
 			type: "calendar",
 			enable: true,
 			position: "sticky",
-			showOnPostPage: true,
+			showOnPostPage: false,
 			hideOnNonPostPage: false,
 		},
 	],
