@@ -45,12 +45,12 @@ if (
 // date 为 null（建站日期未定）时不生成事件序列，事件卡也不渲染
 const currentYear = new Date().getFullYear();
 const anniversaryDate = calendarConfig.siteAnniversary.date;
-const anniversaryOccurrences = (
-	anniversaryDate ? [currentYear - 1, currentYear, currentYear + 1] : []
-)
-	.map((year) => resolveYearlyDate(anniversaryDate, year))
-	.filter((date): date is string => date !== null)
-	.sort((a, b) => a.localeCompare(b));
+const anniversaryOccurrences = anniversaryDate
+	? [currentYear - 1, currentYear, currentYear + 1]
+			.map((year) => resolveYearlyDate(anniversaryDate, year))
+			.filter((date): date is string => date !== null)
+			.sort((a, b) => a.localeCompare(b))
+	: [];
 
 // 热力图构建期静态渲染：48 个方块 + 月份表头 + 周标签，
 // 数据到达后控制器只补计数色阶与 tooltip，不再重建 DOM
