@@ -157,7 +157,17 @@ const opensInNewTab = (href: string) => !/^(mailto:|tel:)/i.test(href);
 				{(beian.icp || beian.police) && (
 					<div class="site-footer__beian">
 						{beian.icp && (
-							<a href={beian.icpUrl} target="_blank" rel="noreferrer">{beian.icp}</a>
+							<a
+								href={beian.icpUrl}
+								target="_blank"
+								rel="noreferrer"
+								class={beian.icpIcon && "site-footer__police-link"}
+							>
+								{beian.icpIcon && (
+									<img src={beian.icpIcon} alt="" aria-hidden="true" />
+								)}
+								<span>{beian.icp}</span>
+							</a>
 						)}
 						{beian.icp && beian.police && <span aria-hidden="true">/</span>}
 						{beian.police && (

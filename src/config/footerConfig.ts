@@ -29,6 +29,8 @@ export const footerConfig: FooterConfig = {
 	beian: {
 		// 萌 ICP 备案号（icp.gov.moe）
 		icp: "萌ICP备20266627号",
+		// 萌 ICP 官方徽标
+		icpIcon: "/assets/images/moe-icp.svg",
 		// 公安网备号，示例：京公网安备11010802012345号
 		police: "",
 		policeIcon: "/assets/images/备案图标.png",

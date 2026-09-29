@@ -631,6 +631,7 @@ export type FooterSocialLink = {
 
 export type FooterBeianConfig = {
 	icp: string; // ICP 备案号，留空则不显示
+	icpIcon: string; // ICP 备案图标路径，留空则不显示图标
 	police: string; // 公安网备号，留空则不显示
 	policeIcon: string; // 公安备案图标路径
 	icpUrl: string; // ICP 备案查询链接
