@@ -26,14 +26,13 @@ export const footerConfig: FooterConfig = {
 	],
 
 	// 备案信息（icp/police 留空则不显示对应条目）
-	// ⚠️ 下面两个 URL 里的号码都是**示例占位**，换成你自己的备案号后再填 icp / police
 	beian: {
-		// ICP 备案号（工信部），示例：京ICP备12345678号-1
-		icp: "",
+		// 萌 ICP 备案号（icp.gov.moe）
+		icp: "萌ICP备20266627号",
 		// 公安网备号，示例：京公网安备11010802012345号
 		police: "",
 		policeIcon: "/assets/images/备案图标.png",
-		icpUrl: "https://beian.miit.gov.cn/#/Integrated/index",
+		icpUrl: "https://icp.gov.moe/?keyword=20266627",
 		policeUrl: "https://beian.mps.gov.cn/#/query/webSearch?code=00000000000000",
 	},
 
