@@ -6,6 +6,13 @@
 	"name": "better-blog",
 	// Workers 运行时兼容性日期，纯静态资产服务下无实质影响
 	"compatibility_date": "2026-05-07",
+	// 自定义域：构建部署时自动绑定并签发证书（免后台手动配置）
+	"routes": [
+		{
+			"pattern": "blog.472100.xyz",
+			"custom_domain": true
+		}
+	],
 	"assets": {
 		// 构建产物目录（astro build 输出）
 		"directory": "./dist",
