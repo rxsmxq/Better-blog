@@ -3,7 +3,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	// 纯静态资产部署：dist/ 由 Workers 静态资产服务直接分发，无 Worker 脚本
 	// Worker 名称，必须与 Cloudflare 后台已连接 Git 构建的那个 Worker 一致
-	"name": "my-blog",
+	"name": "better-blog",
 	// Workers 运行时兼容性日期，纯静态资产服务下无实质影响
 	"compatibility_date": "2026-05-07",
 	"assets": {
