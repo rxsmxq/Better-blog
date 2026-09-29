@@ -90,11 +90,16 @@ const articlePills = [
 const visitPills = [
 	{ label: "UV", value: "--", tone: "light" as const },
 	{ label: "PV", value: "--", tone: "dark" as const },
-	{
-		label: i18n(I18nKey.siteStatsSource),
-		value: "Umami",
-		tone: "outline" as const,
-	},
+	// 数据来源标注：接回 Umami 统计（siteConfig.analytics 填 websiteId）后自动显示
+	...(siteConfig.analytics?.umamiAnalytics?.websiteId
+		? [
+				{
+					label: i18n(I18nKey.siteStatsSource),
+					value: "Umami",
+					tone: "outline" as const,
+				},
+			]
+		: []),
 ];
 const contactItems = homeConfig.links.map((link) => ({
 	name: link.name,

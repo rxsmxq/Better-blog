@@ -155,7 +155,11 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					data-stat-key="uv"
 					data-popup-value="--"
 					data-popup-label={i18n(I18nKey.siteStatsVisitors)}
-					data-popup-detail="数据来源 Umami · 建站起累计"
+					data-popup-detail={
+						siteConfig.analytics?.umamiAnalytics?.websiteId
+							? "数据来源 Umami · 建站起累计"
+							: "接回访问统计后显示"
+					}
 				>
 					<span class="home-mobile-stat__value" data-mobile-stat="UV">--</span>
 					<span class="home-mobile-stat__label">
@@ -169,7 +173,11 @@ const statsShareId = umamiConfig?.shareId ?? "";
 					data-stat-key="pv"
 					data-popup-value="--"
 					data-popup-label={i18n(I18nKey.viewsBrowseLabel)}
-					data-popup-detail="数据来源 Umami · 建站起累计"
+					data-popup-detail={
+						siteConfig.analytics?.umamiAnalytics?.websiteId
+							? "数据来源 Umami · 建站起累计"
+							: "接回访问统计后显示"
+					}
 				>
 					<span class="home-mobile-stat__value" data-mobile-stat="PV">--</span>
 					<span class="home-mobile-stat__label">
